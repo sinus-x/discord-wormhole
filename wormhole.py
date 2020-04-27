@@ -69,6 +69,11 @@ class Wormhole(commands.Cog):
 			m = "**{}** messages sent since the first formation."
 			await ctx.send(m.format(self.transferred))
 
+	@wormhole.command()
+	async def link(self, ctx: commands.Context):
+		"""Send a message with link to the bot"""
+		await ctx.send("https://github.com/sinus-x/discord-wormhole")
+
 	@commands.check(is_admin)
 	@wormhole.command()
 	async def add(self, ctx: commands.Context, channel: discord.TextChannel):
