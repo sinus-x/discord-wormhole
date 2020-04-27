@@ -9,7 +9,7 @@
 	"prefix": "~",
 
 	"__comment": "list of registered channels",
-	"channels": [],
+	"wormholes": [],
 
 	"__comment": "full | guild | none",
 	"anonymity": "full",
