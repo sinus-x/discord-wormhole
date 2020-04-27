@@ -12,5 +12,7 @@ Admin commands:
 - `~wormhole remove #channel` will remove the local wormhole entry
 
 Commands for everyone:
-`~wormhole` will print session information
+- `~wormhole` will print session information
 
+## License
+Released under the GNU GPL v3
