@@ -88,8 +88,16 @@ class Wormhole(commands.Cog):
 	@commands.group(name="wormhole")
 	async def wormhole(self, ctx: commands.Context):
 		if ctx.invoked_subcommand is None:
-			m = "**{}** messages sent since the first formation."
-			await ctx.send(m.format(self.transferred))
+			m = "**{}** messages sent since the first formation. " \
+				"Connected to **{}** wormholes."
+			await ctx.send(m.format(self.transferred, len(config['wormholes'])))
+
+	@wormhole.command()
+	async def settings(self, ctx: commands.Context):
+		m = "**Wormhole settings**:\n" \
+			"Anonymity: **{}**\n" \
+			"Edit/delete timer: **{}s**"
+		await ctx.send(m.format(config['anonymity'], config['message window']))
 
 	@wormhole.command()
 	async def link(self, ctx: commands.Context):
