@@ -35,21 +35,34 @@ class Wormhole(commands.Cog):
 		# get wormhole channel objects
 		self.__update()
 
+		# copy remote message
 		content = None
 		files = []
-
-		# copy remote message
 		if message.content:
+			content = message.content
+
+			# escape mentions
+			users = message.mentions
+			if users is not None:
+				for member in users:
+					content = content.replace(member.mention, '@'+member.name)
+			channels = message.channel_mentions
+			if channels is not None:
+				for channel in channels:
+					content = content.replace(channel.mention, channel.guild.name+'#'+channel.name)
+			roles = message.role_mentions
+			if roles is not None:
+				for role in roles:
+					content = content.replace(role.mention, '@'+role.name)
+
 			a = config.get('anonymity')
 			u = discord.utils.escape_mentions(message.author.name)
 			g = discord.utils.escape_mentions(message.guild.name)
 			if a == 'none':
-				content = f'**{u}, {g}**: ' + message.content
+				content = f'**{u}, {g}**: ' + content
 			elif a == 'guild':
 				g = discord.utils.escape_mentions(message.guild.name)
-				content = f'**{g}**: ' + message.content
-			else:
-				content = message.content
+				content = f'**{g}**: ' + content
 
 		if message.attachments:
 			for f in message.attachments:
@@ -57,10 +70,11 @@ class Wormhole(commands.Cog):
 				await f.save(fp)
 				files.append(discord.File(fp, filename=f.filename))
 
+		#TODO Add support for message editing
+
 		# send the message
 		self.transferred += 1
 		await self.__send(message, content, files)
-
 
 
 	@commands.group(name="wormhole")
