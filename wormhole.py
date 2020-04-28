@@ -1,7 +1,7 @@
 import os
 import json
-from io import BytesIO
 import asyncio
+from io import BytesIO
 
 import discord
 from discord.ext import commands
@@ -13,6 +13,8 @@ class Wormhole(commands.Cog):
 		self.bot = bot
 
 		self.wormholes = []
+		self.sent = []
+
 		self.transferred = 0
 
 	def is_admin(ctx: commands.Context):
@@ -52,11 +54,22 @@ class Wormhole(commands.Cog):
 		await self.__send(message, content, files)
 
 	@commands.Cog.listener()
-	async def on_message_edit(before: discord.Message, after: discord.Message):
-		if before.content != after.content:
+	async def on_message_edit(self, before: discord.Message, after: discord.Message):
+		if before.content == after.content:
 			return
 
-		
+		# get forwarded messages
+		forwarded = None
+		for m in self.sent:
+			if m[0].id == after.id:
+				forwarded = m
+				break
+		if not forwarded:
+			return
+
+		content = self.__process(after)
+		for m in forwarded[1:]:
+			await m.edit(content=content)
 
 
 	@commands.group(name="wormhole")
@@ -73,24 +86,28 @@ class Wormhole(commands.Cog):
 	@commands.check(is_admin)
 	@wormhole.command()
 	async def open(self, ctx: commands.Context):
+		if ctx.channel.id in config['wormholes']:
+			return
 		config['wormholes'].append(ctx.channel.id)
 		self.__update()
 		self.__save()
 		await asyncio.sleep(1)
 		await self.__send(ctx=ctx, source=True,
 			text="Wormhole opened: **{}** in **{}**".format(
-				channel.name, channel.guild.name), files=None)
+				ctx.channel.name, ctx.channel.guild.name), files=None)
 		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
 	@wormhole.command()
 	async def close(self, ctx: commands.Context, channel: discord.TextChannel):
+		if ctx.channel.id not in config['wormholes']:
+			return
 		config['wormholes'].remove(ctx.channel.id)
 		self.__update()
 		self.__save()
 		await self.__send(ctx=ctx, source=True,
 			text="Wormhole closed: **{}** in **{}**".format(
-				channel.name, channel.guild.name), files=None)
+				ctx.channel.name, ctx.channel.guild.name), files=None)
 		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
