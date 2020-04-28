@@ -24,6 +24,8 @@ class Wormhole(commands.Cog):
 		return ctx.author.id == config['admin id'] \
 		or ctx.channel.id in config['wormholes']
 
+	#TODO Add support to manage bot from DMs
+
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
 		# do not act if channel is not wormhole channel
@@ -144,6 +146,19 @@ class Wormhole(commands.Cog):
 			self.__save()
 			await self.__send(message=ctx.message, source=True,
 				text="New anonymity policy: **{}**".format(value), files=None)
+
+	@commands.check(is_admin)
+	@wormhole.command()
+	async def timer(self, ctx: commands.Context, value: str):
+		try:
+			value = int(value)
+		except:
+			return
+		if value < 5 or value > 900:
+			return
+		config['message window'] = value
+		self.__save()
+		await ctx.send("New message windows: **{}s**".format(value))
 
 	@commands.check(in_wormhole)
 	@commands.command()
