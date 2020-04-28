@@ -188,7 +188,6 @@ class Wormhole(commands.Cog):
 
 		# done
 		content = content.replace("@", "")
-		print(content)
 		return content
 
 	async def __send(self, message: discord.Message, text: str, files: list, source: bool = False):
