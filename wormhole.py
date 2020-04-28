@@ -71,6 +71,19 @@ class Wormhole(commands.Cog):
 		for m in forwarded[1:]:
 			await m.edit(content=content)
 
+	@commands.Cog.listener()
+	async def on_message_delete(self, message: discord.Message):
+		# get forwarded messages
+		forwarded = None
+		for m in self.sent:
+			if m[0].id == message.id:
+				forwarded = m
+				break
+		if not forwarded:
+			return
+
+		for m in forwarded[1:]:
+			await m.delete()
 
 	@commands.group(name="wormhole")
 	async def wormhole(self, ctx: commands.Context):
@@ -166,10 +179,8 @@ class Wormhole(commands.Cog):
 			msgs.append(m)
 
 		self.sent.append(msgs)
-		print("DEB >> .sent: " + str(message.id))
-		await asyncio.sleep(30)
+		await asyncio.sleep(config['message window'])
 		self.sent.remove(msgs)
-		print("DEB << .sent: " + str(message.id))
 
 
 	def __update(self):
