@@ -25,6 +25,7 @@ class Wormhole(commands.Cog):
 		or ctx.channel.id in config['wormholes']
 
 	#TODO Add support to manage bot from DMs
+	#TODO Reject big attachments
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -51,9 +52,16 @@ class Wormhole(commands.Cog):
 
 		if message.attachments:
 			for f in message.attachments:
+				if f.size > config['max size']*1000:
+					await message.channel.send(
+						"{}, that file is too big.".format(message.author.mention))
+					continue
 				fp = BytesIO()
 				await f.save(fp)
 				files.append(discord.File(fp, filename=f.filename))
+
+		if content is None and files is None:
+			return
 
 		# send the message
 		self.transferred += 1
@@ -95,14 +103,15 @@ class Wormhole(commands.Cog):
 	@commands.group(name="wormhole")
 	async def wormhole(self, ctx: commands.Context):
 		if ctx.invoked_subcommand is None:
-			m = "**{}** messages sent since the first formation. " \
+			m = "**{}** messages sent since the formation. " \
 				"Connected to **{}** wormholes."
 			await ctx.send(m.format(self.transferred, len(config['wormholes'])))
 
 	@wormhole.command()
 	async def settings(self, ctx: commands.Context):
-		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**"
-		await ctx.send(m.format(config['anonymity'], config['message window']))
+		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**, "
+		m+= "maximal attachment size **{}kB**"
+		await ctx.send(m.format(config['anonymity'], config['message window'], config['max size']))
 
 	@wormhole.command()
 	async def link(self, ctx: commands.Context):
@@ -158,7 +167,20 @@ class Wormhole(commands.Cog):
 			return
 		config['message window'] = value
 		self.__save()
-		await ctx.send("New message windows: **{}s**".format(value))
+		await ctx.send("New message windows: **{} s**".format(value))
+
+	@commands.check(is_admin)
+	@wormhole.command()
+	async def size(self, ctx: commands.Context, value: str):
+		try:
+			value = int(value)
+		except:
+			return
+		if value < 10 or value > 10000:
+			return
+		config['max size'] = value
+		self.__save()
+		await ctx.send("New maximal attachment size: **{} kB**".format(value))
 
 	@commands.check(in_wormhole)
 	@commands.command()

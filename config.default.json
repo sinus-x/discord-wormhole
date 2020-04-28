@@ -17,6 +17,9 @@
 	"__comment": "How much time the sender has to edit or delete their message",
 	"message windows": 30,
 
+	"__comment": "Max attachment size, in kB",
+	"max size": 200,
+
 	"__comment": "Boolean; wheter to print all errors that may occure",
 	"suppress errors": true,
 
