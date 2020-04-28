@@ -39,30 +39,7 @@ class Wormhole(commands.Cog):
 		content = None
 		files = []
 		if message.content:
-			content = message.content
-
-			# escape mentions
-			users = message.mentions
-			if users is not None:
-				for member in users:
-					content = content.replace(member.mention, '@'+member.name)
-			channels = message.channel_mentions
-			if channels is not None:
-				for channel in channels:
-					content = content.replace(channel.mention, channel.guild.name+'#'+channel.name)
-			roles = message.role_mentions
-			if roles is not None:
-				for role in roles:
-					content = content.replace(role.mention, '@'+role.name)
-
-			a = config.get('anonymity')
-			u = discord.utils.escape_mentions(message.author.name)
-			g = discord.utils.escape_mentions(message.guild.name)
-			if a == 'none':
-				content = f'**{u}, {g}**: ' + content
-			elif a == 'guild':
-				g = discord.utils.escape_mentions(message.guild.name)
-				content = f'**{g}**: ' + content
+			content = self.__process(message)
 
 		if message.attachments:
 			for f in message.attachments:
@@ -70,11 +47,16 @@ class Wormhole(commands.Cog):
 				await f.save(fp)
 				files.append(discord.File(fp, filename=f.filename))
 
-		#TODO Add support for message editing
-
 		# send the message
 		self.transferred += 1
 		await self.__send(message, content, files)
+
+	@commands.Cog.listener()
+	async def on_message_edit(before: discord.Message, after: discord.Message):
+		if before.content != after.content:
+			return
+
+		
 
 
 	@commands.group(name="wormhole")
@@ -123,12 +105,55 @@ class Wormhole(commands.Cog):
 			await self.__send(ctx=ctx, source=True,
 				text="New anonymity policy: **{}**".format(value), files=None)
 
-	async def __send(self, ctx: commands.Context, text: str, files: list, source: bool = False):
+
+	def __process(self, message: discord.Message):
+		"""Escape mentions and apply anonymity"""
+		content = message.content
+		# escape mentions
+		users = message.mentions
+		if users is not None:
+			for member in users:
+				content = content.replace(member.mention, '@'+member.name)
+		channels = message.channel_mentions
+		if channels is not None:
+			for channel in channels:
+				content = content.replace(channel.mention, channel.guild.name+'#'+channel.name)
+		roles = message.role_mentions
+		if roles is not None:
+			for role in roles:
+				content = content.replace(role.mention, '@'+role.name)
+
+		# apply anonymity option
+		a = config.get('anonymity')
+		u = discord.utils.escape_mentions(message.author.name)
+		g = discord.utils.escape_mentions(message.guild.name)
+		if a == 'none':
+			content = f'**{u}, {g}**: ' + content
+		elif a == 'guild':
+			g = discord.utils.escape_mentions(message.guild.name)
+			content = f'**{g}**: ' + content
+		elif a == 'all':
+			pass
+
+		# done
+		return content
+
+
+	async def __send(self, message: discord.Message, text: str, files: list, source: bool = False):
 		# redistribute the message
+		msgs = [message]
 		for w in self.wormholes:
-			if w.id == ctx.channel.id and not source:
+			if w.id == message.channel.id and not source:
 				continue
-			await w.send(content=text, files=files)
+			m = await w.send(content=text, files=files)
+			msgs.append(m)
+
+		self.sent.append(msgs)
+		print("DEB >> .sent: " + str(message.id))
+		await asyncio.sleep(30)
+		self.sent.remove(msgs)
+		print("DEB << .sent: " + str(message.id))
+
 
 	def __update(self):
 		self.wormholes = []
