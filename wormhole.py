@@ -1,4 +1,3 @@
-import os
 import re
 import json
 import asyncio
@@ -22,9 +21,8 @@ class Wormhole(commands.Cog):
 		return ctx.author.id == config['admin id']
 
 	def in_wormhole(ctx: commands.Context):
-		if ctx.author.id == config['admin id']:
-			return True
-		return ctx.channel.id in config['wormholes']
+		return ctx.author.id == config['admin id'] \
+		or ctx.channel.id in config['wormholes']
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -101,9 +99,7 @@ class Wormhole(commands.Cog):
 
 	@wormhole.command()
 	async def settings(self, ctx: commands.Context):
-		m = "**Wormhole settings**:\n" \
-			"Anonymity: **{}**\n" \
-			"Edit/delete timer: **{}s**"
+		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**"
 		await ctx.send(m.format(config['anonymity'], config['message window']))
 
 	@wormhole.command()
@@ -123,7 +119,6 @@ class Wormhole(commands.Cog):
 		await self.__send(message=ctx.message, source=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name), files=None)
-		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -137,7 +132,6 @@ class Wormhole(commands.Cog):
 		await self.__send(message=ctx.message, source=True,
 			text="Wormhole closed: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name), files=None)
-		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -150,6 +144,21 @@ class Wormhole(commands.Cog):
 			self.__save()
 			await self.__send(message=ctx.message, source=True,
 				text="New anonymity policy: **{}**".format(value), files=None)
+
+	@commands.check(in_wormhole)
+	@commands.command()
+	async def wormholes(self, ctx: commands.Context):
+		if len(self.wormholes) == 0:
+			self.__update()
+			await asyncio.sleep(1)
+
+		if len(self.wormholes) == 0:
+			m = "No wormhole has been opened."
+		else:
+			m = "Currently opened wormholes:"
+			for w in self.wormholes:
+				m += "\n- **{}** in {}".format(w.name, w.guild.name)
+		await ctx.send(m)
 
 
 	def __process(self, message: discord.Message):

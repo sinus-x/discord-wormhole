@@ -6,13 +6,13 @@ import discord
 from discord.ext import commands
 
 config = json.load(open('config.json'))
-
 bot = commands.Bot(command_prefix=config['prefix'], help_command=None)
 
 @bot.event
 async def on_ready():
 	print("Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
-	#TODO set presence
+	s = f"{config['prefix']}wormhole"
+	await bot.change_presence(activity=discord.Game(s))
 
 @bot.event
 async def on_error(event, *args, **kwargs):
