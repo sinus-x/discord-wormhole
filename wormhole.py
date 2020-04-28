@@ -21,6 +21,11 @@ class Wormhole(commands.Cog):
 	def is_admin(ctx: commands.Context):
 		return ctx.author.id == config['admin id']
 
+	def in_wormhole(ctx: commands.Context):
+		if ctx.author.id == config['admin id']:
+			return True
+		return ctx.channel.id in config['wormholes']
+
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
 		# do not act if channel is not wormhole channel
@@ -86,6 +91,7 @@ class Wormhole(commands.Cog):
 		for m in forwarded[1:]:
 			await m.delete()
 
+	@commands.check(in_wormhole)
 	@commands.group(name="wormhole")
 	async def wormhole(self, ctx: commands.Context):
 		if ctx.invoked_subcommand is None:
@@ -114,20 +120,21 @@ class Wormhole(commands.Cog):
 		self.__update()
 		self.__save()
 		await asyncio.sleep(1)
-		await self.__send(ctx=ctx, source=True,
+		await self.__send(message=ctx.message, source=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name), files=None)
 		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
 	@wormhole.command()
-	async def close(self, ctx: commands.Context, channel: discord.TextChannel):
+	async def close(self, ctx: commands.Context):
 		if ctx.channel.id not in config['wormholes']:
 			return
 		config['wormholes'].remove(ctx.channel.id)
 		self.__update()
 		self.__save()
-		await self.__send(ctx=ctx, source=True,
+		await ctx.send("**Woosh**. The wormhole is gone")
+		await self.__send(message=ctx.message, source=True,
 			text="Wormhole closed: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name), files=None)
 		#TODO Send list of opened wormholes
@@ -141,7 +148,7 @@ class Wormhole(commands.Cog):
 		else:
 			config['anonymity'] = value
 			self.__save()
-			await self.__send(ctx=ctx, source=True,
+			await self.__send(message=ctx.message, source=True,
 				text="New anonymity policy: **{}**".format(value), files=None)
 
 
