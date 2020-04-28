@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import asyncio
 from io import BytesIO
@@ -147,19 +148,31 @@ class Wormhole(commands.Cog):
 	def __process(self, message: discord.Message):
 		"""Escape mentions and apply anonymity"""
 		content = message.content
-		# escape mentions
-		users = message.mentions
-		if users is not None:
-			for member in users:
-				content = content.replace(member.mention, '@'+member.name)
-		channels = message.channel_mentions
-		if channels is not None:
-			for channel in channels:
-				content = content.replace(channel.mention, channel.guild.name+'#'+channel.name)
-		roles = message.role_mentions
-		if roles is not None:
-			for role in roles:
-				content = content.replace(role.mention, '@'+role.name)
+		#FIXME This is not pretty at all
+
+		users = re.findall(r"<@![0-9]+>", content)
+		roles = re.findall(r"<@&[0-9]+>", content)
+		chnls = re.findall(r"<#[0-9]+>", content)
+
+		for u in users:
+			try:
+				user = str(self.bot.get_user(int(u.replace('<@!','').replace('>',''))))
+			except:
+				user = "unknown-user"
+			content = content.replace(u, user)
+		for r in roles:
+			try:
+				role = message.guild.get_role(int(r.replace('<@&','').replace('>',''))).name
+			except:
+				role = "unknown-role"
+			content = content.replace(r, role)
+		for c in chnls:
+			try:
+				ch = self.bot.get_channel(int(c.replace('<#','').replace('>','')))
+				channel = ch.guild.name + ":" + ch.name
+			except:
+				channel = "unknown-channel"
+			content = content.replace(c, channel)
 
 		# apply anonymity option
 		a = config.get('anonymity')
@@ -174,8 +187,9 @@ class Wormhole(commands.Cog):
 			pass
 
 		# done
+		content = content.replace("@", "")
+		print(content)
 		return content
-
 
 	async def __send(self, message: discord.Message, text: str, files: list, source: bool = False):
 		# redistribute the message
