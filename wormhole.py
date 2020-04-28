@@ -90,24 +90,26 @@ class Wormhole(commands.Cog):
 
 	@commands.check(is_admin)
 	@wormhole.command()
-	async def add(self, ctx: commands.Context, channel: discord.TextChannel):
-		config['wormholes'].append(channel.id)
+	async def open(self, ctx: commands.Context):
+		config['wormholes'].append(ctx.channel.id)
 		self.__update()
 		self.__save()
 		await asyncio.sleep(1)
 		await self.__send(ctx=ctx, source=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				channel.name, channel.guild.name), files=None)
+		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
-	@wormhole.command(aliases=["delete"])
-	async def remove(self, ctx: commands.Context, channel: discord.TextChannel):
-		config['wormholes'].remove(channel.id)
+	@wormhole.command()
+	async def close(self, ctx: commands.Context, channel: discord.TextChannel):
+		config['wormholes'].remove(ctx.channel.id)
 		self.__update()
 		self.__save()
 		await self.__send(ctx=ctx, source=True,
 			text="Wormhole closed: **{}** in **{}**".format(
 				channel.name, channel.guild.name), files=None)
+		#TODO Send list of opened wormholes
 
 	@commands.check(is_admin)
 	@wormhole.command()
