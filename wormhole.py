@@ -239,7 +239,12 @@ class Wormhole(commands.Cog):
 		for w in self.wormholes:
 			if w.id == message.channel.id and not announcement:
 				continue
-			whs = await w.webhooks()
+			try:
+				whs = await w.webhooks()
+			except:
+				await self.__garbage(w, message, text, files)
+				return
+
 			#TODO Save webhook alongside the channel object
 			wh = discord.utils.get(whs, name='Wormhole')
 			if wh is None:
@@ -261,6 +266,13 @@ class Wormhole(commands.Cog):
 		self.sent.append(msgs)
 		await asyncio.sleep(config['message window'])
 		self.sent.remove(msgs)
+
+	async def __garbage(self, channel, message, text, files):
+		m = "Could not connect to webhook. Using garbage form: " + str(message.author) + '\n' + text
+		if files:
+			m+= "\nThere were some attachments. You cannot see them, sadly."
+		m += "\n"
+		await channel.send('```'+m.replace('`','')+'```')
 
 	def __update(self):
 		self.wormholes = []
