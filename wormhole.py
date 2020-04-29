@@ -52,7 +52,7 @@ class Wormhole(commands.Cog):
 
 		if message.attachments:
 			for f in message.attachments:
-				if f.size > config['max size']*1000:
+				if not 0 <= f.size < config['max size']*1000:
 					await message.channel.send(
 						"{}, that file is too big.".format(message.author.mention))
 					continue
@@ -157,6 +157,7 @@ class Wormhole(commands.Cog):
 			self.__save()
 			await self.__send(message=ctx.message, announcement=True,
 				text="New anonymity policy: **{}**".format(value), files=None)
+
 
 	@commands.check(is_admin)
 	@wormhole.command()
