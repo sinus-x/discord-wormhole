@@ -1,7 +1,8 @@
 import re
 import json
 import asyncio
-from io import BytesIO
+import io
+import copy
 
 import discord
 from discord.ext import commands
@@ -56,7 +57,7 @@ class Wormhole(commands.Cog):
 					await message.channel.send(
 						"{}, that file is too big.".format(message.author.mention))
 					continue
-				fp = BytesIO()
+				fp = io.BytesIO()
 				await f.save(fp)
 				files.append(discord.File(fp, filename=f.filename))
 
@@ -229,7 +230,7 @@ class Wormhole(commands.Cog):
 			except:
 				channel = "unknown-channel"
 			content = content.replace(c, channel)
-		return content
+		return content.replace("@", "")
 
 	async def __send(self, message: discord.Message, text: str, files: list,
 						   announcement: bool = False):
@@ -239,9 +240,10 @@ class Wormhole(commands.Cog):
 			if w.id == message.channel.id and not announcement:
 				continue
 			whs = await w.webhooks()
+			#TODO Save webhook alongside the channel object
 			wh = discord.utils.get(whs, name='Wormhole')
 			if wh is None:
-				wh = await w.create_webhook(name='Wormhole')
+				wh = await w.create_webhook(name='Wormhole', adapter=AsyncWebhookAdapter())
 
 			a = config['anonymity']
 			if a == 'guild' and not announcement:
@@ -253,7 +255,7 @@ class Wormhole(commands.Cog):
 					username=message.author.name,
 					avatar_url=message.author.avatar_url)
 			else:
-				m = await w.send(text, files=files)
+				m = await w.send(text, files=copy.deepcopy(files))
 			msgs.append(m)
 
 		self.sent.append(msgs)
