@@ -50,23 +50,16 @@ class Wormhole(commands.Cog):
 		files = []
 		if message.content:
 			content = self.__process(message)
+		else:
+			content = ''
 
 		if message.attachments:
 			for f in message.attachments:
-				if not 0 <= f.size < config['max size']*1000:
-					await message.channel.send(
-						"{}, that file is too big.".format(message.author.mention))
-					continue
-				fp = io.BytesIO()
-				await f.save(fp)
-				files.append(discord.File(fp, filename=f.filename))
-
-		if content is None and files is None:
-			return
+				content += f.url + '\n'
 
 		# send the message
 		self.transferred += 1
-		await self.__send(message, content, files)
+		await self.__send(message, content)
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -132,7 +125,7 @@ class Wormhole(commands.Cog):
 		await asyncio.sleep(1)
 		await self.__send(message=ctx.message, announcement=True,
 			text="Wormhole opened: **{}** in **{}**".format(
-				ctx.channel.name, ctx.channel.guild.name), files=None)
+				ctx.channel.name, ctx.channel.guild.name))
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -145,7 +138,7 @@ class Wormhole(commands.Cog):
 		await ctx.send("**Woosh**. The wormhole is gone")
 		await self.__send(message=ctx.message, announcement=True,
 			text="Wormhole closed: **{}** in **{}**".format(
-				ctx.channel.name, ctx.channel.guild.name), files=None)
+				ctx.channel.name, ctx.channel.guild.name))
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -157,7 +150,7 @@ class Wormhole(commands.Cog):
 			config['anonymity'] = value
 			self.__save()
 			await self.__send(message=ctx.message, announcement=True,
-				text="New anonymity policy: **{}**".format(value), files=None)
+				text="New anonymity policy: **{}**".format(value))
 
 
 	@commands.check(is_admin)
@@ -232,7 +225,7 @@ class Wormhole(commands.Cog):
 			content = content.replace(c, channel)
 		return content.replace("@", "")
 
-	async def __send(self, message: discord.Message, text: str, files: list,
+	async def __send(self, message: discord.Message, text: str,
 						   announcement: bool = False):
 		"""Redistribute the message under guild's name"""
 		msgs = [message]
@@ -242,32 +235,32 @@ class Wormhole(commands.Cog):
 			try:
 				whs = await w.webhooks()
 			except:
-				await self.__legacy(w, message, text, files, announcement)
+				await self.__legacy(w, message, text, announcement)
 				continue
 
 			#TODO Save webhook alongside the channel object
 			wh = discord.utils.get(whs, name='Wormhole')
 			if wh is None:
-				wh = await w.create_webhook(name='Wormhole', adapter=AsyncWebhookAdapter())
+				wh = await w.create_webhook(name='Wormhole')
 
 			a = config['anonymity']
 			if a == 'guild' and not announcement:
-				m = await wh.send(text, files=files,
+				m = await wh.send(text,
 					username=message.guild.name,
 					avatar_url=message.guild.icon_url)
 			elif a == 'none' and not announcement:
-				m = await wh.send(text, files=files,
+				m = await wh.send(text,
 					username=message.author.name,
 					avatar_url=message.author.avatar_url)
 			else:
-				m = await w.send(text, files=copy.deepcopy(files))
+				m = await w.send(text)
 			msgs.append(m)
 
 		self.sent.append(msgs)
 		await asyncio.sleep(config['message window'])
 		self.sent.remove(msgs)
 
-	async def __legacy(self, channel, message, text, files, announcement):
+	async def __legacy(self, channel, message, text, announcement):
 		a = config['anonymity']
 		u = discord.utils.escape_mentions(message.author.name)
 		g = discord.utils.escape_mentions(message.guild.name)
@@ -277,9 +270,12 @@ class Wormhole(commands.Cog):
 			prefix = f"**{u}, {g}**: "
 		else:
 			prefix = ''
-		text = prefix + text
+		if text:
+			text = prefix + text
+		else:
+			text = prefix
 
-		await channel.send(text, files=copy.deepcopy(files))
+		await channel.send(text)
 
 	def __update(self):
 		self.wormholes = []
