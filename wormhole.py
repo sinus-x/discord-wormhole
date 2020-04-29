@@ -45,27 +45,18 @@ class Wormhole(commands.Cog):
 		self.__update()
 
 		# copy remote message
-		content = None
-		files = []
-		if message.content:
-			content = self.__process(message)
+		content = self.__process(message)
 
 		if message.attachments:
 			for f in message.attachments:
-				if f.size > config['max size']*1000:
-					await message.channel.send(
-						"{}, that file is too big.".format(message.author.mention))
-					continue
-				fp = BytesIO()
-				await f.save(fp)
-				files.append(discord.File(fp, filename=f.filename))
+				content += f.url + '\n'
 
-		if content is None and files is None:
+		if len(content) < 1:
 			return
 
 		# send the message
 		self.transferred += 1
-		await self.__send(message, content, files)
+		await self.__send(message, content)
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -129,7 +120,7 @@ class Wormhole(commands.Cog):
 		await asyncio.sleep(1)
 		await self.__send(message=ctx.message, source=True,
 			text="Wormhole opened: **{}** in **{}**".format(
-				ctx.channel.name, ctx.channel.guild.name), files=None)
+				ctx.channel.name, ctx.channel.guild.name))
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -142,7 +133,7 @@ class Wormhole(commands.Cog):
 		await ctx.send("**Woosh**. The wormhole is gone")
 		await self.__send(message=ctx.message, source=True,
 			text="Wormhole closed: **{}** in **{}**".format(
-				ctx.channel.name, ctx.channel.guild.name), files=None)
+				ctx.channel.name, ctx.channel.guild.name))
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -154,7 +145,7 @@ class Wormhole(commands.Cog):
 			config['anonymity'] = value
 			self.__save()
 			await self.__send(message=ctx.message, source=True,
-				text="New anonymity policy: **{}**".format(value), files=None)
+				text="New anonymity policy: **{}**".format(value))
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -243,13 +234,13 @@ class Wormhole(commands.Cog):
 		content = content.replace("@", "")
 		return content
 
-	async def __send(self, message: discord.Message, text: str, files: list, source: bool = False):
+	async def __send(self, message: discord.Message, text: str, source: bool = False):
 		# redistribute the message
 		msgs = [message]
 		for w in self.wormholes:
 			if w.id == message.channel.id and not source:
 				continue
-			m = await w.send(content=text, files=files)
+			m = await w.send(content=text)
 			msgs.append(m)
 
 		self.sent.append(msgs)
