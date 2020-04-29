@@ -25,7 +25,7 @@ class Wormhole(commands.Cog):
 		or ctx.channel.id in config['wormholes']
 
 	#TODO Add support to manage bot from DMs
-	#TODO Reject big attachments
+	#TODO Add prefix to wormhole management messages
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -69,6 +69,7 @@ class Wormhole(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before: discord.Message, after: discord.Message):
+		"""If the message was sent in 'message window' seconds, edit it"""
 		if before.content == after.content:
 			return
 
@@ -87,6 +88,7 @@ class Wormhole(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, message: discord.Message):
+		"""If the message was sent in 'message window' seconds, delete it"""
 		# get forwarded messages
 		forwarded = None
 		for m in self.sent:
@@ -127,7 +129,7 @@ class Wormhole(commands.Cog):
 		self.__update()
 		self.__save()
 		await asyncio.sleep(1)
-		await self.__send(message=ctx.message, source=True,
+		await self.__send(message=ctx.message, announcement=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name), files=None)
 
@@ -140,7 +142,7 @@ class Wormhole(commands.Cog):
 		self.__update()
 		self.__save()
 		await ctx.send("**Woosh**. The wormhole is gone")
-		await self.__send(message=ctx.message, source=True,
+		await self.__send(message=ctx.message, announcement=True,
 			text="Wormhole closed: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name), files=None)
 
@@ -153,7 +155,7 @@ class Wormhole(commands.Cog):
 		else:
 			config['anonymity'] = value
 			self.__save()
-			await self.__send(message=ctx.message, source=True,
+			await self.__send(message=ctx.message, announcement=True,
 				text="New anonymity policy: **{}**".format(value), files=None)
 
 	@commands.check(is_admin)
@@ -226,36 +228,36 @@ class Wormhole(commands.Cog):
 			except:
 				channel = "unknown-channel"
 			content = content.replace(c, channel)
-
-		# apply anonymity option
-		a = config.get('anonymity')
-		u = discord.utils.escape_mentions(message.author.name)
-		g = discord.utils.escape_mentions(message.guild.name)
-		if a == 'none':
-			content = f'**{u}, {g}**: ' + content
-		elif a == 'guild':
-			g = discord.utils.escape_mentions(message.guild.name)
-			content = f'**{g}**: ' + content
-		elif a == 'all':
-			pass
-
-		# done
-		content = content.replace("@", "")
 		return content
 
-	async def __send(self, message: discord.Message, text: str, files: list, source: bool = False):
-		# redistribute the message
+	async def __send(self, message: discord.Message, text: str, files: list,
+						   announcement: bool = False):
+		"""Redistribute the message under guild's name"""
 		msgs = [message]
 		for w in self.wormholes:
-			if w.id == message.channel.id and not source:
+			if w.id == message.channel.id and not announcement:
 				continue
-			m = await w.send(content=text, files=files)
+			whs = await w.webhooks()
+			wh = discord.utils.get(whs, name='Wormhole')
+			if wh is None:
+				wh = await w.create_webhook(name='Wormhole')
+
+			a = config['anonymity']
+			if a == 'guild' and not announcement:
+				m = await wh.send(text, files=files,
+					username=message.guild.name,
+					avatar_url=message.guild.icon_url)
+			elif a == 'none' and not announcement:
+				m = await wh.send(text, files=files,
+					username=message.author.name,
+					avatar_url=message.author.avatar_url)
+			else:
+				m = await w.send(text, files=files)
 			msgs.append(m)
 
 		self.sent.append(msgs)
 		await asyncio.sleep(config['message window'])
 		self.sent.remove(msgs)
-
 
 	def __update(self):
 		self.wormholes = []
