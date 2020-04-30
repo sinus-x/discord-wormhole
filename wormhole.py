@@ -30,7 +30,9 @@ class Wormhole(commands.Cog):
 
 	#TODO Add support to manage bot from DMs
 	#TODO Use guild nickname
-	#TODO Replace original message
+	#TODO Split into public and admin commands
+	#TODO Add on_typing listener
+	#TODO Download and re-upload images that fit under the limit - and delete them afterwards
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -61,7 +63,7 @@ class Wormhole(commands.Cog):
 
 		# send the message
 		self.transferred += 1
-		await self.__send(message, content)
+		await self.__send(message, content, files=message.attachments)
 
 		# no activity timer
 		async def silent_callback():
@@ -294,9 +296,10 @@ class Wormhole(commands.Cog):
 		content = content.replace("@", "")
 		return content
 
-	async def __send(self, message: discord.Message, text: str, announcement: bool = False):
+	async def __send(self, message: discord.Message, text: str, files: list = None,
+					 announcement: bool = False):
 		# if the bot has 'Manage messages' permission, remove original
-		if config['replace original']:
+		if config['replace original'] and not files:
 			try:
 				await message.delete()
 				announcement = True
