@@ -212,7 +212,7 @@ class Wormhole(commands.Cog):
 		m = ' '.join(args)
 
 		a = config['anonymity']
-		if a == 'guild' or a == 'all':
+		if a == 'guild' or a == 'none':
 			content = f'**WORMHOLE**: {m}'
 		await self.__send(ctx.message, text=m, announcement=True)
 
