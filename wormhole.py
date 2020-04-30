@@ -25,7 +25,8 @@ class Wormhole(commands.Cog):
 		or ctx.channel.id in config['wormholes']
 
 	#TODO Add support to manage bot from DMs
-	#TODO Reject big attachments
+	#TODO Use guild nickname
+	#TODO Replace original message
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -118,7 +119,7 @@ class Wormhole(commands.Cog):
 		self.__update()
 		self.__save()
 		await asyncio.sleep(1)
-		await self.__send(message=ctx.message, source=True,
+		await self.__send(message=ctx.message, announcement=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
 
@@ -131,7 +132,7 @@ class Wormhole(commands.Cog):
 		self.__update()
 		self.__save()
 		await ctx.send("**Woosh**. The wormhole is gone")
-		await self.__send(message=ctx.message, source=True,
+		await self.__send(message=ctx.message, announcement=True,
 			text="Wormhole closed: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
 
@@ -144,7 +145,7 @@ class Wormhole(commands.Cog):
 		else:
 			config['anonymity'] = value
 			self.__save()
-			await self.__send(message=ctx.message, source=True,
+			await self.__send(message=ctx.message, announcement=True,
 				text="New anonymity policy: **{}**".format(value))
 
 	@commands.check(is_admin)
@@ -188,6 +189,16 @@ class Wormhole(commands.Cog):
 				m += "\n- **{}** in {}".format(w.name, w.guild.name)
 		await ctx.send(m)
 
+	@commands.check(is_admin)
+	@commands.command()
+	async def say(self, ctx: commans.Context, *args):
+		"""Say as a wormhole"""
+		m = ' '.join(args)
+
+		a = config['anonymity']
+		if a == 'guild' or a == 'all':
+			content = f'**WORMHOLE**: {m}'
+		await self.__send(ctx.message, text=m, announcement=True)
 
 	def __process(self, message: discord.Message):
 		"""Escape mentions and apply anonymity"""
@@ -220,8 +231,8 @@ class Wormhole(commands.Cog):
 
 		# apply anonymity option
 		a = config.get('anonymity')
-		u = discord.utils.escape_mentions(message.author.name)
-		g = discord.utils.escape_mentions(message.guild.name)
+		u = discord.utils.escape_markdown(message.author.name)
+		g = discord.utils.escape_markdown(message.guild.name)
 		if a == 'none':
 			content = f'**{u}, {g}**: ' + content
 		elif a == 'guild':
@@ -234,14 +245,17 @@ class Wormhole(commands.Cog):
 		content = content.replace("@", "")
 		return content
 
-	async def __send(self, message: discord.Message, text: str, source: bool = False):
+	async def __send(self, message: discord.Message, text: str, announcement: bool = False):
 		# redistribute the message
 		msgs = [message]
 		for w in self.wormholes:
-			if w.id == message.channel.id and not source:
+			if w.id == message.channel.id and not announcement:
 				continue
 			m = await w.send(content=text)
 			msgs.append(m)
+
+		if announcement:
+			return
 
 		self.sent.append(msgs)
 		await asyncio.sleep(config['message window'])
