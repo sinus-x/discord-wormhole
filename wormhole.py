@@ -19,6 +19,7 @@ class Wormhole(commands.Cog):
 		self.sent = []
 
 		self.transferred = 0
+		self.timer = None
 
 	def is_admin(ctx: commands.Context):
 		return ctx.author.id == config['admin id']
@@ -61,6 +62,17 @@ class Wormhole(commands.Cog):
 		# send the message
 		self.transferred += 1
 		await self.__send(message, content)
+
+		# no activity timer
+		async def silent_callback():
+			for w in self.wormholes:
+				await w.send(config['no activity message'])
+				self.timer = None
+
+		if self.timer:
+			self.timer.cancel()
+		if config['no activity timeout'] > 0:
+			self.timer = Timer(config['no activity timeout']*60, silent_callback)
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -153,7 +165,7 @@ class Wormhole(commands.Cog):
 
 	@commands.check(is_admin)
 	@wormhole.command()
-	async def timer(self, ctx: commands.Context, value: str):
+	async def edittimeout(self, ctx: commands.Context, value: str):
 		try:
 			value = int(value)
 		except:
@@ -163,6 +175,27 @@ class Wormhole(commands.Cog):
 		config['message window'] = value
 		self.__save()
 		await ctx.send("New message windows: **{} s**".format(value))
+
+	@commands.check(is_admin)
+	@wormhole.command()
+	async def silenttimeout(self, ctx: commands.Context, value: str):
+		try:
+			value = int(value)
+		except:
+			return
+		if value < 0:
+			value = 0
+		config['no activity timeout'] = value
+		self.__save()
+		await ctx.send("New 'no activity' timeout: **{} min**".format(value))
+
+	@commands.check(is_admin)
+	@wormhole.command()
+	async def silentmessage(self, ctx: commands.Context, *args):
+		value = ' '.join(args)
+		config['no activity message'] = value
+		self.__save()
+		await ctx.send("New 'no activity' message:\n> {}".format(value))
 
 	@commands.check(is_admin)
 	@wormhole.command()
@@ -295,6 +328,18 @@ class Wormhole(commands.Cog):
 		with open('config.json', 'w', encoding='utf-8') as f:
 			json.dump(config, f, ensure_ascii=False, indent=4)
 
+class Timer:
+	def __init__(self, timeout, callback):
+		self._timeout = timeout
+		self._callback = callback
+		self._task = asyncio.ensure_future(self._job())
+
+	async def _job(self):
+		await asyncio.sleep(self._timeout)
+		await self._callback()
+
+	def cancel(self):
+		self._task.cancel()
 
 def setup(bot):
 	bot.add_cog(Wormhole(bot))

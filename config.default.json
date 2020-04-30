@@ -26,6 +26,8 @@
 	"__comment": "Boolean; wheter to print all errors that may occure",
 	"suppress errors": true,
 
-	"__comment": "Channel for error printing",
-	"debug channel": null
+	"__comment": "If no one sends a message for given amount of minutes, ",
+	"__comment": "send a message. Numbers less than one mean disabled.",
+	"no activity timeout": -1,
+	"no activity message": "No signs of life detected."
 }
