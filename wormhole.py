@@ -50,7 +50,7 @@ class Wormhole(commands.Cog):
 
 		if message.attachments:
 			for f in message.attachments:
-				content += f.url + '\n'
+				content += ' ' + f.url + '\n'
 
 		if len(content) < 1:
 			return
@@ -174,6 +174,19 @@ class Wormhole(commands.Cog):
 		self.__save()
 		await ctx.send("New maximal attachment size: **{} kB**".format(value))
 
+	@commands.check(is_admin)
+	@wormhole.command()
+	async def replace(self, ctx: commands.Context, value: str):
+		if value == 'true':
+			v = True
+		elif value == 'false':
+			v = False
+		else:
+			return
+		config['replace original'] = v
+		self.__save()
+		await ctx.send(f"Try to replace original messages: **{value}**")
+
 	@commands.check(in_wormhole)
 	@commands.command()
 	async def wormholes(self, ctx: commands.Context):
@@ -190,8 +203,8 @@ class Wormhole(commands.Cog):
 		await ctx.send(m)
 
 	@commands.check(is_admin)
-	@commands.command()
-	async def say(self, ctx: commans.Context, *args):
+	@wormhole.command()
+	async def say(self, ctx: commands.Context, *args):
 		"""Say as a wormhole"""
 		m = ' '.join(args)
 
@@ -246,6 +259,14 @@ class Wormhole(commands.Cog):
 		return content
 
 	async def __send(self, message: discord.Message, text: str, announcement: bool = False):
+		# if the bot has 'Manage messages' permission, remove original
+		if config['replace original']:
+			try:
+				await message.delete()
+				announcement = True
+			except discord.Forbidden:
+				pass
+
 		# redistribute the message
 		msgs = [message]
 		for w in self.wormholes:
