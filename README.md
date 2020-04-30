@@ -7,14 +7,20 @@ A simple discord bot to connect multiple guilds.
 - Run the bot with `python3 bot.py`
 
 ## Management
+Commands:
+- `~wormhole` Print session information
+- `~wormholes` Display information about opened wormholes
+- `~wormhole settings` Display public settings
+- `~wormhole link` Link to the github repository
+
 Admin commands:
 - `~wormhole open` Open wormhole in current channel
 - `~wormhole close` Close wormhole in current channel
 - `~wormhole anonymity [none|guild|full]` will change the presentation of incoming messages
-
-Commands for everyone:
-- `~wormhole` will print session information
-- `~wormhole link` will link to the github repository
+- `~wormhole timer [int]` Change edit countdown timer
+- `~wormhole size [int]` Change maximal size of attachments, in kB
+- `~wormhole replace [true|false]` Replace original messages? (Makes editing impossible)
+- `~wormhole say [text]` Say something as wormhole
 
 ## License
 Released under the GNU GPL v3

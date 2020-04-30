@@ -1,12 +1,15 @@
 import re
 import json
 import asyncio
+from datetime import datetime
 from io import BytesIO
 
 import discord
 from discord.ext import commands
 
 config = json.load(open('config.json'))
+
+init = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
 class Wormhole(commands.Cog):
 	def __init__(self, bot):
@@ -95,9 +98,9 @@ class Wormhole(commands.Cog):
 	@commands.group(name="wormhole")
 	async def wormhole(self, ctx: commands.Context):
 		if ctx.invoked_subcommand is None:
-			m = "**{}** messages sent since the formation. " \
+			m = "**{}** messages sent since the formation ({}). " \
 				"Connected to **{}** wormholes."
-			await ctx.send(m.format(self.transferred, len(config['wormholes'])))
+			await ctx.send(m.format(self.transferred, init, len(config['wormholes'])))
 
 	@wormhole.command()
 	async def settings(self, ctx: commands.Context):
