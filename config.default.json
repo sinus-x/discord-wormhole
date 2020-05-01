@@ -1,12 +1,21 @@
 {
-	"_comment": "Who is allowed to alter settings",
+	"__comment": "Who is allowed to alter settings",
 	"admin id": null,
+
+	"__comment": "Client ID, used for invites",
+	"bot id": null,
 
 	"__comment": "A bot key",
 	"bot key": null,
 
 	"__comment": "Bot prefix",
 	"prefix": "~",
+
+
+
+	"__COMMENT": "",
+	"__COMMENT": "NEXT OPTIONS CAN BE ALTERED LIVE, YOU DO NOT NEED TO FILL THEM MANUALLY",
+	"__COMMENT": "",
 
 	"__comment": "list of registered channels",
 	"wormholes": [],
@@ -29,5 +38,8 @@
 	"__comment": "If no one sends a message for given amount of minutes, ",
 	"__comment": "send a message. Numbers less than one mean disabled.",
 	"no activity timeout": -1,
-	"no activity message": "No signs of life detected."
+	"no activity message": "No signs of life detected.",
+
+	"__comment": "Guild name aliases",
+	"aliases": []
 }

@@ -29,10 +29,8 @@ class Wormhole(commands.Cog):
 		or ctx.channel.id in config['wormholes']
 
 	#TODO Add support to manage bot from DMs
-	#TODO Use guild nickname
-	#TODO Split into public and admin commands
-	#TODO Add on_typing listener
 	#TODO Download and re-upload images that fit under the limit - and delete them afterwards
+	#TODO React with checkmark if message was successfully edited, else with cross
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -45,7 +43,7 @@ class Wormhole(commands.Cog):
 			return
 
 		# do not act if message is bot command
-		if message.content.startswith(config['prefix'] + 'wormhole'):
+		if message.content.startswith(config['prefix']):
 			return
 
 		# get wormhole channel objects
@@ -63,7 +61,7 @@ class Wormhole(commands.Cog):
 
 		# send the message
 		self.transferred += 1
-		await self.__send(message, content, files=message.attachments)
+		await self.send(message, content, files=message.attachments)
 
 		# no activity timer
 		async def silent_callback():
@@ -108,66 +106,193 @@ class Wormhole(commands.Cog):
 		for m in forwarded[1:]:
 			await m.delete()
 
+
+	@commands.check(in_wormhole)
+	@commands.command(aliases=["stat", "stats"])
+	async def info(self, ctx: commands.Context):
+		"""Display information about wormholes"""
+		if len(self.wormholes) == 0:
+			self.__update()
+			await asyncio.sleep(.25)
+
+		if len(self.wormholes) == 0:
+			m = "No wormhole has been opened."
+		else:
+			m = f"**{self.transferred}** messages sent since the formation ({init}). \n"
+			m+= "Currently opened wormholes:"
+			for w in self.wormholes:
+				m += "\n- **{}** in {}".format(w.name, w.guild.name)
+		await ctx.send(m)
+
+	@commands.check(in_wormhole)
+	@commands.command()
+	async def help(self, ctx: commands.Context):
+		"""Display help"""
+		embed = discord.Embed(title="Wormhole", color=discord.Color.light_grey())
+		p = config['prefix']
+		embed.add_field(value=f"**{p}e** | **{p}edit**", name="Edit last message")
+		embed.add_field(value=f"**{p}d** | **{p}delete**", name="Delete last message")
+		embed.add_field(value=f"**{p}info**", name="Connection information")
+		embed.add_field(value=f"**{p}settings**", name="Display current settings")
+		embed.add_field(value=f"**{p}link**", name="Link to GitHub repository")
+		embed.add_field(value=f"**{p}invite**", name="Bot invite link")
+		await ctx.send(embed=embed)
+
 	@commands.check(in_wormhole)
 	@commands.group(name="wormhole")
 	async def wormhole(self, ctx: commands.Context):
-		if ctx.invoked_subcommand is None:
-			m = "**{}** messages sent since the formation ({}). " \
-				"Connected to **{}** wormholes."
-			await ctx.send(m.format(self.transferred, init, len(config['wormholes'])))
+		"""Control the wormholes"""
+		if ctx.invoked_subcommand is not None:
+			return
 
-	@wormhole.command()
-	async def settings(self, ctx: commands.Context):
-		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**, "
-		m+= "maximal attachment size **{}kB**"
-		await ctx.send(m.format(config['anonymity'], config['message window'], config['max size']))
-
-	@wormhole.command()
-	async def link(self, ctx: commands.Context):
-		"""Send a message with link to the bot"""
-		await ctx.send("https://github.com/sinus-x/discord-wormhole")
+		await self.help(ctx)
 
 	@commands.check(is_admin)
 	@wormhole.command()
 	async def open(self, ctx: commands.Context):
+		"""Open a wormhole"""
 		if ctx.channel.id in config['wormholes']:
 			return
 		config['wormholes'].append(ctx.channel.id)
 		self.__update()
 		self.__save()
 		await asyncio.sleep(1)
-		await self.__send(message=ctx.message, announcement=True,
+		await self.send(message=ctx.message, announcement=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
 
 	@commands.check(is_admin)
 	@wormhole.command()
 	async def close(self, ctx: commands.Context):
+		"""Close the current wormhole"""
 		if ctx.channel.id not in config['wormholes']:
 			return
 		config['wormholes'].remove(ctx.channel.id)
 		self.__update()
 		self.__save()
 		await ctx.send("**Woosh**. The wormhole is gone")
-		await self.__send(message=ctx.message, announcement=True,
+		await self.send(message=ctx.message, announcement=True,
 			text="Wormhole closed: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
+		if len(self.wormholes) == 0:
+			self.transferred = 0
+
+	@commands.check(in_wormhole)
+	@commands.command(name="delete", aliases=["remove", "d", "r"])
+	async def delete(self, ctx: commands.Context):
+		"""Delete last sent message"""
+		if len(self.sent) == 0:
+			return
+
+		for msgs in self.sent[::-1]:
+			if isinstance(msgs[0], discord.Member) and ctx.author.id == msgs[0].id \
+			or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
+				try:
+					await ctx.message.delete()
+				except:
+					pass
+				for m in msgs:
+					try:
+						await m.delete()
+					except:
+						pass
+
+	@commands.check(in_wormhole)
+	@commands.command(name="edit", aliases=["e"])
+	async def edit(self, ctx: commands.Context,  *, text: str):
+		"""Edit last sent message
+
+		text: A new text
+		"""
+		if len(self.sent) == 0:
+			return
+
+		for msgs in self.sent[::-1]:
+			if isinstance(msgs[0], discord.Member) and ctx.author.id == msgs[0].id \
+			or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
+				try:
+					await ctx.message.delete()
+				except:
+					pass
+				m = ctx.message
+				m.content = m.content.split(' ', 1)[1]
+				c = self.__process(m)
+				for m in msgs:
+					try:
+						await m.edit(content=c)
+					except Exception as e:
+						print(e)
+						pass
+
+	@commands.check(in_wormhole)
+	@commands.command()
+	async def settings(self, ctx: commands.Context):
+		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**, "
+		m+= "maximal attachment size **{}kB**"
+		await ctx.send(m.format(config['anonymity'], config['message window'], config['max size']))
+
+	@commands.check(in_wormhole)
+	@commands.command()
+	async def link(self, ctx: commands.Context):
+		"""Send a message with link to the bot"""
+		await ctx.send("https://github.com/sinus-x/discord-wormhole")
+
+	@commands.check(in_wormhole)
+	@commands.command()
+	async def invite(self, ctx: commands.Context):
+		"""Invite the wormhole to your guild"""
+		# permissions:
+		# - send messages      - attach files
+		# - manage messages    - use external emojis
+		# - embed links        - add reactions
+		l = "https://discordapp.com/oauth2/authorize?client_id=" + str(self.bot.user.id)
+		l+= "&permissions=321600&scope=bot"
+		await ctx.send(l)
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@commands.group(name="admin")
+	async def admin(self, ctx: commands.Context):
+		if ctx.invoked_subcommand is not None:
+			return
+
+		embed = discord.Embed(title="Wormhole administration", color=discord.Color.red())
+		p = config['prefix']
+		pa = config['prefix'] + 'admin'
+		embed.add_field(name=f"{pa} anonymity", value="Anonymity level\n_none | guild | full_")
+		embed.add_field(name=f"{pa} edittimeout", value="Editing timeout\n_# of seconds_")
+		embed.add_field(name=f"{pa} silenttimeout", value="No activity timeout\n_# of minutes_")
+		embed.add_field(name=f"{pa} silentmessage", value="No activity message\n_A message_")
+		embed.add_field(name=f"{pa} size", value="Max attachment size\n_# of kilobytes_")
+		embed.add_field(name=f"{pa} replace", value="Replace user messages?\n_true | false_")
+
+		embed.add_field(name=f"{p}say", value="Say as a wormhole\n_A message_")
+
+		embed.add_field(name=f"{p}alias <guild id> [set|unset] [emote]", value="Guild prefix")
+		await ctx.send(embed=embed)
+
+	@commands.check(is_admin)
+	@admin.command()
 	async def anonymity(self, ctx: commands.Context, value: str):
+		"""Set anonymity level
+
+		value: [none | guild | full]
+		"""
 		opts = ['none', 'guild', 'full']
 		if value not in opts:
 			ctx.send("Options are: " + ', '.join(opts))
 		else:
 			config['anonymity'] = value
 			self.__save()
-			await self.__send(message=ctx.message, announcement=True,
+			await self.send(message=ctx.message, announcement=True,
 				text="New anonymity policy: **{}**".format(value))
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@admin.command()
 	async def edittimeout(self, ctx: commands.Context, value: str):
+		"""Time period for keeping sent messages in memory, in seconds
+
+		value: # of seconds
+		"""
 		try:
 			value = int(value)
 		except:
@@ -176,11 +301,15 @@ class Wormhole(commands.Cog):
 			return
 		config['message window'] = value
 		self.__save()
-		await ctx.send("New message windows: **{} s**".format(value))
+		await self.send("New time limit for message edit/deletion: **{value} s**", announcement=True)
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@admin.command()
 	async def silenttimeout(self, ctx: commands.Context, value: str):
+		"""Time period, after which the wormhole should send a message
+		
+		value: # of minutes, zero to disable
+		"""
 		try:
 			value = int(value)
 		except:
@@ -192,16 +321,24 @@ class Wormhole(commands.Cog):
 		await ctx.send("New 'no activity' timeout: **{} min**".format(value))
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@admin.command()
 	async def silentmessage(self, ctx: commands.Context, *args):
+		"""The content of the message
+
+		value: A message
+		"""
 		value = ' '.join(args)
 		config['no activity message'] = value
 		self.__save()
 		await ctx.send("New 'no activity' message:\n> {}".format(value))
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@admin.command()
 	async def size(self, ctx: commands.Context, value: str):
+		"""Maximal size for attachments
+	
+		value: # of kilobytes
+		"""
 		try:
 			value = int(value)
 		except:
@@ -210,11 +347,15 @@ class Wormhole(commands.Cog):
 			return
 		config['max size'] = value
 		self.__save()
-		await ctx.send("New maximal attachment size: **{} kB**".format(value))
+		await self.send("New maximal attachment size: **{} kB**".format(value), announcement=True)
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@admin.command()
 	async def replace(self, ctx: commands.Context, value: str):
+		"""Whether to replace original messages
+	
+		value: [true | false]
+		"""
 		if value == 'true':
 			v = True
 		elif value == 'false':
@@ -223,33 +364,67 @@ class Wormhole(commands.Cog):
 			return
 		config['replace original'] = v
 		self.__save()
-		await ctx.send(f"Try to replace original messages: **{value}**")
-
-	@commands.check(in_wormhole)
-	@commands.command()
-	async def wormholes(self, ctx: commands.Context):
-		if len(self.wormholes) == 0:
-			self.__update()
-			await asyncio.sleep(1)
-
-		if len(self.wormholes) == 0:
-			m = "No wormhole has been opened."
-		else:
-			m = "Currently opened wormholes:"
-			for w in self.wormholes:
-				m += "\n- **{}** in {}".format(w.name, w.guild.name)
-		await ctx.send(m)
+		await self.send(f"New replacing policy: **{value}**", announcement=True)
 
 	@commands.check(is_admin)
-	@wormhole.command()
+	@commands.command()
 	async def say(self, ctx: commands.Context, *args):
-		"""Say as a wormhole"""
+		"""Say as a wormhole
+
+		value: A message
+		"""
 		m = ' '.join(args)
 
 		a = config['anonymity']
 		if a == 'guild' or a == 'none':
-			content = f'**WORMHOLE**: {m}'
-		await self.__send(ctx.message, text=m, announcement=True)
+			m = f'**WORMHOLE**: {m}'
+		await self.send(ctx.message, text=m, announcement=True)
+
+	@commands.check(is_admin)
+	@commands.command()
+	async def alias(self, ctx: commands.Context, guild: str, key: str, *, value: str = None):
+		"""Set guild prefix alias
+
+		guild: Guild ID
+		key: [set | unset] 
+		value: A new prefix for current guild
+		"""
+		try:
+			guild_id = int(guild)
+			guild_obj = self.bot.get_guild(guild_id)
+		except:
+			return
+
+		if key == 'unset':
+			config['aliases'][guild] = None
+			self.__save()
+			m = f"Alias for guild {guild_obj.name} unset."
+		elif key == 'set':
+			config['aliases'][guild] = value
+			self.__save()
+			m = f"New alias for guild **{guild_obj.name}** is: {value}"
+		else:
+			return
+
+		await asyncio.sleep(.5)
+		await self.send(ctx.message, text=m, announcement=True)
+
+
+	def __getPrefix(self, message: discord.Message):
+		"""Get prefix for message"""
+		a = config['anonymity']
+		u = discord.utils.escape_markdown(message.author.name)
+		g = str(message.guild.id)
+		if g in config['aliases'] and config['aliases'][g] is not None:
+			g = config['aliases'][g]
+		else:
+			g = discord.utils.escape_markdown(message.guild.name) + ','
+
+		if a == 'none':
+			return f'{g} **{u}**: '
+		if a == 'guild':
+			return f'**{g}**: '
+		return ''
 
 	def __process(self, message: discord.Message):
 		"""Escape mentions and apply anonymity"""
@@ -275,47 +450,41 @@ class Wormhole(commands.Cog):
 		for c in chnls:
 			try:
 				ch = self.bot.get_channel(int(c.replace('<#','').replace('>','')))
-				channel = ch.guild.name + ":" + ch.name
+				channel = '#['+ch.guild.name + ':' + ch.name + ']'
 			except:
 				channel = "unknown-channel"
 			content = content.replace(c, channel)
 
-		# apply anonymity option
-		a = config.get('anonymity')
-		u = discord.utils.escape_markdown(message.author.name)
-		g = discord.utils.escape_markdown(message.guild.name)
-		if a == 'none':
-			content = f'**{u}, {g}**: ' + content
-		elif a == 'guild':
-			g = discord.utils.escape_mentions(message.guild.name)
-			content = f'**{g}**: ' + content
-		elif a == 'all':
-			pass
+		# apply prefixes
+		prefix = self.__getPrefix(message)
+		content = content.split('\n')
+		c = ''
+		for line in content:
+			c += prefix + line + '\n'
 
 		# done
-		content = content.replace("@", "")
-		return content
+		c = c.replace("@", "")
+		return c
 
-	async def __send(self, message: discord.Message, text: str, files: list = None,
-					 announcement: bool = False):
+	async def send(self, message: discord.Message, text: str, files: list = None, announcement: bool = False):
+		msgs = [message]
 		# if the bot has 'Manage messages' permission, remove original
 		if config['replace original'] and not files:
 			try:
+				msgs[0] = message.author
 				await message.delete()
 				announcement = True
 			except discord.Forbidden:
 				pass
 
+		if len(text) > 1000:
+			text = text[:1000]
 		# redistribute the message
-		msgs = [message]
 		for w in self.wormholes:
 			if w.id == message.channel.id and not announcement:
 				continue
 			m = await w.send(content=text)
 			msgs.append(m)
-
-		if announcement:
-			return
 
 		self.sent.append(msgs)
 		await asyncio.sleep(config['message window'])
