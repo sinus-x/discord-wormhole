@@ -19,6 +19,7 @@ class Wormhole(commands.Cog):
 		self.sent = []
 
 		self.transferred = 0
+		self.stats = {}
 		self.timer = None
 
 	def is_admin(ctx: commands.Context):
@@ -60,7 +61,10 @@ class Wormhole(commands.Cog):
 			return
 
 		# send the message
-		self.transferred += 1
+		try:
+			self.stats[str(message.guild.id)] += 1
+		except KeyError:
+			self.stats[str(message.guild.id)] = 1
 		await self.send(message, content, files=message.attachments)
 
 		# no activity timer
@@ -118,10 +122,29 @@ class Wormhole(commands.Cog):
 		if len(self.wormholes) == 0:
 			m = "No wormhole has been opened."
 		else:
-			m = f"**{self.transferred}** messages sent since the formation ({init}). \n"
+			# get total message count
+			total = 0
+			for i in self.stats:
+				total += self.stats[i]
+			m = "Wormhole formation time: **{}**, ping **{:.2f} s**.\n".format(init, self.bot.latency)
 			m+= "Currently opened wormholes:"
 			for w in self.wormholes:
-				m += "\n- **{}** in {}".format(w.name, w.guild.name)
+				# get logo
+				try:
+					logo = config['aliases'][str(w.guild.id)]
+					logo = logo if isinstance(logo, str) else ''
+				except KeyError:
+					logo = ''
+				# get names
+				g = discord.utils.escape_markdown(w.guild.name)
+				c = discord.utils.escape_markdown(w.name)
+				# get message count
+				try:
+					cnt = self.stats[str(w.guild.id)]
+				except KeyError:
+					cnt = 0
+				# get message
+				m += f'\n{logo} **{g}** (#{c}): **{cnt}** messages'
 		await ctx.send(m)
 
 	@commands.check(in_wormhole)
