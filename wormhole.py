@@ -196,6 +196,7 @@ class Wormhole(commands.Cog):
 						await m.delete()
 					except:
 						pass
+				return
 
 	@commands.check(in_wormhole)
 	@commands.command(name="edit", aliases=["e"])
@@ -223,6 +224,7 @@ class Wormhole(commands.Cog):
 					except Exception as e:
 						print(e)
 						pass
+				return
 
 	@commands.check(in_wormhole)
 	@commands.command()
