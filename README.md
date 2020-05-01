@@ -8,21 +8,31 @@ A simple discord bot to connect multiple guilds.
 
 ## Management
 Commands:
-- `~wormhole` Print session information
-- `~wormholes` Display information about opened wormholes
-- `~wormhole settings` Display public settings
-- `~wormhole link` Link to the github repository
+`;e` Edit last message
+`;d` Delete last message
+`;info` Connection information
+`;settings` Display current settings
+`;link` Link to GitHub repository
+`;invite` Bot invite link
+
 
 Admin commands:
-- `~wormhole open` Open wormhole in current channel
-- `~wormhole close` Close wormhole in current channel
-- `~wormhole say [text]` Say something as wormhole
-- `~wormhole anonymity [none|guild|full]` will change the presentation of incoming messages
-- `~wormhole size [int]` Change maximal size of attachments, in kB
-- `~wormhole replace [true|false]` Replace original messages? (Makes editing impossible)
-- `~wormhole edittimeout [int (s)]` Change edit countdown timer
-- `~wormhole silenttimeout [int (min)]` When to send a message declaring no activity. `0` to disable
-- `~wormhole silentmessage [text]` What to say on timeout
+
+- `;admin anonymity` Anonymity level (none | guild | full)
+
+- `;admin edittimeout` Editing timeout (# of seconds)
+
+- `;admin silenttimeout` No activity timeout (# of minutes)
+
+- `;admin silentmessage` No activity message (A message)
+
+- `;admin size` Max attachment size (# of kilobytes)
+
+- `;admin replace` Replace user messages? (true | false)
+
+- `;alias <guild id> [set|unset] [emote]` Change guild prefix
+
+- `;say` Say as a wormhole (A message)
 
 ## License
 Released under the GNU GPL v3
