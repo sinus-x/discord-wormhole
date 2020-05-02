@@ -32,6 +32,7 @@ class Wormhole(commands.Cog):
 	#TODO Add support to manage bot from DMs
 	#TODO Download and re-upload images that fit under the limit - and delete them afterwards
 	#TODO React with checkmark if message was successfully edited, else with cross
+	#TODO Remove admin messages after some delay
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -389,7 +390,7 @@ class Wormhole(commands.Cog):
 			return
 		config['replace original'] = v
 		self.__save()
-		await self.send(f"New replacing policy: **{value}**", announcement=True)
+		await self.send(ctx.message, text=f"New replacing policy: **{value}**", announcement=True)
 
 	@commands.check(is_admin)
 	@commands.command()

@@ -8,12 +8,19 @@ A simple discord bot to connect multiple guilds.
 
 ## Management
 Commands:
-`;e` Edit last message
-`;d` Delete last message
-`;info` Connection information
-`;settings` Display current settings
-`;link` Link to GitHub repository
-`;invite` Bot invite link
+
+- `;e` Edit last message
+
+- `;d` Delete last message
+
+- `;info` Connection information
+
+- `;settings` Display current settings
+
+- `;link` Link to GitHub repository
+
+- `;invite` Bot invite link
+
 
 
 Admin commands:
