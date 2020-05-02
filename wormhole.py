@@ -410,7 +410,7 @@ class Wormhole(commands.Cog):
 	async def alias(self, ctx: commands.Context, guild: str, key: str, *, value: str = None):
 		"""Set guild prefix alias
 
-		guild: Guild ID
+		guild: Guild ID. Dot (.) to use current guild
 		key: [set | unset] 
 		value: A new prefix for current guild
 		"""
@@ -418,7 +418,12 @@ class Wormhole(commands.Cog):
 			guild_id = int(guild)
 			guild_obj = self.bot.get_guild(guild_id)
 		except:
-			return
+			if guild == '.':
+				guild_id = ctx.guild.id
+				guild_obj = ctx.guild
+				guild = str(guild_id)
+			else:
+				return
 
 		if key == 'unset':
 			config['aliases'][guild] = None
