@@ -135,15 +135,15 @@ class Wormhole(commands.Cog):
 			await asyncio.sleep(.25)
 
 		if len(self.wormholes) == 0:
-			m = "No wormhole has been opened."
+			m = "> No wormhole has been opened."
 		else:
 			# get total message count
 			total = 0
 			for i in self.stats:
 				total += self.stats[i]
-			m = "{} messages sent since the formation (**{}**); ping **{:.2f} s**.\n".format(self.transferred, init, self.bot.latency)
+			m = "> {} messages sent since the formation (**{}**); ping **{:.2f} s**.\n".format(self.transferred, init, self.bot.latency)
 
-			m+= "Currently opened wormholes:"
+			m+= "> Currently opened wormholes:"
 			for w in self.wormholes:
 				# get logo
 				try:
@@ -160,7 +160,7 @@ class Wormhole(commands.Cog):
 				except KeyError:
 					cnt = 0
 				# get message
-				m += f'\n{logo} **{g}** (#{c}): **{cnt}** messages'
+				m += f'\n> {logo} **{g}** (#{c}): **{cnt}** messages'
 		await ctx.send(m, delete_after=self.delay['user'])
 		await self.tryDelete(ctx.message)
 
@@ -199,7 +199,7 @@ class Wormhole(commands.Cog):
 		self.__save()
 		await asyncio.sleep(.25)
 		await self.send(message=ctx.message, announcement=True,
-			text="Wormhole opened: **{}** in **{}**".format(
+			text="> Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
 
 	@commands.check(is_admin)
@@ -211,9 +211,9 @@ class Wormhole(commands.Cog):
 		config['wormholes'].remove(ctx.channel.id)
 		self.__update()
 		self.__save()
-		await ctx.send("**Woosh**. The wormhole is gone")
+		await ctx.send("> **Woosh**. The wormhole is gone")
 		await self.send(message=ctx.message, announcement=True,
-			text="Wormhole closed: **{}** in **{}**".format(
+			text="> Wormhole closed: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
 		if len(self.wormholes) == 0:
 			self.transferred = 0
@@ -270,7 +270,7 @@ class Wormhole(commands.Cog):
 	@commands.check(in_wormhole)
 	@commands.command()
 	async def settings(self, ctx: commands.Context):
-		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**, "
+		m = "> **Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**, "
 		m+= "maximal attachment size **{}kB**"
 		await ctx.send(
 			m.format(config['anonymity'], config['message window'], config['max size']),
@@ -281,7 +281,7 @@ class Wormhole(commands.Cog):
 	@commands.command()
 	async def link(self, ctx: commands.Context):
 		"""Send a message with link to the bot"""
-		await ctx.send("**GitHub link:** https://github.com/sinus-x/discord-wormhole")
+		await ctx.send("> **GitHub link:** https://github.com/sinus-x/discord-wormhole")
 		await self.tryDelete(ctx.message)
 
 	@commands.check(in_wormhole)
@@ -292,7 +292,7 @@ class Wormhole(commands.Cog):
 		# - send messages      - attach files
 		# - manage messages    - use external emojis
 		# - embed links        - add reactions
-		l = "**Invite link:** https://discordapp.com/oauth2/authorize?client_id=" + \
+		l = "> **Invite link:** https://discordapp.com/oauth2/authorize?client_id=" + \
 		    str(self.bot.user.id) + "&permissions=321600&scope=bot"
 		await ctx.send(l)
 		await self.tryDelete(ctx.message)
@@ -335,7 +335,7 @@ class Wormhole(commands.Cog):
 			config['anonymity'] = value
 			self.__save()
 			await self.send(message=ctx.message, announcement=True,
-				text="New anonymity policy: **{}**".format(value))
+				text="> New anonymity policy: **{}**".format(value))
 		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
@@ -353,7 +353,7 @@ class Wormhole(commands.Cog):
 			return
 		config['message window'] = value
 		self.__save()
-		await self.send("New time limit for message edit/deletion: **{value} s**", announcement=True)
+		await self.send("> New time limit for message edit/deletion: **{value} s**", announcement=True)
 		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
@@ -371,7 +371,7 @@ class Wormhole(commands.Cog):
 			value = 0
 		config['no activity timeout'] = value
 		self.__save()
-		await ctx.send("New 'no activity' timeout: **{} min**".format(value))
+		await ctx.send("> New 'no activity' timeout: **{} min**".format(value))
 		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
@@ -384,7 +384,7 @@ class Wormhole(commands.Cog):
 		value = ' '.join(args)
 		config['no activity message'] = value
 		self.__save()
-		await ctx.send("New 'no activity' message:\n> {}".format(value))
+		await ctx.send("> New 'no activity' message:\n> {}".format(value))
 		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
@@ -402,7 +402,7 @@ class Wormhole(commands.Cog):
 			return
 		config['max size'] = value
 		self.__save()
-		await self.send("New maximal attachment size: **{} kB**".format(value), announcement=True)
+		await self.send("> New maximal attachment size: **{} kB**".format(value), announcement=True)
 		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
@@ -420,7 +420,7 @@ class Wormhole(commands.Cog):
 			return
 		config['replace original'] = v
 		self.__save()
-		await self.send(ctx.message, text=f"New replacing policy: **{value}**", announcement=True)
+		await self.send(ctx.message, text=f"> New replacing policy: **{value}**", announcement=True)
 		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
@@ -462,11 +462,11 @@ class Wormhole(commands.Cog):
 		if key == 'unset':
 			config['aliases'][guild] = None
 			self.__save()
-			m = f"Alias for guild {guild_obj.name} unset."
+			m = f"> Alias for guild {guild_obj.name} unset."
 		elif key == 'set':
 			config['aliases'][guild] = value
 			self.__save()
-			m = f"New alias for guild **{guild_obj.name}** is: {value}"
+			m = f"> New alias for guild **{guild_obj.name}** is: {value}"
 		else:
 			return
 
