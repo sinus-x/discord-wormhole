@@ -35,6 +35,9 @@
 	"__comment": "Boolean; wheter to print all errors that may occure",
 	"suppress errors": true,
 
+	"__comment": "When member sends a multiline text, this will be used instead of guild alias",
+	"prefix fill": "",
+
 	"__comment": "If no one sends a message for given amount of minutes, ",
 	"__comment": "send a message. Numbers less than one mean disabled.",
 	"no activity timeout": -1,

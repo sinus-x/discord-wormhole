@@ -12,14 +12,27 @@ config = json.load(open('config.json'))
 init = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
 class Wormhole(commands.Cog):
+	"""Transfer messages between guilds"""
+
+	#TODO Add support to manage bot from DMs
+	#TODO Download and re-upload images that fit under the limit - and delete them afterwards
+	#TODO User aliases
+	#TODO Use Black for formatting
+	#TODO Use pre-commit
+
 	def __init__(self, bot):
 		self.bot = bot
+		self.delay = {"user": 60, "admin": 15}
 
 		self.wormholes = []
 		self.sent = []
 
 		self.transferred = 0
-		self.stats = {}
+		try:
+			self.stats = config['stats']
+		except KeyError:
+			self.stats = {}
+
 		self.timer = None
 
 	def is_admin(ctx: commands.Context):
@@ -28,11 +41,6 @@ class Wormhole(commands.Cog):
 	def in_wormhole(ctx: commands.Context):
 		return ctx.author.id == config['admin id'] \
 		or ctx.channel.id in config['wormholes']
-
-	#TODO Add support to manage bot from DMs
-	#TODO Download and re-upload images that fit under the limit - and delete them afterwards
-	#TODO React with checkmark if message was successfully edited, else with cross
-	#TODO Remove admin messages after some delay
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
@@ -61,18 +69,24 @@ class Wormhole(commands.Cog):
 		if len(content) < 1:
 			return
 
-		# send the message
+		# count the message
+		self.transferred += 1
+		if self.transferred % 50 == 0:
+			self.__save()
 		try:
 			self.stats[str(message.guild.id)] += 1
 		except KeyError:
 			self.stats[str(message.guild.id)] = 1
+
+		# send the message
 		await self.send(message, content, files=message.attachments)
 
 		# no activity timer
 		async def silent_callback():
+			#TODO use self.send()
 			for w in self.wormholes:
 				await w.send(config['no activity message'])
-				self.timer = None
+			self.timer = None
 
 		if self.timer:
 			self.timer.cancel()
@@ -127,7 +141,8 @@ class Wormhole(commands.Cog):
 			total = 0
 			for i in self.stats:
 				total += self.stats[i]
-			m = "Wormhole formation time: **{}**, ping **{:.2f} s**.\n".format(init, self.bot.latency)
+			m = "{} messages sent since the formation (**{}**); ping **{:.2f} s**.\n".format(self.transferred, init, self.bot.latency)
+
 			m+= "Currently opened wormholes:"
 			for w in self.wormholes:
 				# get logo
@@ -146,7 +161,8 @@ class Wormhole(commands.Cog):
 					cnt = 0
 				# get message
 				m += f'\n{logo} **{g}** (#{c}): **{cnt}** messages'
-		await ctx.send(m)
+		await ctx.send(m, delete_after=self.delay['user'])
+		await self.tryDelete(ctx.message)
 
 	@commands.check(in_wormhole)
 	@commands.command()
@@ -160,7 +176,8 @@ class Wormhole(commands.Cog):
 		embed.add_field(value=f"**{p}settings**", name="Display current settings")
 		embed.add_field(value=f"**{p}link**", name="Link to GitHub repository")
 		embed.add_field(value=f"**{p}invite**", name="Bot invite link")
-		await ctx.send(embed=embed)
+		await ctx.send(embed=embed, delete_after=self.delay['user'])
+		await self.tryDelete(ctx.message)
 
 	@commands.check(in_wormhole)
 	@commands.group(name="wormhole")
@@ -180,7 +197,7 @@ class Wormhole(commands.Cog):
 		config['wormholes'].append(ctx.channel.id)
 		self.__update()
 		self.__save()
-		await asyncio.sleep(1)
+		await asyncio.sleep(.25)
 		await self.send(message=ctx.message, announcement=True,
 			text="Wormhole opened: **{}** in **{}**".format(
 				ctx.channel.name, ctx.channel.guild.name))
@@ -255,13 +272,17 @@ class Wormhole(commands.Cog):
 	async def settings(self, ctx: commands.Context):
 		m = "**Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**, "
 		m+= "maximal attachment size **{}kB**"
-		await ctx.send(m.format(config['anonymity'], config['message window'], config['max size']))
+		await ctx.send(
+			m.format(config['anonymity'], config['message window'], config['max size']),
+			delete_after=self.delay['user'])
+		await self.tryDelete(ctx.message)
 
 	@commands.check(in_wormhole)
 	@commands.command()
 	async def link(self, ctx: commands.Context):
 		"""Send a message with link to the bot"""
-		await ctx.send("https://github.com/sinus-x/discord-wormhole")
+		await ctx.send("**GitHub link:** https://github.com/sinus-x/discord-wormhole")
+		await self.tryDelete(ctx.message)
 
 	@commands.check(in_wormhole)
 	@commands.command()
@@ -271,9 +292,10 @@ class Wormhole(commands.Cog):
 		# - send messages      - attach files
 		# - manage messages    - use external emojis
 		# - embed links        - add reactions
-		l = "https://discordapp.com/oauth2/authorize?client_id=" + str(self.bot.user.id)
-		l+= "&permissions=321600&scope=bot"
+		l = "**Invite link:** https://discordapp.com/oauth2/authorize?client_id=" + \
+		    str(self.bot.user.id) + "&permissions=321600&scope=bot"
 		await ctx.send(l)
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@commands.group(name="admin")
@@ -284,6 +306,8 @@ class Wormhole(commands.Cog):
 		embed = discord.Embed(title="Wormhole administration", color=discord.Color.red())
 		p = config['prefix']
 		pa = config['prefix'] + 'admin'
+		embed.add_field(name=f"{p}wormhole open", value="Open wormhole in current channel", inline=False)
+		embed.add_field(name=f"{p}wormhole close", value="Close wormhole in current channel", inline=False)
 		embed.add_field(name=f"{pa} anonymity", value="Anonymity level\n_none | guild | full_")
 		embed.add_field(name=f"{pa} edittimeout", value="Editing timeout\n_# of seconds_")
 		embed.add_field(name=f"{pa} silenttimeout", value="No activity timeout\n_# of minutes_")
@@ -294,7 +318,8 @@ class Wormhole(commands.Cog):
 		embed.add_field(name=f"{p}say", value="Say as a wormhole\n_A message_")
 
 		embed.add_field(name=f"{p}alias <guild id> [set|unset] [emote]", value="Guild prefix")
-		await ctx.send(embed=embed)
+		await ctx.send(embed=embed, delete_after=self.delay['admin'])
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@admin.command()
@@ -311,6 +336,7 @@ class Wormhole(commands.Cog):
 			self.__save()
 			await self.send(message=ctx.message, announcement=True,
 				text="New anonymity policy: **{}**".format(value))
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@admin.command()
@@ -328,6 +354,7 @@ class Wormhole(commands.Cog):
 		config['message window'] = value
 		self.__save()
 		await self.send("New time limit for message edit/deletion: **{value} s**", announcement=True)
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@admin.command()
@@ -345,6 +372,7 @@ class Wormhole(commands.Cog):
 		config['no activity timeout'] = value
 		self.__save()
 		await ctx.send("New 'no activity' timeout: **{} min**".format(value))
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@admin.command()
@@ -357,6 +385,7 @@ class Wormhole(commands.Cog):
 		config['no activity message'] = value
 		self.__save()
 		await ctx.send("New 'no activity' message:\n> {}".format(value))
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@admin.command()
@@ -374,6 +403,7 @@ class Wormhole(commands.Cog):
 		config['max size'] = value
 		self.__save()
 		await self.send("New maximal attachment size: **{} kB**".format(value), announcement=True)
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@admin.command()
@@ -391,6 +421,7 @@ class Wormhole(commands.Cog):
 		config['replace original'] = v
 		self.__save()
 		await self.send(ctx.message, text=f"New replacing policy: **{value}**", announcement=True)
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@commands.command()
@@ -405,6 +436,7 @@ class Wormhole(commands.Cog):
 		if a == 'guild' or a == 'none':
 			m = f'**WORMHOLE**: {m}'
 		await self.send(ctx.message, text=m, announcement=True)
+		await self.tryDelete(ctx.message)
 
 	@commands.check(is_admin)
 	@commands.command()
@@ -415,6 +447,7 @@ class Wormhole(commands.Cog):
 		key: [set | unset] 
 		value: A new prefix for current guild
 		"""
+		await self.tryDelete(ctx.message)
 		try:
 			guild_id = int(guild)
 			guild_obj = self.bot.get_guild(guild_id)
@@ -441,20 +474,28 @@ class Wormhole(commands.Cog):
 		await self.send(ctx.message, text=m, announcement=True)
 
 
-	def __getPrefix(self, message: discord.Message):
+	def __getPrefix(self, message: discord.Message, firstline: bool = True):
 		"""Get prefix for message"""
 		a = config['anonymity']
 		u = discord.utils.escape_markdown(message.author.name)
 		g = str(message.guild.id)
-		if g in config['aliases'] and config['aliases'][g] is not None:
-			g = config['aliases'][g]
+		logo = g in config['aliases'] and config['aliases'][g] is not None
+		if logo:
+			if not firstline:
+				g = config['prefix fill']
+			else:
+				g = config['aliases'][g]
 		else:
 			g = discord.utils.escape_markdown(message.guild.name) + ','
 
 		if a == 'none':
 			return f'{g} **{u}**: '
+
+		if a == 'guild' and logo:
+			return f'**{g}** '
 		if a == 'guild':
 			return f'**{g}**: '
+
 		return ''
 
 	def __process(self, message: discord.Message):
@@ -486,16 +527,41 @@ class Wormhole(commands.Cog):
 				channel = "unknown-channel"
 			content = content.replace(c, channel)
 
-		# apply prefixes
-		prefix = self.__getPrefix(message)
-		content = content.split('\n')
-		c = ''
-		for line in content:
-			c += prefix + line + '\n'
+		# line preprocessor (code)
+		content_ = content.split('\n')
+		if '```' in content:
+			content = []
+			for line in content_:
+				# do not allow code block starting on text line
+				line.replace(' ```', '\n```')
+				# do not alow text on code block end
+				line.replace('``` ', '```\n')
+				line = line.split('\n')
+				for l in line:
+					content.append(l)
+		else:
+			content = content_
 
-		# done
-		c = c.replace("@", "")
-		return c
+		# apply prefixes
+		content_ = content.copy()
+		content = ''
+		p = self.__getPrefix(message)
+		code = False
+		for i in range(len(content_)):
+			if i == 1:
+				# use fill icon instead of guild one
+				p = self.__getPrefix(message, firstline=False)
+			line = content_[i]
+			if line.startswith('```'):
+				code = True
+			if code:
+				content += line + '\n'
+			else:
+				content += p + line.replace('@','') + '\n'
+			if line.endswith('```'):
+				code = False
+
+		return content
 
 	async def send(self, message: discord.Message, text: str, files: list = None, announcement: bool = False):
 		msgs = [message]
@@ -528,8 +594,15 @@ class Wormhole(commands.Cog):
 			self.wormholes.append(self.bot.get_channel(w))
 
 	def __save(self):
+		config['stats'] = self.stats
 		with open('config.json', 'w', encoding='utf-8') as f:
 			json.dump(config, f, ensure_ascii=False, indent=4)
+
+	async def tryDelete(self, message: discord.Message):
+		try:
+			await message.delete()
+		except:
+			return
 
 class Timer:
 	def __init__(self, timeout, callback):
