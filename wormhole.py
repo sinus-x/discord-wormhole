@@ -560,11 +560,13 @@ class Wormhole(commands.Cog):
 			if code:
 				content += line + '\n'
 			else:
-				content += p + line.replace('@','') + '\n'
+				content += p + line + '\n'
 			if line.endswith('```') and code and len(line) > 3:
 				code = False
+		if code:
+			content += '```'
 
-		return content
+		return content.replace('@','@_').replace('&','&_')
 
 	async def send(self, message: discord.Message, text: str, files: list = None, announcement: bool = False):
 		msgs = [message]
