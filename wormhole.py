@@ -20,6 +20,7 @@ class Wormhole(commands.Cog):
 	#TODO Use Black for formatting
 	#TODO Use pre-commit
 	#TODO Add blacklisting - full and cooldown
+	#TODO When the message is removed, remove it from sent[], too
 
 	def __init__(self, bot):
 		self.bot = bot

@@ -22,5 +22,16 @@ async def on_error(event, *args, **kwargs):
 	output = traceback.format_exc()
 	print(output)
 
+@bot.command()
+async def reload(ctx: commands.Context):
+	"""Reload the wormhole"""
+	if ctx.author.id != config['admin id']:
+		return
+	try:
+		bot.reload_extension('wormhole')
+		await ctx.send('Reloaded.')
+	except Exception:
+		await ctx.send('An error occured. RIP.')
+
 bot.load_extension('wormhole')
 bot.run(config.get('bot key'))

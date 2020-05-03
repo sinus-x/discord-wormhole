@@ -59,5 +59,7 @@ Admin commands:
 
 - `~say [text]` Say as a wormhole
 
+- `~reload` Reload the code (Production usage probably won't need this)
+
 ## License
 Released under the GNU GPL v3
