@@ -85,9 +85,7 @@ class Wormhole(commands.Cog):
 
 		# no activity timer
 		async def silent_callback():
-			#TODO use self.send()
-			for w in self.wormholes:
-				await w.send(config['no activity message'])
+			await self.send(message, text=config['no activity message'], announcement=True)
 			self.timer = None
 
 		if self.timer:

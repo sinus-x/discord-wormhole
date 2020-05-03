@@ -1,4 +1,5 @@
 import json
+import git
 import traceback
 from datetime import datetime
 
@@ -11,7 +12,9 @@ bot = commands.Bot(command_prefix=config['prefix'], help_command=None)
 @bot.event
 async def on_ready():
 	print("Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
-	s = f"{config['prefix']}wormhole"
+	git_repo = git.Repo(search_parent_directories=True)
+	git_hash = git_repo.head.object.hexsha[:7]
+	s = f"{config['prefix']}wormhole | " + git_hash
 	await bot.change_presence(activity=discord.Game(s))
 
 @bot.event
