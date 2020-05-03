@@ -27,7 +27,7 @@
 	"replace original": true,
 
 	"__comment": "How much time the sender has to edit or delete their message",
-	"message windows": 30,
+	"message window": 30,
 
 	"__comment": "Max attachment size, in kB",
 	"max size": 200,
