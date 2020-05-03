@@ -552,6 +552,9 @@ class Wormhole(commands.Cog):
 				# use fill icon instead of guild one
 				p = self.__getPrefix(message, firstline=False)
 			line = content_[i]
+			# add prefix if message starts with code block
+			if i == 0 and line.startswith('```'):
+				content += self.__getPrefix(message) + '\n'
 			if line.startswith('```'):
 				code = True
 			if code:
