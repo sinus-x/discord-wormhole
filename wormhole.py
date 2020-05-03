@@ -19,6 +19,7 @@ class Wormhole(commands.Cog):
 	#TODO User aliases
 	#TODO Use Black for formatting
 	#TODO Use pre-commit
+	#TODO Add blacklisting - full and cooldown
 
 	def __init__(self, bot):
 		self.bot = bot
@@ -558,7 +559,7 @@ class Wormhole(commands.Cog):
 				content += line + '\n'
 			else:
 				content += p + line.replace('@','') + '\n'
-			if line.endswith('```'):
+			if line.endswith('```') and code and len(line) > 3:
 				code = False
 
 		return content
