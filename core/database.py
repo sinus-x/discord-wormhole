@@ -13,32 +13,68 @@ class Database:
 database = Database()
 session  = sessionmaker(database.db)()
 
-class Guild(database.base):
-	__tablename__ = 'guilds'
+class Settings(database.base):
+	__tablename__ = 'settings'
+
+	name         = Column(String,  primary_key=True)
+	replace      = Column(Boolean, default=True)
+	anonymity    = Column(String,  default='none')
+	edit_time    = Column(Intger,  default=60)
+	dead_time    = Column(Integer, default=0)
+	dead_message = Column(String,  default=None)
+	file_limit   = Column(Integer, default=-1)
+
+class SettingsRepository:
+	def add(self, str: name):
+		session.add(Settings(name=name))
+		session.commit()
+	def set(self, str: name, replace: bool = None, anonymity: str = None, edit_time: int = None, dead_time: int = None, dead_message: str = None, file_limit: int = None):
+		s = self.get(name)
+		s_replace      = replace      if replace      else s.replace
+		s_anonymity    = anonymity    if anonymity    else s.anonymity
+		s_edit_time    = edit_time    if edit_time    else s.edit_time
+		s_dead_time    = dead_time    if dead_time    else s.dead_time
+		s_dead_message = dead_message if dead_message else s.dead_message
+		s_file_limit   = file_limit   if file_limit   else s.file_limit
+		session.query(Settings).filter(Settings.name==name).update({
+			Settings.replace      : s_replace,
+			Settings.anonymity    : s_anonymity,
+			Settings.edit_time    : s_edit_time,
+			Settings.dead_time    : s_dead_time,
+			Settings.dead_message : s_dead_message,
+			Settings.file_limit   : s_file_limit,
+		})
+		session.commit()
+
+class Wormhole(database.base):
+	__tablename__ = 'wormholes'
 
 	id       = Column(BigInteger, primary_key=True)
+	settings = Column(String,     foreignKey('settings.name', ondelete='CASCADE'))
 	readonly = Column(Boolean,    default=False)
 	nickname = Column(String,     default=None)
 	cooldown = Column(Integer,    default=None)
 	messages = Column(Integer,    default=0)
 
-class GuildRepository:
+class WormholeRepository:
 	def add(self, id: int):
-		session.add(Guild(id=id))
+		session.add(Wormhole(id=id))
 		session.commit()
+	def getAll(self):
+		return session.query(Wormhole)
 	def get(self, id: int):
-		return session.query(Guild).filter(Guild.id==id).one_or_none()
+		return session.query(Wormhole).filter(Wormhole.id==id).one_or_none()
 	def set(self, id: int, nickname: str = None, cooldown: int = None, readonly: bool = None, message: int = None):
 		g = self.get(id)
 		g_nickname = nickname if nickname else g.nickname
 		g_cooldown = cooldown if cooldown else g.cooldown
 		g_readonly = readonly if readonly else g.readonly
 		g_messages = messages if messages else g.messages
-		session.query(Guild).filter(Guild.id==id).update({
-			Guild.nickname : g_nickname,
-			Guild.cooldown : g_cooldown,
-			Guild.readonly : g_readonly,
-			Guild.messages : g_messages,
+		session.query(Wormhole).filter(Wormhole.id==id).update({
+			Wormhole.nickname : g_nickname,
+			Wormhole.cooldown : g_cooldown,
+			Wormhole.readonly : g_readonly,
+			Wormhole.messages : g_messages,
 		})
 		session.commit()
 
@@ -56,6 +92,8 @@ class UserRepository:
 	def add(self, id: int):
 		session.add(User(id=id))
 		session.commit()
+	def getAll(self):
+		return session.query(User)
 	def get(self, id: int):
 		return session.query(User).filter(User.id==id).one_or_none()
 	def set(self, id: int, nickname: str = None, mod: bool = None, cooldown: int = None,
@@ -96,6 +134,7 @@ class LogRepository:
 database.base.metadata.create_all(database.db)
 session.commit()
 
-guildRepository = GuildRepository()
-userRepository  = UserRepository()
-logRepository   = LogRepository()
+repo_s = SettingsRepository()
+repo_w = WormholeRepository()
+repo_u = UserRepository()
+repo_l = LogRepository()

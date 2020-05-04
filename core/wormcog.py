@@ -5,6 +5,8 @@ import git
 import discord
 from discord.ext import commands
 
+from core.database import repo_w, repo_u, repo_s
+
 #TODO Add support to manage bot from DMs
 #TODO Download and re-upload images that fit under the limit - and delete them afterwards
 #TODO User aliases
@@ -13,10 +15,13 @@ from discord.ext import commands
 #TODO When the message is removed, remove it from sent[], too
 #TODO Add reactions
 
-async def presence(bot: commands.Bot, prefix: str):
+async def presence(bot: commands.Bot, prefix: str, messages: int = None):
 	git_repo = git.Repo(search_parent_directories=True)
 	git_hash = git_repo.head.object.hexsha[:7]
-	s = f"{prefix}wormhole | " + git_hash
+	if messages:
+		s = f"{prefix}wormhole | {messages} | " + git_hash
+	else:
+		s = f"{prefix}wormhole | " + git_hash
 	await bot.change_presence(activity=discord.Game(s))
 
 class Wormcog(commands.Cog):
@@ -37,8 +42,8 @@ class Wormcog(commands.Cog):
 
 	def wormholesUpdate(self):
 		self.wormholes = []
-		for wormhole in self.confGet('wormholes'):
-			self.wormholes.append(self.bot.get_channel(wormhole))
+		for wormhole in repo_w.getAll():
+			self.wormholes.append(self.bot.get_channel(wormhole.id))
 
 	def removalDelay(self, key: str = 'user'):
 		if key == 'user':
