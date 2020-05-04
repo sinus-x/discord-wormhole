@@ -7,7 +7,8 @@ from io import BytesIO
 import discord
 from discord.ext import commands
 
-import init, wormcog
+import init
+from core import wormcog
 
 started = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
