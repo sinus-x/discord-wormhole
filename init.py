@@ -53,7 +53,7 @@ async def reload(ctx: commands.Context, cog: str):
 		return
 	try:
 		bot.reload_extension(f'cogs.{cog}')
-		m = f'**{cog}** reloaded.'
+		m = f'**{cog.upper()}** reloaded.'
 		print(m)
 		await ctx.send(m)
 	except Exception:

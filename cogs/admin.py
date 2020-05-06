@@ -86,6 +86,24 @@ class Admin(wormcog.Wormcog):
 			#TODO Wrong key
 			return
 
+	@beam.command(name="list")
+	async def beam_list(self, ctx: commands.Context):
+		"""List all wormholes"""
+		bs = repo_b.getAll()
+
+		result = 'NAME'+' '*10+'ACTIVE REPLACE ANONYMITY TIMEOUT FILELIMIT\n'
+		s = '{} {} {} {} {}'
+		for b in bs:
+			result += s.format(
+				b.name.ljust(13),
+				'yes   '  if b.active  else 'no    ',
+				'yes    ' if b.replace else 'no     ',
+				b.anonymity.ljust(9),
+				str(b.timeout).ljust(7),
+				b.file_limit,
+			)
+		await ctx.send(f'```{result}```')
+
 
 	@commands.check(init.is_admin)
 	@commands.group(name="wormhole")
@@ -168,6 +186,23 @@ class Admin(wormcog.Wormcog):
 			#TODO Wrong key
 			return
 
+	@wormhole.command(name="list")
+	async def wormhole_list(self, ctx: commands.Context):
+		"""List all wormholes"""
+		ws = repo_w.getAll()
+
+		result = 'CHANNEL     GUILD    ACTIVE READONLY LOGO'
+		s = '{} {} {} {} {}'
+		for w in ws:
+			ch = self.bot.get_channel(w.channel)
+			result += s.format(
+				ch.name.rjust(12),
+				ch.guild.name.rjust(8),
+				'yes   ' if w.active   else 'no    ',
+				'yes   ' if w.readonly else 'no    ',
+				w.logo.ljust(30),
+			)
+		await ctx.send(f'```{result}```')
 
 	@commands.check(init.is_mod)
 	@commands.group(name="user")
