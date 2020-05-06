@@ -9,8 +9,11 @@ from discord.ext import commands
 
 import init
 from core import wormcog
+from core.database import repo_b, repo_u, repo_w
 
 started = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+
+config = json.load(open('config.json'))
 
 class Wormhole(wormcog.Wormcog):
 	"""Transfer messages between guilds"""
@@ -19,17 +22,15 @@ class Wormhole(wormcog.Wormcog):
 		super().__init__(bot)
 
 		self.transferred = 0
-		try:
-			self.stats = self.config['stats']
-		except KeyError:
-			self.stats = {}
-
-		self.timer = None
+		"""Global message counter"""
+		self.stats = {}
+		"""Per-channel message couter"""
+		#TODO Load stats from database
 
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
 		# do not act if channel is not wormhole channel
-		if message.channel.id not in self.config['wormholes']:
+		if message.channel.id not in [w.channel for w in repo_w.getAll()]:
 			return
 
 		# do not act if author is bot
@@ -37,15 +38,20 @@ class Wormhole(wormcog.Wormcog):
 			return
 
 		# do not act if message is bot command
-		if message.content.startswith(self.config['prefix']):
+		if message.content.startswith(config['prefix']):
 			return
 
-		# get wormhole channel objects
-		self.wormholesUpdate()
+		# get current beam
+		beam = self.getBeamName(message)
 
-		# copy remote message
+		# get wormhole channel objects
+		if not beam in self.wormholes or len(self.wormholes[beam]) == 0:
+			self.reconnect(beam)
+
+		# process incoming message
 		content = self.__process(message)
 
+		# convert attachments to links
 		if message.attachments:
 			for f in message.attachments:
 				content += '\n' + f.url
@@ -56,24 +62,14 @@ class Wormhole(wormcog.Wormcog):
 		# count the message
 		self.transferred += 1
 		if self.transferred % 50 == 0:
-			self.confSave()
+			self.__saveStats()
 		try:
-			self.stats[str(message.guild.id)] += 1
+			self.stats[str(message.channel.id)] += 1
 		except KeyError:
-			self.stats[str(message.guild.id)] = 1
+			self.stats[str(message.channel.id)] = 1
 
 		# send the message
-		await self.send(message, content, files=message.attachments)
-
-		# no activity timer
-		async def silent_callback():
-			await self.send(message, text=self.config['no activity message'], announcement=True)
-			self.timer = None
-
-		if self.timer:
-			self.timer.cancel()
-		if self.config['no activity timeout'] > 0:
-			self.timer = Timer(self.config['no activity timeout']*60, silent_callback)
+		await self.send(message, beam, content, files=message.attachments)
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -87,11 +83,13 @@ class Wormhole(wormcog.Wormcog):
 				forwarded = m
 				break
 		if not forwarded:
+			#TODO React with cross, wait, and delete
 			return
 
 		content = self.__process(after)
 		for m in forwarded[1:]:
 			await m.edit(content=content)
+		#TODO React with check, wait, and delete
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, message: discord.Message):
@@ -102,10 +100,12 @@ class Wormhole(wormcog.Wormcog):
 				forwarded = m
 				break
 		if not forwarded:
+			#TODO React with cross, wait, and delete
 			return
 
 		for m in forwarded[1:]:
 			await m.delete()
+		#TODO React with check, wait, and delete
 
 
 	@commands.check(init.in_wormhole)
@@ -114,7 +114,7 @@ class Wormhole(wormcog.Wormcog):
 		"""Display information about wormholes"""
 
 		if len(self.wormholes) == 0:
-			self.wormholesUpdate()
+			self.reconnect()
 			await asyncio.sleep(.25)
 
 		if len(self.wormholes) == 0:
@@ -127,12 +127,11 @@ class Wormhole(wormcog.Wormcog):
 			m = "> {} messages sent since the formation (**{}**); ping **{:.2f} s**.\n".format(self.transferred, started, self.bot.latency)
 
 			m+= "> Currently opened wormholes:"
+			#FIXME What happens if the guild/channel does not exist?
 			for w in self.wormholes:
 				# get logo
-				try:
-					logo = self.config['aliases'][str(w.guild.id)]
-					logo = logo if isinstance(logo, str) else ''
-				except KeyError:
+				logo = repo_w.get(w.id).logo
+				if not logo:
 					logo = ''
 
 				# get names
@@ -141,7 +140,7 @@ class Wormhole(wormcog.Wormcog):
 
 				# get message count
 				try:
-					cnt = self.stats[str(w.guild.id)]
+					cnt = self.stats[str(w.id)]
 				except KeyError:
 					cnt = 0
 
@@ -155,7 +154,7 @@ class Wormhole(wormcog.Wormcog):
 	async def help(self, ctx: commands.Context):
 		"""Display help"""
 		embed = discord.Embed(title="Wormhole", color=discord.Color.light_grey())
-		p = self.config['prefix']
+		p = config['prefix']
 		embed.add_field(value=f"**{p}e** | **{p}edit**", name="Edit last message")
 		embed.add_field(value=f"**{p}d** | **{p}delete**", name="Delete last message")
 		embed.add_field(value=f"**{p}info**", name="Connection information")
@@ -164,45 +163,6 @@ class Wormhole(wormcog.Wormcog):
 		embed.add_field(value=f"**{p}invite**", name="Bot invite link")
 		await ctx.send(embed=embed, delete_after=self.removalDelay())
 		await self.delete(ctx.message)
-
-	@commands.check(init.in_wormhole)
-	@commands.group(name="wormhole")
-	async def wormhole(self, ctx: commands.Context):
-		"""Control the wormholes"""
-		if ctx.invoked_subcommand is not None:
-			return
-
-		await self.help(ctx)
-
-	@commands.check(init.is_admin)
-	@wormhole.command()
-	async def open(self, ctx: commands.Context):
-		"""Open a wormhole"""
-		if ctx.channel.id in self.config['wormholes']:
-			return
-		self.confAdd('wormholes', ctx.channel.id)
-		self.wormholesUpdate()
-		self.confSave()
-		await asyncio.sleep(.25)
-		await self.send(message=ctx.message, announcement=True,
-			text="> Wormhole opened: **{}** in **{}**".format(
-				ctx.channel.name, ctx.channel.guild.name))
-
-	@commands.check(init.is_admin)
-	@wormhole.command()
-	async def close(self, ctx: commands.Context):
-		"""Close the current wormhole"""
-		if ctx.channel.id not in self.config['wormholes']:
-			return
-		self.confDel('wormholes', ctx.channel.id)
-		self.wormholesUpdate()
-		self.confSave()
-		await ctx.send("> **Woosh**. The wormhole is gone")
-		await self.send(message=ctx.message, announcement=True,
-			text="> Wormhole closed: **{}** in **{}**".format(
-				ctx.channel.name, ctx.channel.guild.name))
-		if len(self.wormholes) == 0:
-			self.transferred = 0
 
 	@commands.check(init.in_wormhole)
 	@commands.command(name="remove", aliases=["d", "delete", "r"])
@@ -247,8 +207,10 @@ class Wormhole(wormcog.Wormcog):
 	@commands.check(init.in_wormhole)
 	@commands.command()
 	async def settings(self, ctx: commands.Context):
+		return
+		#TODO Update
 		m = "> **Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**"
-		await ctx.send(m.format(self.config['anonymity'], self.config['message window']))
+		await ctx.send(m.format(config['anonymity'], config['message window']))
 		await self.delete(ctx.message)
 
 	@commands.check(init.in_wormhole)
@@ -273,15 +235,17 @@ class Wormhole(wormcog.Wormcog):
 
 	def __getPrefix(self, message: discord.Message, firstline: bool = True):
 		"""Get prefix for message"""
-		a = self.config['anonymity']
+		dbw = repo_w.get(self.getBeamName(message))
+		dbb = repo_b.get(dbw.beam)
+		a = dbb.anonymity
 		u = discord.utils.escape_markdown(message.author.name)
 		g = str(message.guild.id)
-		logo = g in self.config['aliases'] and self.config['aliases'][g] is not None
+		logo = g in config['aliases'] and config['aliases'][g] is not None
 		if logo:
 			if not firstline:
-				g = self.config['prefix fill']
+				g = config['prefix fill']
 			else:
-				g = self.config['aliases'][g]
+				g = config['aliases'][g]
 		else:
 			g = discord.utils.escape_markdown(message.guild.name) + ','
 
@@ -365,18 +329,12 @@ class Wormhole(wormcog.Wormcog):
 
 		return content.replace('@','@_').replace('&','&_')
 
-class Timer:
-	def __init__(self, timeout, callback):
-		self._timeout = timeout
-		self._callback = callback
-		self._task = asyncio.ensure_future(self._job())
+	def __saveStats(self):
+		"""Save message statistics to the database"""
+		for w, n in self.stats.values():
+			repo_w.set(int(w), n)
+		return
 
-	async def _job(self):
-		await asyncio.sleep(self._timeout)
-		await self._callback()
-
-	def cancel(self):
-		self._task.cancel()
 
 def setup(bot):
 	bot.add_cog(Wormhole(bot))

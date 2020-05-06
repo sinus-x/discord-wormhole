@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, ForeignKey
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -13,105 +13,135 @@ class Database:
 database = Database()
 session  = sessionmaker(database.db)()
 
-class Settings(database.base):
-	__tablename__ = 'settings'
+class Beam(database.base):
+	__tablename__ = 'beams'
 
-	name         = Column(String,  primary_key=True)
-	replace      = Column(Boolean, default=True)
-	anonymity    = Column(String,  default='none')
-	edit_time    = Column(Intger,  default=60)
-	dead_time    = Column(Integer, default=0)
-	dead_message = Column(String,  default=None)
-	file_limit   = Column(Integer, default=-1)
+	name       = Column(String,  primary_key=True)
+	active     = Column(Boolean, default=True)
+	replace    = Column(Boolean, default=True)
+	anonymity  = Column(String,  default='none')
+	timeout    = Column(Integer, default=60)
+	file_limit = Column(Integer, default=-1)
 
-class SettingsRepository:
-	def add(self, str: name):
-		session.add(Settings(name=name))
+class BeamRepository:
+	def add(self, name: str):
+		session.add(Beam(name=name))
 		session.commit()
-	def set(self, str: name, replace: bool = None, anonymity: str = None, edit_time: int = None, dead_time: int = None, dead_message: str = None, file_limit: int = None):
+	def get(self, name: str):
+		return session.query(Beam).filter(Beam.name==name).one_or_none()
+	def getAll(self):
+		return session.query(Beam).all()
+	def set(
+		self,
+		name:       str,
+		active:     bool = None,
+		replace:    bool = None,
+		anonymity:  str  = None,
+		timeout:    int  = None,
+		file_limit: int  = None,
+	):
 		s = self.get(name)
-		s_replace      = replace      if replace      else s.replace
-		s_anonymity    = anonymity    if anonymity    else s.anonymity
-		s_edit_time    = edit_time    if edit_time    else s.edit_time
-		s_dead_time    = dead_time    if dead_time    else s.dead_time
-		s_dead_message = dead_message if dead_message else s.dead_message
-		s_file_limit   = file_limit   if file_limit   else s.file_limit
+		s_active     = active     if active     else s.active
+		s_replace    = replace    if replace    else s.replace
+		s_anonymity  = anonymity  if anonymity  else s.anonymity
+		s_timeout    = timeout    if timeout    else s.timeout
+		s_file_limit = file_limit if file_limit else s.file_limit
 		session.query(Settings).filter(Settings.name==name).update({
-			Settings.replace      : s_replace,
-			Settings.anonymity    : s_anonymity,
-			Settings.edit_time    : s_edit_time,
-			Settings.dead_time    : s_dead_time,
-			Settings.dead_message : s_dead_message,
-			Settings.file_limit   : s_file_limit,
+			Settings.active     : s_active,
+			Settings.replace    : s_replace,
+			Settings.anonymity  : s_anonymity,
+			Settings.timeout    : s_timeout,
+			Settings.file_limit : s_file_limit,
 		})
 		session.commit()
+	def remove(self, name: str):
+		session.query(Beam).filter(Beam.name==name).delete()
 
 class Wormhole(database.base):
 	__tablename__ = 'wormholes'
 
-	id       = Column(BigInteger, primary_key=True)
-	settings = Column(String,     foreignKey('settings.name', ondelete='CASCADE'))
+	channel  = Column(BigInteger, primary_key=True)
+	beam     = Column(String,     ForeignKey('beams.name', ondelete='CASCADE'))
+	active   = Column(Boolean,    default=True )
 	readonly = Column(Boolean,    default=False)
-	nickname = Column(String,     default=None)
-	cooldown = Column(Integer,    default=None)
-	messages = Column(Integer,    default=0)
+	logo     = Column(String,     default=None )
+	messages = Column(Integer,    default=0    )
 
 class WormholeRepository:
-	def add(self, id: int):
-		session.add(Wormhole(id=id))
+	def add(self, beam: str, channel: int):
+		session.add(Wormhole(channel=channel, beam=beam))
 		session.commit()
+		print("Added")
+	def get(self, channel: int):
+		return session.query(Wormhole).filter(Wormhole.channel==channel).one_or_none()
+	def getByBeam(self, beam: str):
+		return session.query(Wormhole).filter(Wormhole.beam==beam).all()
+	def getByActive(self):
+		return session.query(Wormhole).filter(Wormhole.active==True).all()
 	def getAll(self):
-		return session.query(Wormhole)
-	def get(self, id: int):
-		return session.query(Wormhole).filter(Wormhole.id==id).one_or_none()
-	def set(self, id: int, nickname: str = None, cooldown: int = None, readonly: bool = None, message: int = None):
-		g = self.get(id)
-		g_nickname = nickname if nickname else g.nickname
-		g_cooldown = cooldown if cooldown else g.cooldown
+		return session.query(Wormhole).all()
+	def set(
+		self,
+		channel:  int,
+		active:   bool = None,
+		logo :    str  = None,
+		readonly: bool = None,
+		messages: int  = None,
+	):
+		g = self.get(channel)
+		g_nickname = logo     if logo     else g.logo
 		g_readonly = readonly if readonly else g.readonly
 		g_messages = messages if messages else g.messages
-		session.query(Wormhole).filter(Wormhole.id==id).update({
-			Wormhole.nickname : g_nickname,
-			Wormhole.cooldown : g_cooldown,
+		session.query(Wormhole).filter(Wormhole.channel==channel).update({
+			Wormhole.logo     : g_nickname,
 			Wormhole.readonly : g_readonly,
 			Wormhole.messages : g_messages,
 		})
 		session.commit()
+	def remove(self, channel: int):
+		session.query(Wormhole).filter(Wormhole.channel==channel).delete()
 
 class User(database.base):
 	__tablename__ = 'users'
 
-	id       = Column(BigInteger, primary_key=True)
-	nickname = Column(String,     default=None    )
-	mod      = Column(Boolean,    default=False   )
-	cooldown = Column(Integer,    default=None    )
-	readonly = Column(Boolean,    default=False   )
-	banned   = Column(Boolean,    default=False   )
+	id         = Column(BigInteger, primary_key = True )
+	nickname   = Column(String,     default     = None )
+	mod        = Column(Boolean,    default     = False)
+	restricted = Column(BigInteger, default     = None )
+	readonly   = Column(Boolean,    default     = False)
+	banned     = Column(Boolean,    default     = False)
 
 class UserRepository:
 	def add(self, id: int):
 		session.add(User(id=id))
 		session.commit()
-	def getAll(self):
-		return session.query(User)
 	def get(self, id: int):
 		return session.query(User).filter(User.id==id).one_or_none()
-	def set(self, id: int, nickname: str = None, mod: bool = None, cooldown: int = None,
-				  readonly: bool = None, banned: bool = None):
+	def getMods(self):
+		return session.query(User).filter(User.mod==True).all()
+	def getAll(self):
+		return session.query(User).all()
+	def set(
+		self,
+		id: int,
+		nickname:  str  = None,
+		mod:       bool = None,
+		restricted: int = None,
+		readonly:  bool = None,
+	):
 		u = self.get(id)
-		u_nickname = nickname if nickname else u.nickname
-		u_mod      = mod      if mod      else u.mod
-		u_cooldown = cooldown if cooldown else u.cooldown
-		u_readonly = readonly if readonly else u.readonly
-		u_banned   = banned   if banned   else u.banned
+		u_nickname   = nickname   if nickname   else u.nickname
+		u_mod        = mod        if mod        else u.mod
+		u_restricted = restricted if restricted else u.restricted
+		u_readonly   = readonly   if readonly   else u.readonly
 		session.query(User).filter(User.id==id).update({
 			User.nickname : g_nickname,
 			User.mod      : g_mod,
-			User.cooldown : g_cooldown,
 			User.readonly : g_readonly,
-			User.banned   : g_banned,
 		})
 		session.commit()
+	def delete(self, id: int):
+		session.query(User).filter(User.id==id).delete()
 
 class Log(database.base):
 	__tablename__ = 'log'
@@ -125,16 +155,25 @@ class Log(database.base):
 	new       = Column(String)
 
 class LogRepository:
-	def add(self, author: int, table: str, key: str, old: str, new: str):
+	def log(self, author: int, table: str, key: str, old: str, new: str):
 		session.add(Log(author=author, table=table, key=key, old=old, new=new))
-	def get(self, author: int = None, table: str = None, key: str = None, old: str = None, new: str = None):
+	def get(
+		self,
+		author: int = None,
+		table:  str = None,
+		key:    str = None,
+		old:    str = None,
+		new:    str = None,
+		before: datetime = None,
+		after:  datetime = None,
+	):
 		#TODO
 		return
 
 database.base.metadata.create_all(database.db)
 session.commit()
 
-repo_s = SettingsRepository()
+repo_b = BeamRepository()
 repo_w = WormholeRepository()
 repo_u = UserRepository()
 repo_l = LogRepository()

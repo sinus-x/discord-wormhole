@@ -11,38 +11,9 @@
 	"__comment": "Bot prefix",
 	"prefix": "~",
 
-
-
-	"__COMMENT": "",
-	"__COMMENT": "NEXT OPTIONS CAN BE ALTERED LIVE, YOU DO NOT NEED TO FILL THEM MANUALLY",
-	"__COMMENT": "",
-
-	"__comment": "list of registered channels",
-	"wormholes": [],
-
-	"__comment": "full | guild | none",
-	"anonymity": "full",
-
-	"__comment": "Replace original sender?",
-	"replace original": true,
-
-	"__comment": "How much time the sender has to edit or delete their message",
-	"message window": 30,
-
-	"__comment": "Max attachment size, in kB",
-	"max size": 200,
-
 	"__comment": "Boolean; wheter to print all errors that may occure",
 	"suppress errors": true,
 
-	"__comment": "When member sends a multiline text, this will be used instead of guild alias",
-	"prefix fill": "",
-
-	"__comment": "If no one sends a message for given amount of minutes, ",
-	"__comment": "send a message. Numbers less than one mean disabled.",
-	"no activity timeout": -1,
-	"no activity message": "No signs of life detected.",
-
-	"__comment": "Guild name aliases",
-	"aliases": []
+	"__comment": "Empty emote to print on multiline comments instead of guild logo",
+	"logo fill": null,
 }

@@ -5,7 +5,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-import wormcog
+from core import wormcog
 
 config = json.load(open('config.json'))
 bot = commands.Bot(command_prefix=config['prefix'], help_command=None)
@@ -18,6 +18,9 @@ bot = commands.Bot(command_prefix=config['prefix'], help_command=None)
 def is_admin(ctx: commands.Context):
 	return ctx.author.id == config['admin id']
 
+def is_mod(ctx: commands.Context):
+	return
+
 def in_wormhole(ctx: commands.Context):
 	return ctx.author.id == config['admin id'] \
 	or ctx.channel.id in config['wormholes']
@@ -29,11 +32,11 @@ def in_wormhole(ctx: commands.Context):
 @bot.event
 async def on_ready():
 	print("Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
-	await wormcog.presence(bot, config['prefix'])
+	await wormcog.presence(bot)
 
 @bot.event
 async def on_error(event, *args, **kwargs):
-	if config['supress errors']:
+	if config['suppress errors']:
 		return
 
 	output = traceback.format_exc()
@@ -44,13 +47,15 @@ async def on_error(event, *args, **kwargs):
 ##
 
 @bot.command()
-async def reload(ctx: commands.Context):
+async def reload(ctx: commands.Context, cog: str):
 	"""Reload the wormhole"""
 	if ctx.author.id != config['admin id']:
 		return
 	try:
-		bot.reload_extension('cogs.wormhole')
-		await ctx.send('**Wormhole** cog reloaded.')
+		bot.reload_extension(f'cogs.{cog}')
+		m = f'**{cog}** reloaded.'
+		print(m)
+		await ctx.send(m)
 	except Exception:
 		await ctx.send('An error occured. RIP.')
 
@@ -58,8 +63,8 @@ async def reload(ctx: commands.Context):
 ## INIT
 ##
 
-for c in ['wormhole', 'edit']:
+for c in ['wormhole', 'admin']:
 	bot.load_extension(f'cogs.{c}')
-	print(f'Cog {c.upper()} loaded')
+	print(f'{c.upper()} loaded')
 
 bot.run(config.get('bot key'))
