@@ -19,7 +19,7 @@ async def on_ready():
 
 @bot.event
 async def on_error(event, *args, **kwargs):
-	if config['supress errors']:
+	if config['suppress errors']:
 		return
 
 	output = traceback.format_exc()
