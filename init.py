@@ -71,6 +71,7 @@ async def reload(ctx: commands.Context, cog: str):
 ## INIT
 ##
 
+bot.load_extension("core/errors.py")
 for c in ["wormhole", "admin"]:
     bot.load_extension(f"cogs.{c}")
     print(f"{c.upper()} loaded")
