@@ -27,23 +27,39 @@ class Admin(wormcog.Wormcog):
             # TODO Make Rubbergoddess-like help embed
             pass
 
-    @beam.command(name="open", aliases=["create", "add"])
-    async def beam_open(self, ctx: commands.Context, name: str):
-        """Open new beam"""
+    @beam.command(name="add", aliases=["create"])
+    async def beam_add(self, ctx: commands.Context, name: str):
+        """Add new beam"""
         try:
             repo_b.add(name)
-        except:
+            print(f"Beam {name} created")
+        except Exception as e:
             # TODO Already exists
+            raise
             return
 
-    @beam.command(name="close", aliases=["remove"])
+    @beam.command(name="open", aliases=["enable"])
+    async def beam_open(self, ctx: commands.Context, name: str):
+        """Open closed beam"""
+        try:
+            repo_b.set(name=name, active=True)
+            print(f"Beam {name} opened")
+        except Exception as e:
+            # TODO Error
+            print(f"Beam {name} could not be opened")
+            print(e)
+            return
+
+    @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx: commands.Context, name: str):
         """Close beam"""
         try:
             repo_b.set(name=name, active=False)
-            # TODO Disable all beam wormholes, if some
-        except:
+            print(f"Beam {name} closed")
+        except Exception as e:
             # TODO Error
+            print(f"Beam {name} could not be closed")
+            print(e)
             return
 
     @beam.command(name="edit", aliases=["alter"])
@@ -61,12 +77,14 @@ class Admin(wormcog.Wormcog):
                 repo_b.set(name, replace=value)
             else:
                 # TODO Wrong value
+                print(f"Beam {name} update error: {key} = {value}")
                 return
         elif key == "anonymity":
             if value in ["none", "guild", "full"]:
                 repo_b.set(name, anonymity=value)
             else:
                 # TODO Wrong value
+                print(f"Beam {name} update error: {key} = {value}")
                 return
         elif key == "timeout":
             try:
@@ -75,6 +93,7 @@ class Admin(wormcog.Wormcog):
                 repo_b.set(name, timeout=value)
             except:
                 # TODO Wrong value
+                print(f"Beam {name} update error: {key} = {value}")
                 return
         elif key == "file_limit":
             try:
@@ -82,10 +101,14 @@ class Admin(wormcog.Wormcog):
                 repo_b.set(name, file_limit=value)
             except:
                 # TODO Wrong value
+                print(f"Beam {name} update error: {key} = {value}")
                 return
         else:
             # TODO Wrong key
+            print(f"Beam {name} update error: invalid key {key}")
             return
+
+        print(f"Beam {name} updated: {key} = {value}")
 
     @beam.command(name="list")
     async def beam_list(self, ctx: commands.Context):
@@ -93,15 +116,17 @@ class Admin(wormcog.Wormcog):
         bs = repo_b.getAll()
 
         result = "NAME" + " " * 10 + "ACTIVE REPLACE ANONYMITY TIMEOUT FILELIMIT\n"
-        s = "{} {} {} {} {}"
+        s = "{} {} {} {} {}\n"
         for b in bs:
             result += s.format(
+                # fmt: off
                 b.name.ljust(13),
-                "yes   " if b.active else "no    ",
+                "yes   "  if b.active  else "no    ",
                 "yes    " if b.replace else "no     ",
                 b.anonymity.ljust(9),
                 str(b.timeout).ljust(7),
                 b.file_limit,
+                # fmt: on
             )
         await ctx.send(f"```{result}```")
 
@@ -113,12 +138,13 @@ class Admin(wormcog.Wormcog):
             # TODO Make Rubbergoddess-like help embed
             pass
 
-    @wormhole.command(name="open", aliases=["create", "add"])
-    async def wormhole_open(self, ctx: commands.Context, beam: str, channel=None):
+    @wormhole.command(name="add", aliases=["create"])
+    async def wormhole_add(self, ctx: commands.Context, beam: str, channel=None):
         """Open new wormhole"""
         beam = repo_b.get(beam)
         if not beam:
             # TODO No beam found
+            print(f"Beam {name} not found")
             return
 
         if channel:
@@ -126,9 +152,28 @@ class Admin(wormcog.Wormcog):
         else:
             channel = ctx.channel.id
         try:
-            repo_w.add(channel)
-        except:
+            repo_w.add(beam=beam.name, channel=channel)
+            print(f"Wormhole {channel} in beam {beam.name} created")
+        except Exception as e:
             # TODO Already exists
+            print(e)
+            print(f"Creating of wormhole {channel} in beam {beam.name} failed")
+            return
+
+    @wormhole.command(name="open")
+    async def wormhole_open(self, ctx: commands.Context, channel=None):
+        """Reopen existing wormhole"""
+        if channel:
+            channel = str2int(channel)
+        else:
+            channel = ctx.channel.id
+
+        try:
+            repo_w.set(name=name, active=True)
+            print(f"Wormhole {channel} opened")
+        except:
+            # TODO Error
+            print(f"Could not open wormhole {channel}")
             return
 
     @wormhole.command(name="close")
@@ -140,10 +185,12 @@ class Admin(wormcog.Wormcog):
             channel = ctx.channel.id
 
         try:
-            repo_b.set(name=name, active=False)
+            repo_w.set(name=name, active=False)
             # TODO Disable all beam wormholes, if there are registered
+            print(f"Wormhole {channel} closed")
         except:
             # TODO Error
+            print(f"Could not close wormhole {channel}")
             return
 
     @wormhole.command(name="remove", aliases=["delete"])
@@ -156,8 +203,10 @@ class Admin(wormcog.Wormcog):
 
         try:
             repo_b.delete(id=channel)
+            print(f"Wormhole {channel} removed from database")
         except:
             # TODO Error
+            print(f"Wormhole {channel} could not be removed from the database")
             return
 
     @wormhole.command(name="edit")
@@ -179,28 +228,34 @@ class Admin(wormcog.Wormcog):
                 repo_b.set(name, readonly=value)
             else:
                 # TODO Wrong value
+                print(f"Wormhole {channel} update error: {key} = {value}")
                 return
         elif key == "logo":
             repo_b.set(name, logo=value)
         else:
             # TODO Wrong key
+            print(f"Wormhole {channel} update error: invalid key {key}")
             return
+
+        print(f"Wormhole {channel} updated: {key} = {value}")
 
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx: commands.Context):
         """List all wormholes"""
         ws = repo_w.getAll()
 
-        result = "CHANNEL     GUILD    ACTIVE READONLY LOGO"
-        s = "{} {} {} {} {}"
+        result = "CHANNEL     GUILD    ACTIVE READONLY LOGO\n"
+        s = "{} {} {} {} {}\n"
         for w in ws:
             ch = self.bot.get_channel(w.channel)
             result += s.format(
+                # fmt: off
                 ch.name.rjust(12),
                 ch.guild.name.rjust(8),
-                "yes   " if w.active else "no    ",
+                "yes   " if w.active   else "no    ",
                 "yes   " if w.readonly else "no    ",
-                w.logo.ljust(30),
+                w.logo   if w.logo     else ''
+                # fmt: on
             )
         await ctx.send(f"```{result}```")
 
@@ -217,8 +272,10 @@ class Admin(wormcog.Wormcog):
         """Add user"""
         try:
             repo_u.add(member.id)
+            print(f"User {member} ({member.id}) added to database")
         except:
             # TODO Error
+            print(f"Could not add {member} ({member.id}) to the database")
             return
 
     @user.command(name="remove", aliases=["delete"])
@@ -226,18 +283,19 @@ class Admin(wormcog.Wormcog):
         """Remove user"""
         try:
             repo_u.delete(member.id)
+            print(f"User {member} ({member.id}) remove from the database")
         except:
             # TODO Error
+            print(f"Could not remove {member} ({member.id}) from the database")
             return
 
     @user.command(name="edit")
     async def user_edit(self, ctx: commands.Context, member: discord.Member, *args):
         """Edit user"""
-        if ctx.author.id != config["admin id"] and (
-            member.id == config["admin id"] or member.id in self.mod_ids
-        ):
-            await ctx.send("You do not have permission to alter the this account.")
-            return
+        if ctx.author.id != config["admin id"] and member.id in self.mod_ids:
+            return await ctx.send("You do not have permission to alter mod account.")
+        if ctx.author.id != config["admin id"] and member.id == config["admin id"]:
+            return await ctx.send("> You do not have permission to alter admin account")
 
         if len(args) != 2:
             # TODO Wrong argument count
@@ -247,24 +305,44 @@ class Admin(wormcog.Wormcog):
 
         if key == "nickname":
             value = None if value == "None" else value
-            repo_b.set(name, nickname=value)
+            repo_u.set(member.id, nickname=value)
         if key == "mod":
             if value in ["true", "false"]:
                 value = True if value == "true" else False
-                repo_b.set(name, replace=value)
+                repo_u.set(member.id, mod=value)
             else:
                 # TODO Wrong value
                 return
         if key == "readonly":
             if value in ["true", "false"]:
                 value = True if value == "true" else False
-                repo_b.set(name, readonly=value)
+                repo_u.set(member.id, readonly=value)
             else:
                 # TODO Wrong value
                 return
         else:
             # TODO Wrong key
             return
+
+    @user.command(name="list")
+    async def user_list(self, ctx):
+        """List all registered users"""
+        us = repo_u.getAll()
+
+        result = "USER" + " " * 15 + "NICKNAME       MOD RO  RESTRICTED\n"
+        s = "{} {} {} {} {}\n"
+        for u in us:
+            user = self.bot.get_user(u.id)
+            result += s.format(
+                # fmt: off
+                str(user).ljust(18)         if user         else str(u.id).rjust(18),
+                u.nickname.ljust(14)        if u.nickname   else ' '*14,
+                "yes"                       if u.mod        else "no ", 
+                "yes"                       if u.readonly   else "no ",
+                str(u.restricted).ljust(18) if u.restricted else '',
+                # fmt: on
+            )
+        await ctx.send(f"```{result}```")
 
     def str2int(s: str):
         try:
