@@ -115,20 +115,20 @@ class Admin(wormcog.Wormcog):
         """List all wormholes"""
         bs = repo_b.getAll()
 
+        embed = discord.Embed(title="Beam list")
+
         result = "NAME" + " " * 10 + "ACTIVE REPLACE ANONYMITY TIMEOUT FILELIMIT\n"
         s = "{} {} {} {} {}\n"
         for b in bs:
-            result += s.format(
-                # fmt: off
-                b.name.ljust(13),
-                "yes   "  if b.active  else "no    ",
-                "yes    " if b.replace else "no     ",
-                b.anonymity.ljust(9),
-                str(b.timeout).ljust(7),
-                b.file_limit,
-                # fmt: on
+            name = f"**{b.name}** ({'in' if not b.active else ''}active)"
+
+            value = (
+                f"Anonymity _{b.anonymity}_, "
+                + f"timeout _{b.timeout} s_, "
+                + f"file limit _{b.file_limit}_"
             )
-        await ctx.send(f"```{result}```")
+            embed.add_field(name=name, value=value, inline=False)
+        await ctx.send(embed=embed)
 
     @commands.check(init.is_admin)
     @commands.group(name="wormhole")
@@ -244,20 +244,17 @@ class Admin(wormcog.Wormcog):
         """List all wormholes"""
         ws = repo_w.getAll()
 
-        result = "CHANNEL     GUILD    ACTIVE READONLY LOGO\n"
-        s = "{} {} {} {} {}\n"
+        embed = discord.Embed(title="Wormhole list")
         for w in ws:
             ch = self.bot.get_channel(w.channel)
-            result += s.format(
-                # fmt: off
-                ch.name.rjust(12),
-                ch.guild.name.rjust(8),
-                "yes   " if w.active   else "no    ",
-                "yes   " if w.readonly else "no    ",
-                w.logo   if w.logo     else ''
-                # fmt: on
-            )
-        await ctx.send(f"```{result}```")
+            g = discord.utils.escape_markdown(ch.guild.name)
+            name = "\u200B"
+            value = f"**{ch.mention}** ({g}): "
+            value += f"{'in' if not w.active else ''}active"
+            value += ", read only" if w.readonly else ""
+            value += f", {w.logo}" if w.logo else ""
+            embed.add_field(name=name, value=value, inline=False)
+        await ctx.send(embed=embed)
 
     @commands.check(init.is_mod)
     @commands.group(name="user")
@@ -328,21 +325,19 @@ class Admin(wormcog.Wormcog):
     async def user_list(self, ctx):
         """List all registered users"""
         us = repo_u.getAll()
-
-        result = "USER" + " " * 15 + "NICKNAME       MOD RO  RESTRICTED\n"
-        s = "{} {} {} {} {}\n"
+        embed = discord.Embed(title="User list")
         for u in us:
             user = self.bot.get_user(u.id)
-            result += s.format(
-                # fmt: off
-                str(user).ljust(18)         if user         else str(u.id).rjust(18),
-                u.nickname.ljust(14)        if u.nickname   else ' '*14,
-                "yes"                       if u.mod        else "no ", 
-                "yes"                       if u.readonly   else "no ",
-                str(u.restricted).ljust(18) if u.restricted else '',
-                # fmt: on
-            )
-        await ctx.send(f"```{result}```")
+            name = "MOD" if u.mod else "\u200B"
+            value = f"{user.mention}"
+            value += f" {discord.utils.escape_markdown(u.nickname)}. " if u.nickname else ". "
+            value += "Read only. " if u.readonly else ""
+            if u.restricted:
+                ch = self.bot.get_channel(u.restricted)
+                g = discord.utils.escape_markdown(ch.guild.name)
+                value += f"restricted to {ch.mention} ({g})"
+            embed.add_field(name=name, value=value, inline=False)
+        await ctx.send(embed=embed)
 
     def str2int(s: str):
         try:
