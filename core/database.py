@@ -19,12 +19,14 @@ session = sessionmaker(database.db)()
 class Beam(database.base):
     __tablename__ = "beams"
 
-    name = Column(String, primary_key=True)
-    active = Column(Boolean, default=True)
-    replace = Column(Boolean, default=True)
-    anonymity = Column(String, default="none")
-    timeout = Column(Integer, default=60)
-    file_limit = Column(Integer, default=-1)
+    # fmt: off
+    name       = Column(String,  primary_key = True  )
+    active     = Column(Boolean, default     = True  )
+    replace    = Column(Boolean, default     = True  )
+    anonymity  = Column(String,  default     = "none")
+    timeout    = Column(Integer, default     = 60    )
+    file_limit = Column(Integer, default     = -1    )
+    # fmt: on
 
 
 class BeamRepository:
@@ -39,27 +41,31 @@ class BeamRepository:
         return session.query(Beam).all()
 
     def set(
+        # fmt: off
         self,
-        name: str,
-        active: bool = None,
-        replace: bool = None,
-        anonymity: str = None,
-        timeout: int = None,
-        file_limit: int = None,
+        name:       str,
+        active:     bool = None,
+        replace:    bool = None,
+        anonymity:  str  = None,
+        timeout:    int  = None,
+        file_limit: int  = None,
+        # fmt: on
     ):
-        s = self.get(name)
-        s_active = active if active else s.active
-        s_replace = replace if replace else s.replace
-        s_anonymity = anonymity if anonymity else s.anonymity
-        s_timeout = timeout if timeout else s.timeout
-        s_file_limit = file_limit if file_limit else s.file_limit
-        session.query(Settings).filter(Settings.name == name).update(
+        # fmt: off
+        b = self.get(name)
+        b_active     = active     if active     else b.active
+        b_replace    = replace    if replace    else b.replace
+        b_anonymity  = anonymity  if anonymity  else b.anonymity
+        b_timeout    = timeout    if timeout    else b.timeout
+        b_file_limit = file_limit if file_limit else b.file_limit
+        # fmt: on
+        session.query(Beam).filter(Beam.name == name).update(
             {
-                Settings.active: s_active,
-                Settings.replace: s_replace,
-                Settings.anonymity: s_anonymity,
-                Settings.timeout: s_timeout,
-                Settings.file_limit: s_file_limit,
+                Beam.active: s_active,
+                Beam.replace: s_replace,
+                Beam.anonymity: s_anonymity,
+                Beam.timeout: s_timeout,
+                Beam.file_limit: s_file_limit,
             }
         )
         session.commit()
@@ -71,19 +77,20 @@ class BeamRepository:
 class Wormhole(database.base):
     __tablename__ = "wormholes"
 
-    channel = Column(BigInteger, primary_key=True)
-    beam = Column(String, ForeignKey("beams.name", ondelete="CASCADE"))
-    active = Column(Boolean, default=True)
-    readonly = Column(Boolean, default=False)
-    logo = Column(String, default=None)
-    messages = Column(Integer, default=0)
+    # fmt: off
+    channel  = Column(BigInteger, primary_key = True)
+    beam     = Column(String,     ForeignKey("beams.name", ondelete="CASCADE"))
+    active   = Column(Boolean,    default = True )
+    readonly = Column(Boolean,    default = False)
+    logo     = Column(String,     default = None )
+    messages = Column(Integer,    default = 0    )
+    # fmt: on
 
 
 class WormholeRepository:
     def add(self, beam: str, channel: int):
         session.add(Wormhole(channel=channel, beam=beam))
         session.commit()
-        print("Added")
 
     def get(self, channel: int):
         return session.query(Wormhole).filter(Wormhole.channel == channel).one_or_none()
@@ -98,23 +105,23 @@ class WormholeRepository:
         return session.query(Wormhole).all()
 
     def set(
+        # fmt: off
         self,
-        channel: int,
-        active: bool = None,
-        logo: str = None,
+        channel:  int,
+        active:   bool = None,
+        logo:     str  = None,
         readonly: bool = None,
-        messages: int = None,
+        messages: int  = None,
+        # fmt: on
     ):
+        # fmt: off
         g = self.get(channel)
-        g_nickname = logo if logo else g.logo
+        g_logo     = logo     if logo     else g.logo
         g_readonly = readonly if readonly else g.readonly
         g_messages = messages if messages else g.messages
+        # fmt: on
         session.query(Wormhole).filter(Wormhole.channel == channel).update(
-            {
-                Wormhole.logo: g_nickname,
-                Wormhole.readonly: g_readonly,
-                Wormhole.messages: g_messages,
-            }
+            {Wormhole.logo: g_logo, Wormhole.readonly: g_readonly, Wormhole.messages: g_messages,}
         )
         session.commit()
 
@@ -125,12 +132,14 @@ class WormholeRepository:
 class User(database.base):
     __tablename__ = "users"
 
-    id = Column(BigInteger, primary_key=True)
-    nickname = Column(String, default=None)
-    mod = Column(Boolean, default=False)
-    restricted = Column(BigInteger, default=None)
-    readonly = Column(Boolean, default=False)
-    banned = Column(Boolean, default=False)
+    # fmt: off
+    id         = Column(BigInteger, primary_key=True)
+    nickname   = Column(String,     default=None )
+    mod        = Column(Boolean,    default=False)
+    restricted = Column(BigInteger, default=None )
+    readonly   = Column(Boolean,    default=False)
+    banned     = Column(Boolean,    default=False)
+    # fmt: on
 
 
 class UserRepository:
@@ -148,18 +157,22 @@ class UserRepository:
         return session.query(User).all()
 
     def set(
+        # fmt: off
         self,
-        id: int,
-        nickname: str = None,
-        mod: bool = None,
-        restricted: int = None,
-        readonly: bool = None,
+        id:         int,
+        nickname:   str  = None,
+        mod:        bool = None,
+        restricted: int  = None,
+        readonly:   bool = None,
+        # fmt: on
     ):
+        # fmt: off
         u = self.get(id)
-        u_nickname = nickname if nickname else u.nickname
-        u_mod = mod if mod else u.mod
+        u_nickname   = nickname   if nickname   else u.nickname
+        u_mod        = mod        if mod        else u.mod
         u_restricted = restricted if restricted else u.restricted
-        u_readonly = readonly if readonly else u.readonly
+        u_readonly   = readonly   if readonly   else u.readonly
+        # fmt: on
         session.query(User).filter(User.id == id).update(
             {User.nickname: g_nickname, User.mod: g_mod, User.readonly: g_readonly,}
         )
@@ -172,13 +185,15 @@ class UserRepository:
 class Log(database.base):
     __tablename__ = "log"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    # fmt: off
+    id        = Column(Integer,  primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, default=datetime.now)
-    author = Column(BigInteger)
-    table = Column(String)
-    key = Column(String)
-    old = Column(String)
-    new = Column(String)
+    author    = Column(BigInteger)
+    table     = Column(String    )
+    key       = Column(String    )
+    old       = Column(String    )
+    new       = Column(String    )
+    # fmt: on
 
 
 class LogRepository:
@@ -186,14 +201,16 @@ class LogRepository:
         session.add(Log(author=author, table=table, key=key, old=old, new=new))
 
     def get(
+        # fmt: off
         self,
         author: int = None,
-        table: str = None,
-        key: str = None,
-        old: str = None,
-        new: str = None,
+        table:  str = None,
+        key:    str = None,
+        old:    str = None,
+        new:    str = None,
         before: datetime = None,
-        after: datetime = None,
+        after:  datetime = None,
+        # fmt: on
     ):
         # TODO
         return
