@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 from core import wormcog
+from core.database import repo_u
 
 config = json.load(open("config.json"))
 bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
@@ -21,7 +22,7 @@ def is_admin(ctx: commands.Context):
 
 
 def is_mod(ctx: commands.Context):
-    return
+    return is_admin(ctx) or ctx.author.id in [u.id for u in repo_u.getMods()]
 
 
 def in_wormhole(ctx: commands.Context):
@@ -71,8 +72,7 @@ async def reload(ctx: commands.Context, cog: str):
 ## INIT
 ##
 
-bot.load_extension("core/errors.py")
-for c in ["wormhole", "admin"]:
+for c in ["errors", "wormhole", "admin"]:
     bot.load_extension(f"cogs.{c}")
     print(f"{c.upper()} loaded")
 

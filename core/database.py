@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from core.errors import DatabaseAddException, DatabaseUpdateException
+
 
 class Database:
     def __init__(self):
@@ -31,8 +33,12 @@ class Beam(database.base):
 
 class BeamRepository:
     def add(self, name: str):
-        session.add(Beam(name=name))
-        session.commit()
+        try:
+            session.add(Beam(name=name))
+            session.commit()
+        except:
+            session.rollback()
+            raise DatabaseAddException(f"{name} already exists", table="beam")
 
     def get(self, name: str):
         return session.query(Beam).filter(Beam.name == name).one_or_none()
@@ -53,22 +59,26 @@ class BeamRepository:
     ):
         # fmt: off
         b = self.get(name)
-        b_active     = active     if active     else b.active
-        b_replace    = replace    if replace    else b.replace
-        b_anonymity  = anonymity  if anonymity  else b.anonymity
-        b_timeout    = timeout    if timeout    else b.timeout
-        b_file_limit = file_limit if file_limit else b.file_limit
+        b_active     = active     if active     is not None else b.active
+        b_replace    = replace    if replace    is not None else b.replace
+        b_anonymity  = anonymity  if anonymity  is not None else b.anonymity
+        b_timeout    = timeout    if timeout    is not None else b.timeout
+        b_file_limit = file_limit if file_limit is not None else b.file_limit
         # fmt: on
-        session.query(Beam).filter(Beam.name == name).update(
-            {
-                Beam.active: s_active,
-                Beam.replace: s_replace,
-                Beam.anonymity: s_anonymity,
-                Beam.timeout: s_timeout,
-                Beam.file_limit: s_file_limit,
-            }
-        )
-        session.commit()
+        try:
+            session.query(Beam).filter(Beam.name == name).update(
+                {
+                    Beam.active: b_active,
+                    Beam.replace: b_replace,
+                    Beam.anonymity: b_anonymity,
+                    Beam.timeout: b_timeout,
+                    Beam.file_limit: b_file_limit,
+                }
+            )
+            session.commit()
+        except:
+            session.rollback()
+            raise DatabaseUpdateException("Update failed", table="beam")
 
     def remove(self, name: str):
         session.query(Beam).filter(Beam.name == name).delete()
@@ -89,8 +99,15 @@ class Wormhole(database.base):
 
 class WormholeRepository:
     def add(self, beam: str, channel: int):
-        session.add(Wormhole(channel=channel, beam=beam))
-        session.commit()
+        try:
+            session.add(Wormhole(channel=channel, beam=beam))
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(e)
+            raise DatabaseAddException(
+                f"Channel {channel} is already a wormhole", table="wormholes"
+            )
 
     def get(self, channel: int):
         return session.query(Wormhole).filter(Wormhole.channel == channel).one_or_none()
@@ -116,14 +133,22 @@ class WormholeRepository:
     ):
         # fmt: off
         g = self.get(channel)
-        g_logo     = logo     if logo     else g.logo
-        g_readonly = readonly if readonly else g.readonly
-        g_messages = messages if messages else g.messages
+        g_logo     = logo     if logo     is not None else g.logo
+        g_readonly = readonly if readonly is not None else g.readonly
+        g_messages = messages if messages is not None else g.messages
         # fmt: on
-        session.query(Wormhole).filter(Wormhole.channel == channel).update(
-            {Wormhole.logo: g_logo, Wormhole.readonly: g_readonly, Wormhole.messages: g_messages,}
-        )
-        session.commit()
+        try:
+            session.query(Wormhole).filter(Wormhole.channel == channel).update(
+                {
+                    Wormhole.logo: g_logo,
+                    Wormhole.readonly: g_readonly,
+                    Wormhole.messages: g_messages,
+                }
+            )
+            session.commit()
+        except:
+            session.rollback()
+            raise DatabaseUpdateException("{channel} update failed", table="wormholes")
 
     def remove(self, channel: int):
         session.query(Wormhole).filter(Wormhole.channel == channel).delete()
@@ -144,8 +169,12 @@ class User(database.base):
 
 class UserRepository:
     def add(self, id: int):
-        session.add(User(id=id))
-        session.commit()
+        try:
+            session.add(User(id=id))
+            session.commit()
+        except:
+            session.rollback()
+            raise DatabaseAddException(f"{id} already exists", table="users")
 
     def get(self, id: int):
         return session.query(User).filter(User.id == id).one_or_none()
@@ -168,15 +197,19 @@ class UserRepository:
     ):
         # fmt: off
         u = self.get(id)
-        u_nickname   = nickname   if nickname   else u.nickname
-        u_mod        = mod        if mod        else u.mod
-        u_restricted = restricted if restricted else u.restricted
-        u_readonly   = readonly   if readonly   else u.readonly
+        u_nickname   = nickname   if nickname   is not None else u.nickname
+        u_mod        = mod        if mod        is not None else u.mod
+        u_restricted = restricted if restricted is not None else u.restricted
+        u_readonly   = readonly   if readonly   is not None else u.readonly
         # fmt: on
-        session.query(User).filter(User.id == id).update(
-            {User.nickname: g_nickname, User.mod: g_mod, User.readonly: g_readonly,}
-        )
-        session.commit()
+        try:
+            session.query(User).filter(User.id == id).update(
+                {User.nickname: u_nickname, User.mod: u_mod, User.readonly: u_readonly,}
+            )
+            session.commit()
+        except:
+            session.rollback()
+            raise DatabaseUpdateException("Update of {id} failed", table="users")
 
     def delete(self, id: int):
         session.query(User).filter(User.id == id).delete()
