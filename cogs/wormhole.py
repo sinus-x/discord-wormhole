@@ -7,8 +7,7 @@ from io import BytesIO
 import discord
 from discord.ext import commands
 
-import init
-from core import wormcog
+from core import checks, wormcog
 from core.database import repo_b, repo_u, repo_w
 
 started = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
@@ -108,7 +107,7 @@ class Wormhole(wormcog.Wormcog):
             await m.delete()
         # TODO React with check, wait, and delete
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command(aliases=["stat", "stats"])
     async def info(self, ctx: commands.Context):
         """Display information about wormholes"""
@@ -151,7 +150,7 @@ class Wormhole(wormcog.Wormcog):
         await ctx.send(m, delete_after=self.removalDelay())
         await self.delete(ctx.message)
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command()
     async def help(self, ctx: commands.Context):
         """Display help"""
@@ -166,7 +165,7 @@ class Wormhole(wormcog.Wormcog):
         await ctx.send(embed=embed, delete_after=self.removalDelay())
         await self.delete(ctx.message)
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command(name="remove", aliases=["d", "delete", "r"])
     async def remove(self, ctx: commands.Context):
         """Delete last sent message"""
@@ -185,7 +184,7 @@ class Wormhole(wormcog.Wormcog):
                     await self.delete(m)
                 return
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command(name="edit", aliases=["e"])
     async def edit(self, ctx: commands.Context, *, text: str):
         """Edit last sent message
@@ -214,7 +213,7 @@ class Wormhole(wormcog.Wormcog):
                         pass
                 return
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command()
     async def settings(self, ctx: commands.Context):
         return
@@ -223,14 +222,14 @@ class Wormhole(wormcog.Wormcog):
         await ctx.send(m.format(config["anonymity"], config["message window"]))
         await self.delete(ctx.message)
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command()
     async def link(self, ctx: commands.Context):
         """Send a message with link to the bot"""
         await ctx.send("> **GitHub link:** https://github.com/sinus-x/discord-wormhole")
         await self.delete(ctx.message)
 
-    @commands.check(init.in_wormhole)
+    @commands.check(checks.in_wormhole)
     @commands.command()
     async def invite(self, ctx: commands.Context):
         """Invite the wormhole to your guild"""

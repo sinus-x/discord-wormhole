@@ -1,12 +1,14 @@
 import traceback
+import json
 import sys
 
 
 import discord
 from discord.ext import commands
 
-from init import config
 from core import wormcog
+
+config = json.load(open("config.json"))
 
 
 class Errors(wormcog.Wormcog):

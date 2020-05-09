@@ -1,33 +1,20 @@
 import json
+import logging
 import traceback
 from datetime import datetime
 
 import discord
 from discord.ext import commands
 
-from core import wormcog
+from core import wormcog, logger
 from core.database import repo_u
 
 config = json.load(open("config.json"))
 bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
 
-
-##
-## CHECKS
-##
-
-
-def is_admin(ctx: commands.Context):
-    return ctx.author.id == config["admin id"]
-
-
-def is_mod(ctx: commands.Context):
-    return is_admin(ctx) or ctx.author.id in [u.id for u in repo_u.getMods()]
-
-
-def in_wormhole(ctx: commands.Context):
-    return ctx.author.id == config["admin id"] or ctx.channel.id in config["wormholes"]
-
+log = logging.getLogger("root")
+log.setLevel(config["log level"])
+log.addHandler(logger.WormholeLogger())
 
 ##
 ## EVENTS
@@ -58,14 +45,15 @@ async def on_error(event, *args, **kwargs):
 async def reload(ctx: commands.Context, cog: str):
     """Reload the wormhole"""
     if ctx.author.id != config["admin id"]:
+        await ctx.send("You do not have permission to do this!")
         return
     try:
         bot.reload_extension(f"cogs.{cog}")
         m = f"**{cog.upper()}** reloaded."
         print(m)
         await ctx.send(m)
-    except Exception:
-        await ctx.send("An error occured. RIP.")
+    except Exception as e:
+        await ctx.send(f"An error occured: ```\n{e}```")
 
 
 ##

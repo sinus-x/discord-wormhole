@@ -1,15 +1,16 @@
 import asyncio
 import json
+import logging
 from datetime import datetime
 
 import discord
 from discord.ext import commands
 
-import init
-from core import wormcog
+from core import checks, wormcog
 from core.database import repo_b, repo_l, repo_u, repo_w
 
 config = json.load(open("config.json"))
+log = logging.getLogger("root")
 
 
 class Admin(wormcog.Wormcog):
@@ -19,7 +20,7 @@ class Admin(wormcog.Wormcog):
         super().__init__(bot)
         self.mod_ids = [m.id for m in repo_u.getMods()]
 
-    @commands.check(init.is_admin)
+    @commands.check(checks.is_admin)
     @commands.group(name="beam")
     async def beam(self, ctx: commands.Context):
         """Manage beams"""
@@ -129,7 +130,7 @@ class Admin(wormcog.Wormcog):
             embed.add_field(name=name, value=value, inline=False)
         await ctx.send(embed=embed)
 
-    @commands.check(init.is_admin)
+    @commands.check(checks.is_admin)
     @commands.group(name="wormhole")
     async def wormhole(self, ctx: commands.Context):
         """Manage wormholes"""
@@ -262,7 +263,7 @@ class Admin(wormcog.Wormcog):
             embed.add_field(name=name, value=value, inline=False)
         await ctx.send(embed=embed)
 
-    @commands.check(init.is_mod)
+    @commands.check(checks.is_mod)
     @commands.group(name="user")
     async def user(self, ctx: commands.Context):
         """Manage users"""
