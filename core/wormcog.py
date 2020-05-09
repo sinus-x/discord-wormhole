@@ -10,12 +10,12 @@ from core.database import repo_b, repo_w
 
 # TODO Add support to manage bot from DMs
 # TODO Download and re-upload images that fit under the limit - and delete them afterwards
-# TODO User aliases
-# TODO Use Black for formatting & pre-commit
-# TODO Add blacklisting - full and cooldown
 # TODO When the message is removed, remove it from sent[], too
-# TODO Add reactions
-# TODO Specify log channel for each beam
+
+# TODO logger
+# TODO Log channel for each beam
+# TODO Log level for log channel
+# TODO Log level for stdout/stderr
 
 config = json.load(open("config.json"))
 
