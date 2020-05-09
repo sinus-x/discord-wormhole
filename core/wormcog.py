@@ -102,7 +102,7 @@ class Wormcog(commands.Cog):
         except:
             return
 
-    def getBeamName(self, message: discord.Message):
-        dbw = repo_w.get(message.channel.id)
-        print(f"found dbw {dbw.channel} in beam {dbw.beam}")
-        return dbw.beam
+    def message2Beam(self, message: discord.Message):
+        wormhole = repo_w.get(message.channel.id)
+        beam = repo_b.get(wormhole.beam)
+        return beam

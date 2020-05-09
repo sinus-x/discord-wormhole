@@ -43,7 +43,7 @@ class Wormhole(wormcog.Wormcog):
             return
 
         # get current beam
-        beam = self.getBeamName(message)
+        beam = self.message2Beam(message).name
 
         # get wormhole channel objects
         if not beam in self.wormholes or len(self.wormholes[beam]) == 0:
@@ -190,8 +190,8 @@ class Wormhole(wormcog.Wormcog):
     async def edit(self, ctx: commands.Context, *, text: str):
         """Edit last sent message
 
-		text: A new text
-		"""
+        text: A new text
+        """
         if len(self.sent) == 0:
             return
 
@@ -248,19 +248,22 @@ class Wormhole(wormcog.Wormcog):
 
     def __getPrefix(self, message: discord.Message, firstline: bool = True):
         """Get prefix for message"""
-        dbw = repo_w.get(self.getBeamName(message))
-        dbb = repo_b.get(dbw.beam)
-        a = dbb.anonymity
+        beam = self.message2Beam(message)
+        print("[__getPrefix] Found beam " + beam.name)
+        wormhole = repo_w.get(message.channel.id)
+        print("[__getPrefix] Found wormhole {}".format(wormhole.channel))
+
+        a = beam.anonymity
         u = discord.utils.escape_markdown(message.author.name)
         g = str(message.guild.id)
-        logo = g in config["aliases"] and config["aliases"][g] is not None
-        if logo:
+        if wormhole.logo:
             if not firstline:
-                g = config["prefix fill"]
+                g = config["logo fill"]
             else:
-                g = config["aliases"][g]
+                g = wormhole.logo
         else:
             g = discord.utils.escape_markdown(message.guild.name) + ","
+            print("[__getPrefix] No logo found")
 
         if a == "none":
             return f"{g} **{u}**: "

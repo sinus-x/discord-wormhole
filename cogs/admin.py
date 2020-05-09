@@ -117,10 +117,9 @@ class Admin(wormcog.Wormcog):
 
         embed = discord.Embed(title="Beam list")
 
-        result = "NAME" + " " * 10 + "ACTIVE REPLACE ANONYMITY TIMEOUT FILELIMIT\n"
-        s = "{} {} {} {} {}\n"
         for b in bs:
-            name = f"**{b.name}** ({'in' if not b.active else ''}active)"
+            ws = len(repo_w.getByBeam(b.name))
+            name = f"**{b.name}** ({'in' if not b.active else ''}active) | {ws} wormholes"
 
             value = (
                 f"Anonymity _{b.anonymity}_, "
@@ -148,7 +147,7 @@ class Admin(wormcog.Wormcog):
             return
 
         if channel:
-            channel = str2int(channel)
+            channel = self.str2int(channel)
         else:
             channel = ctx.channel.id
         try:
@@ -163,13 +162,20 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="open")
     async def wormhole_open(self, ctx: commands.Context, channel=None):
         """Reopen existing wormhole"""
+        print(channel)
         if channel:
-            channel = str2int(channel)
+            channel = self.str2int(channel)
         else:
             channel = ctx.channel.id
 
+        w = repo_w.get(channel=channel)
+        if w is None:
+            print("Wormhole not found. Has it been added?")
+            await ctx.send("Wormhole not found. Has it been added?")
+            return
+
         try:
-            repo_w.set(name=name, active=True)
+            repo_w.set(channel=channel, active=True)
             print(f"Wormhole {channel} opened")
         except:
             # TODO Error
@@ -180,12 +186,12 @@ class Admin(wormcog.Wormcog):
     async def wormhole_close(self, ctx: commands.Context, channel=None):
         """Close wormhole"""
         if channel:
-            channel = str2int(channel)
+            channel = self.str2int(channel)
         else:
             channel = ctx.channel.id
 
         try:
-            repo_w.set(name=name, active=False)
+            repo_w.set(channel=channel, active=False)
             # TODO Disable all beam wormholes, if there are registered
             print(f"Wormhole {channel} closed")
         except:
@@ -197,7 +203,7 @@ class Admin(wormcog.Wormcog):
     async def wormhole_remove(self, ctx: commands.Context, channel=None):
         """Remove wormhole from database"""
         if channel:
-            channel = str2int(channel)
+            channel = self.str2int(channel)
         else:
             channel = ctx.channel.id
 
@@ -210,9 +216,9 @@ class Admin(wormcog.Wormcog):
             return
 
     @wormhole.command(name="edit")
-    async def wormhole_edit(self, ctx: commands.Context, channel=None):
+    async def wormhole_edit(self, ctx: commands.Context, channel: discord.TextChannel, *args):
         if channel:
-            channel = str2int(channel)
+            channel = self.str2int(channel)
         else:
             channel = ctx.channel.id
 
@@ -339,7 +345,7 @@ class Admin(wormcog.Wormcog):
             embed.add_field(name=name, value=value, inline=False)
         await ctx.send(embed=embed)
 
-    def str2int(s: str):
+    def str2int(self, s: str):
         try:
             return int(s)
         except:
