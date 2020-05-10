@@ -573,7 +573,7 @@ class Wormhole(commands.Cog):
 		# if the bot has 'Manage messages' permission, remove original
 		if config['replace original'] and not files:
 			try:
-				msgs[0] = message.author
+				msgs[0] = message.author.split('#')[0]
 				await message.delete()
 				announcement = True
 			except discord.Forbidden:
