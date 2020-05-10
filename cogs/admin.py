@@ -27,7 +27,7 @@ class Admin(wormcog.Wormcog):
     async def beam(self, ctx: commands.Context):
         """Manage beams"""
         if ctx.invoked_subcommand is None:
-            # TODO Make Rubbergoddess-like help embed
+            # TODO Help embed
             pass
 
     @beam.command(name="add", aliases=["create"])
@@ -35,10 +35,10 @@ class Admin(wormcog.Wormcog):
         """Add new beam"""
         try:
             repo_b.add(name)
-            await self.console.info(f"Beam {name} created")
-            await self.embed.info(ctx, f"Beam **{name}** created")
+            await self.console.info(f"Beam {name} created and opened")
+            await self.embed.info(ctx, f"Beam **{name}** created and opened")
         except Exception as e:
-            await self.console.error(f"Beam **{name}** could not be created", e)
+            await self.console.error(f"Beam {name} could not be created", e)
             await self.embed.error(ctx, f"Beam **{name}** could not be created", e)
             return
 
@@ -47,11 +47,11 @@ class Admin(wormcog.Wormcog):
         """Open closed beam"""
         try:
             repo_b.set(name=name, active=True)
-            print(f"Beam {name} opened")
+            await self.console.info(f"Beam {name} opened")
+            await self.embed.info(ctx, f"Beam **{name}** opened")
         except Exception as e:
-            # TODO Error
-            print(f"Beam {name} could not be opened")
-            print(e)
+            await self.console.error(f"Beam {name} could not be opened", e)
+            await self.embed.error(ctx, f"Beam **{name}** could not be opened", e)
             return
 
     @beam.command(name="close", aliases=["disable"])
@@ -59,11 +59,11 @@ class Admin(wormcog.Wormcog):
         """Close beam"""
         try:
             repo_b.set(name=name, active=False)
-            print(f"Beam {name} closed")
+            await self.console.info(f"Beam {name} closed")
+            await self.embed.info(ctx, f"Beam **{name}** closed")
         except Exception as e:
-            # TODO Error
-            print(f"Beam {name} could not be closed")
-            print(e)
+            await self.console.error(f"Beam {name} could not be closed", e)
+            await self.embed.error(ctx, f"Beam **{name}** could not be closed", e)
             return
 
     @beam.command(name="edit", aliases=["alter"])
@@ -80,39 +80,39 @@ class Admin(wormcog.Wormcog):
                 value = True if value == "true" else False
                 repo_b.set(name, replace=value)
             else:
-                # TODO Wrong value
-                print(f"Beam {name} update error: {key} = {value}")
+                await self.console.error(f"Beam {name} update error: {key} = {value}")
+                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}")
                 return
         elif key == "anonymity":
             if value in ["none", "guild", "full"]:
                 repo_b.set(name, anonymity=value)
             else:
-                # TODO Wrong value
-                print(f"Beam {name} update error: {key} = {value}")
+                await self.console.error(f"Beam {name} update error: {key} = {value}")
+                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}")
                 return
         elif key == "timeout":
             try:
                 value = int(value)
                 value = 0 if value < 0 else value
-                repo_b.set(name, timeout=value)
-            except:
-                # TODO Wrong value
-                print(f"Beam {name} update error: {key} = {value}")
+            except Exception as e:
+                await self.console.error(f"Beam {name} update error: {key} = {value}", e)
+                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}", e)
                 return
         elif key == "file_limit":
             try:
                 value = int(value)
                 repo_b.set(name, file_limit=value)
-            except:
-                # TODO Wrong value
-                print(f"Beam {name} update error: {key} = {value}")
+            except Exception as e:
+                await self.console.error(f"Beam {name} update error: {key} = {value}", e)
+                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}", e)
                 return
         else:
-            # TODO Wrong key
-            print(f"Beam {name} update error: invalid key {key}")
+            await self.console.error(f"Beam {name} update error: invalid key {key}")
+            await self.embed.error(ctx, f"Beam **{name}** update error: invalid key {key}")
             return
 
-        print(f"Beam {name} updated: {key} = {value}")
+        await self.console.info(f"Beam {name} updated: {key} = {value}")
+        await self.embed.info(ctx, f"Beam **{name}** updated: {key} = {value}")
 
     @beam.command(name="list")
     async def beam_list(self, ctx: commands.Context):
@@ -146,8 +146,8 @@ class Admin(wormcog.Wormcog):
         """Open new wormhole"""
         beam = repo_b.get(beam)
         if not beam:
-            # TODO No beam found
-            print(f"Beam {name} not found")
+            await self.console.error(f"Beam {name} not found")
+            await self.embed.error(ctx, f"Beam **{name}** not found")
             return
 
         if channel:
@@ -156,11 +156,11 @@ class Admin(wormcog.Wormcog):
             channel = ctx.channel.id
         try:
             repo_w.add(beam=beam.name, channel=channel)
-            print(f"Wormhole {channel} in beam {beam.name} created")
+            await self.console.info(f"Wormhole (ID {channel}) added to beam {beam.name}")
+            #TODO Send to all wormholes in beam
         except Exception as e:
-            # TODO Already exists
-            print(e)
-            print(f"Creating of wormhole {channel} in beam {beam.name} failed")
+            await self.console.error(f"This channel is already registered as a wormhole", e)
+            await self.embed.error(ctx, f"This channel is already registered as a wormhole", e)
             return
 
     @wormhole.command(name="open")
@@ -174,16 +174,17 @@ class Admin(wormcog.Wormcog):
 
         w = repo_w.get(channel=channel)
         if w is None:
-            print("Wormhole not found. Has it been added?")
-            await ctx.send("Wormhole not found. Has it been added?")
+            await self.console.error(f"No wormhole found. Has it been added?")
+            await self.embed.error(ctx, f"No wormhole found. Has it been added?")
             return
 
         try:
             repo_w.set(channel=channel, active=True)
-            print(f"Wormhole {channel} opened")
-        except:
-            # TODO Error
-            print(f"Could not open wormhole {channel}")
+            await self.console.info(f"Wormhole (ID {channel}) opened")
+            #TODO Send to all wormholes in beam
+        except Exception as e:
+            await self.console.error(f"Wormhole could not be opened", e)
+            await self.embed.error(ctx, f"Wormhole could not be opened", e)
             return
 
     @wormhole.command(name="close")
@@ -197,10 +198,11 @@ class Admin(wormcog.Wormcog):
         try:
             repo_w.set(channel=channel, active=False)
             # TODO Disable all beam wormholes, if there are registered
-            print(f"Wormhole {channel} closed")
-        except:
-            # TODO Error
-            print(f"Could not close wormhole {channel}")
+            await self.console.info(f"Wormhole (ID {channel}) closed")
+            #TODO Send to all wormholes in beam
+        except Exception as e:
+            await self.console.error(f"Wormhole could not be closed", e)
+            await self.embed.error(ctx, f"Wormhole could not be closed", e)
             return
 
     @wormhole.command(name="remove", aliases=["delete"])
@@ -213,10 +215,11 @@ class Admin(wormcog.Wormcog):
 
         try:
             repo_b.delete(id=channel)
-            print(f"Wormhole {channel} removed from database")
-        except:
-            # TODO Error
-            print(f"Wormhole {channel} could not be removed from the database")
+            await self.console.info(f"Wormhole (ID {channel}) removed")
+            #TODO Send to all wormholes in beam IF IT WAS OPENED
+        except Exception as e:
+            await self.console.error(f"Wormhole could not be removed", e)
+            await self.embed.error(ctx, f"Wormhole could not be removed", e)
             return
 
     @wormhole.command(name="edit")
@@ -227,7 +230,7 @@ class Admin(wormcog.Wormcog):
             channel = ctx.channel.id
 
         if len(args) != 2:
-            # TODO Wrong argument count
+            await self.embed.error(ctx, f"Wormhole update error: Wrong argument count")
             return
         key = args[0]
         value = args[1]
@@ -237,17 +240,20 @@ class Admin(wormcog.Wormcog):
                 value = True if value == "true" else False
                 repo_b.set(name, readonly=value)
             else:
-                # TODO Wrong value
-                print(f"Wormhole {channel} update error: {key} = {value}")
+                await self.console.error(f"Wormhole update error: {key} = {value}")
+                await self.embed.error(ctx, f"Wormhole update error: {key} = {value}")
                 return
         elif key == "logo":
             repo_b.set(name, logo=value)
         else:
-            # TODO Wrong key
-            print(f"Wormhole {channel} update error: invalid key {key}")
+            await self.console.error(f"Wormhole update error: invalid key {key}")
+            await self.embed.error(ctx, f"Wormhole update error: invalid key {key}")
             return
 
-        print(f"Wormhole {channel} updated: {key} = {value}")
+        await self.console.info(f"Wormhole {name} updated: {key} = {value}")
+        await self.embed.info(ctx, f"Wormhole **{name}** updated: {key} = {value}")
+
+        #TODO Should this event be sent to the wormhole? It probably should
 
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx: commands.Context):
