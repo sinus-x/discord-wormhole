@@ -6,7 +6,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from core import checks, wormcog
+from core import checks, output, wormcog
 from core.database import repo_b, repo_l, repo_u, repo_w
 
 config = json.load(open("config.json"))
@@ -19,6 +19,8 @@ class Admin(wormcog.Wormcog):
     def __init__(self, bot):
         super().__init__(bot)
         self.mod_ids = [m.id for m in repo_u.getMods()]
+        self.console = output.Console(bot)
+        self.embed   = output.Embed(bot)
 
     @commands.check(checks.is_admin)
     @commands.group(name="beam")
@@ -33,10 +35,11 @@ class Admin(wormcog.Wormcog):
         """Add new beam"""
         try:
             repo_b.add(name)
-            print(f"Beam {name} created")
+            await self.console.info(f"Beam {name} created")
+            await self.embed.info(ctx, f"Beam **{name}** created")
         except Exception as e:
-            # TODO Already exists
-            raise
+            await self.console.error(f"Beam **{name}** could not be created", e)
+            await self.embed.error(ctx, f"Beam **{name}** could not be created", e)
             return
 
     @beam.command(name="open", aliases=["enable"])

@@ -6,24 +6,37 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from core import wormcog, logger
+from core import wormcog, output
 from core.database import repo_u
 
 config = json.load(open("config.json"))
 bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
-
-log = logging.getLogger("root")
-log.setLevel(config["log level"])
-log.addHandler(logger.WormholeLogger())
 
 ##
 ## EVENTS
 ##
 
 
+started = False
+
+
 @bot.event
 async def on_ready():
-    print("Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+    global started
+    if started:
+        return
+
+    started = True
+
+    m = "INFO: Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+    print(m)
+
+    # do not spam logging channel while testing
+    level = getattr(logging, config["log level"])
+    if level >= logging.INFO:
+        ch = output.getLogChannel(bot)
+        await ch.send(f"```{m}```")
+
     await wormcog.presence(bot)
 
 
@@ -32,8 +45,8 @@ async def on_error(event, *args, **kwargs):
     if config["suppress errors"]:
         return
 
-    output = traceback.format_exc()
-    print(output)
+    tb = traceback.format_exc()
+    print(tb)
 
 
 ##

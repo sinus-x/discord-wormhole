@@ -13,10 +13,6 @@ from core.database import repo_b, repo_w
 # TODO Download and re-upload images that fit under the limit - and delete them afterwards
 # TODO When the message is removed, remove it from sent[], too
 
-# TODO logger
-# TODO Log channel for each beam
-# TODO Log level for log channel
-# TODO Log level for stdout/stderr
 
 config = json.load(open("config.json"))
 
