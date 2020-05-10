@@ -9,6 +9,16 @@ from discord.ext import commands
 config = json.load(open('config.json'))
 bot = commands.Bot(command_prefix=config['prefix'], help_command=None)
 
+
+"""
+NOTE:
+
+This master branch is frozen. Only bugfixes will be merged.
+
+Development is focused on `split` branch, which is for now considered unstable
+and may change in following weeks.
+"""
+
 @bot.event
 async def on_ready():
 	print("Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
