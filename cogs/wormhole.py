@@ -248,9 +248,7 @@ class Wormhole(wormcog.Wormcog):
     def __getPrefix(self, message: discord.Message, firstline: bool = True):
         """Get prefix for message"""
         beam = self.message2Beam(message)
-        print("[__getPrefix] Found beam " + beam.name)
         wormhole = repo_w.get(message.channel.id)
-        print("[__getPrefix] Found wormhole {}".format(wormhole.channel))
 
         a = beam.anonymity
         u = discord.utils.escape_markdown(message.author.name)
@@ -262,7 +260,6 @@ class Wormhole(wormcog.Wormcog):
                 g = wormhole.logo
         else:
             g = discord.utils.escape_markdown(message.guild.name) + ","
-            print("[__getPrefix] No logo found")
 
         if a == "none":
             return f"{g} **{u}**: "
@@ -277,14 +274,16 @@ class Wormhole(wormcog.Wormcog):
     def __process(self, message: discord.Message):
         """Escape mentions and apply anonymity"""
         content = message.content
-        # FIXME This is not pretty at all
 
+        # FIXME This is not pretty at all
         users = re.findall(r"<@![0-9]+>", content)
         roles = re.findall(r"<@&[0-9]+>", content)
         chnls = re.findall(r"<#[0-9]+>", content)
 
         for u in users:
             try:
+                #TODO Can we use fetch_user, or would it be API intensive?
+                #     Should it cache all users that sent something, and clean it every x hours?
                 user = str(self.bot.get_user(int(u.replace("<@!", "").replace(">", ""))))
             except:
                 user = "unknown-user"
@@ -304,22 +303,14 @@ class Wormhole(wormcog.Wormcog):
             content = content.replace(c, channel)
 
         # line preprocessor (code)
-        content_ = content.split("\n")
         if "```" in content:
-            content = []
-            for line in content_:
-                # do not allow code block starting on text line
-                line.replace(" ```", "\n```")
-                # do not alow text on code block end
-                line.replace("``` ", "```\n")
-                line = line.split("\n")
-                for l in line:
-                    content.append(l)
-        else:
-            content = content_
+            backticks = re.findall(r"```[a-z0-9]*", content)
+            for b in backticks:
+                content = content.replace(f" {b}", f"\n{b}", 1)
+                content = content.replace(f"{b} ", f"{b}\n", 1)
 
         # apply prefixes
-        content_ = content.copy()
+        content_ = content.split("\n")
         content = ""
         p = self.__getPrefix(message)
         code = False
@@ -337,12 +328,10 @@ class Wormhole(wormcog.Wormcog):
                 content += line + "\n"
             else:
                 content += p + line + "\n"
-            if line.endswith("```") and code and len(line) > 3:
+            if line.endswith("```") and code:
                 code = False
-        if code:
-            content += "```"
 
-        return content.replace("@", "@_").replace("&", "&_")
+        return content.replace("@", "@_")
 
     def __saveStats(self):
         """Save message statistics to the database"""
