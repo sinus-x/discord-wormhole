@@ -1,3 +1,8 @@
+# binaries
 __pycache__
+# config
 config.json
-data.db
+# database
+*.db
+# sourcetrail
+*.srctrl*

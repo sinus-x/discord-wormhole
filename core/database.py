@@ -11,7 +11,7 @@ from core.errors import DatabaseAddException, DatabaseUpdateException
 class Database:
     def __init__(self):
         self.base = declarative_base()
-        self.db = create_engine("sqlite:///data.db")
+        self.db = create_engine("sqlite:///wormhole.db")
 
 
 database = Database()
@@ -132,17 +132,17 @@ class WormholeRepository:
         # fmt: on
     ):
         # fmt: off
-        g = self.get(channel)
-        g_logo     = logo     if logo     is not None else g.logo
-        g_readonly = readonly if readonly is not None else g.readonly
-        g_messages = messages if messages is not None else g.messages
+        ch = self.get(channel)
+        ch_logo     = logo     if logo     is not None else ch.logo
+        ch_readonly = readonly if readonly is not None else ch.readonly
+        ch_messages = messages if messages is not None else ch.messages
         # fmt: on
         try:
             session.query(Wormhole).filter(Wormhole.channel == channel).update(
                 {
-                    Wormhole.logo: g_logo,
-                    Wormhole.readonly: g_readonly,
-                    Wormhole.messages: g_messages,
+                    Wormhole.logo:     ch_logo,
+                    Wormhole.readonly: ch_readonly,
+                    Wormhole.messages: ch_messages,
                 }
             )
             session.commit()

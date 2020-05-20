@@ -166,7 +166,6 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="open")
     async def wormhole_open(self, ctx: commands.Context, channel=None):
         """Reopen existing wormhole"""
-        print(channel)
         if channel:
             channel = self.str2int(channel)
         else:
@@ -214,7 +213,7 @@ class Admin(wormcog.Wormcog):
             channel = ctx.channel.id
 
         try:
-            repo_b.delete(id=channel)
+            repo_w.delete(id=channel)
             await self.console.info(f"Wormhole (ID {channel}) removed")
             #TODO Send to all wormholes in beam IF IT WAS OPENED
         except Exception as e:
@@ -238,13 +237,13 @@ class Admin(wormcog.Wormcog):
         if key == "readonly":
             if value in ["true", "false"]:
                 value = True if value == "true" else False
-                repo_b.set(name, readonly=value)
+                repo_w.set(channel, readonly=value)
             else:
                 await self.console.error(f"Wormhole update error: {key} = {value}")
                 await self.embed.error(ctx, f"Wormhole update error: {key} = {value}")
                 return
         elif key == "logo":
-            repo_b.set(name, logo=value)
+            repo_w.set(channel, logo=value)
         else:
             await self.console.error(f"Wormhole update error: invalid key {key}")
             await self.embed.error(ctx, f"Wormhole update error: invalid key {key}")

@@ -59,7 +59,7 @@ class Errors(wormcog.Wormcog):
             return await self.send(ctx, error, "No such cog")
 
         # print the rest
-        print(f"Ignoring exception in command {ctx.command}", file=sys.stderr)
+        print(f"Unhandled Wormhole exception: {config['prefix']}{ctx.command}", file=sys.stderr)
         if config["suppress errors"]:
             return
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
