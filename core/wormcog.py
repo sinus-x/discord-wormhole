@@ -6,10 +6,9 @@ import git
 import discord
 from discord.ext import commands
 
-from core import database
+from core import database, output
 from core.database import repo_b, repo_w
 
-# TODO Add support to manage bot from DMs
 # TODO Download and re-upload images that fit under the limit - and delete them afterwards
 # TODO When the message is removed, remove it from sent[], too
 
@@ -20,7 +19,7 @@ config = json.load(open("config.json"))
 async def presence(bot: commands.Bot):
     git_repo = git.Repo(search_parent_directories=True)
     git_hash = git_repo.head.object.hexsha[:7]
-    s = f"{config['prefix']}wormhole | " + git_hash
+    s = f"{config['prefix']}help | " + git_hash
     await bot.change_presence(activity=discord.Game(s))
 
 
@@ -34,6 +33,10 @@ class Wormcog(commands.Cog):
 
         # sent messages still held in memory
         self.sent = []
+
+        # bot management logging
+        self.console = output.Console(bot)
+        self.embed = output.Embed(bot)
 
     ##
     ## FUNCTIONS
@@ -53,16 +56,16 @@ class Wormcog(commands.Cog):
     async def send(
         self,
         message: discord.Message,
-        beam: database.Beam,
+        beam: str,
         text: str,
         files: list = None,
         announcement: bool = False,
     ):
         """Distribute the message"""
         msgs = [message]
-        # if the bot has 'Manage messages' permission, remove the original
-        if beam is not None:
+        if not isinstance(beam, str):
             beam = database.repo_b.get(database.repo_w.get(message.channel.id).beam)
+        # if the bot has 'Manage messages' permission, remove the original
         if beam and beam.replace and not files:
             try:
                 msgs[0] = message.author
@@ -79,6 +82,8 @@ class Wormcog(commands.Cog):
         if beam is None:
             ws = self.wormholes.values()
         else:
+            if not beam.name in self.wormholes:
+                self.reconnect(beam.name)
             ws = self.wormholes[beam.name]
         for w in ws:
             if w.id == message.channel.id and not announcement:

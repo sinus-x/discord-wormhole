@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 from datetime import datetime
 
 import discord
@@ -14,10 +15,11 @@ def getLogChannel(bot: discord.ext.commands.Bot):
 def getTimestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+
 class Embed:
     def __init__(self, bot: discord.ext.commands.Bot = None):
         self.bot = bot
-        self.level = getattr(logging, config['log level'].upper())
+        self.level = getattr(logging, config["log level"].upper())
 
     def bot(self, bot: discord.ext.commands.Bot):
         self.bot = bot
@@ -31,40 +33,45 @@ class Embed:
     async def warning(self, ctx, msg):
         await ctx.send(embed=self._getEmbed(ctx, "Warning", msg), delete_after=120)
 
-    async def error(self, ctx, msg, error = None):
+    async def error(self, ctx, msg, error=None):
         embed = self._getEmbed(ctx, "Error", msg)
 
+        # TODO Use error description, not whole traceback
         if error:
-            tr = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-            if len(tr) > 2000:
-                tr = tr[-2000:]
-                embed.set_footer(text=f"```{tr}```")
+            tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            if len(tr) > 1900:
+                tr = tr[-1900:]
+                embed.set_footer(text=f"{str(error)}\n{tr}")
 
         await ctx.send(embed=embed, delete_after=120)
 
-    async def critical(self, ctx, msg, error = None):
+    async def critical(self, ctx, msg, error=None):
         embed = self._getEmbed(ctx, "Critical", msg)
 
+        # TODO Use error description, not whole traceback
         if error:
-            tr = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-            if len(tr) > 2000:
-                tr = tr[-2000:]
-                embed.set_footer(text=f"```{tr}```")
+            tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            if len(tr) > 1900:
+                tr = tr[-1900:]
+                embed.set_footer(text=f"{str(error)}\n{tr}")
 
         await ctx.send(embed=embed, delete_after=120)
 
-    def _getEmbed(self, ctx, level, msg, ):
+    def _getEmbed(
+        self, ctx, level, msg,
+    ):
         colors = {
-            "DEBUG": 0xefe19b,
-            "INFO": 0x91c42b,
-            "WARINNG": 0xce991e,
-            "ERROR": 0xef4a13,
-            "CRITICAL": 0xfc0509,
+            "DEBUG": 0xEFE19B,
+            "INFO": 0x91C42B,
+            "WARINNG": 0xCE991E,
+            "ERROR": 0xEF4A13,
+            "CRITICAL": 0xFC0509,
         }
         embed = discord.Embed(title="Wormhole output", color=colors[level.upper()])
         embed.add_field(name=level, value=msg)
         embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
         return embed
+
 
 class Console:
     def __init__(self, bot: discord.ext.commands.Bot = None):
@@ -77,34 +84,37 @@ class Console:
         self.bot = bot
         self.channel = getLogChannel(self.bot)
 
-    async def debug(self, msg, *args, **kwargs):
+    async def debug(self, msg, error=None, *args, **kwargs):
         if self.level <= logging.DEBUG:
             print(f"{getTimestamp()} DEBUG: {msg}")
-            await self._send(msg, *args, **kwargs)
+            await self._send(msg, error, *args, **kwargs)
 
-    async def info(self, msg, *args, **kwargs):
+    async def info(self, msg, error=None, *args, **kwargs):
         if self.level <= logging.INFO:
             print(f"{getTimestamp()} INFO: {msg}")
-            await self._send(msg, *args, **kwargs)
+            await self._send(msg, error, *args, **kwargs)
 
-    async def warning(self, msg, *args, **kwargs):
+    async def warning(self, msg, error=None, *args, **kwargs):
         if self.level <= logging.WARNING:
             print(f"{getTimestamp()} WARNING: {msg}")
-            await self._send(msg, *args, **kwargs)
+            await self._send(msg, error, *args, **kwargs)
 
-    async def error(self, msg, *args, **kwargs):
+    async def error(self, msg, error=None, *args, **kwargs):
         if self.level <= logging.ERROR:
             print(f"{getTimestamp()} ERROR: {msg}")
-            await self._send(msg, *args, **kwargs)
+            await self._send(msg, error, *args, **kwargs)
 
-    async def critical(self, msg, *args, **kwargs):
+    async def critical(self, msg, error=None, *args, **kwargs):
         if self.level <= logging.CRITICAL:
             print(f"{getTimestamp()} CRITICAL: {msg}")
-            await self._send(msg, *args, **kwargs)
+            await self._send(msg, error, *args, **kwargs)
 
-    async def _send(self, msg, *args, **kwargs):
+    async def _send(self, msg, error, *args, **kwargs):
         if self.channel is None:
-                self.channel = getLogChannel(self.bot)
+            self.channel = getLogChannel(self.bot)
 
-        await self.channel.send(f"```\n{getTimestamp()} {msg}\n```")
+        m = f"{getTimestamp()} {msg}"
+        if error is not None:
+            m += f"\n{str(error)}"
 
+        await self.channel.send(f"```\n{m}\n```")
