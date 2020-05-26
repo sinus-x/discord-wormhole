@@ -10,7 +10,7 @@ from core.database import repo_b, repo_u, repo_w
 
 config = json.load(open("config.json"))
 
-# TODO Fix those awful error outputs (e.g. wormhole_edit)
+# TODO Clear markdown on save, not on every print
 
 
 class Admin(wormcog.Wormcog):
@@ -40,9 +40,7 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f'Beam "{name}" created and opened')
             await self.embed.info(ctx, f"Beam **{self.e(name)}** created and opened")
         except errors.DatabaseException as e:
-            await self.console.error(f'Beam "{name}" could not be created', e)
-            await self.embed.error(ctx, f"Beam **{self.e(name)}** could not be created", e)
-            return
+            raise commands.BadArgument(f"Error creating the beam `{self.e(name)}`", e)
 
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx: commands.Context, name: str):
@@ -51,32 +49,22 @@ class Admin(wormcog.Wormcog):
             repo_b.set(name=name, active=True)
             await self.console.info(f'Beam "{name}" opened')
             await self.send(
-                ctx.message,
-                name,
-                "> The current wormhole beam has been opened.",
-                announcement=True,
+                ctx.message, name, "> The current wormhole beam has been opened.", system=True,
             )
         except Exception as e:
-            await self.console.error(f'Beam "{name}" could not be opened', e)
-            await self.embed.error(ctx, f"Beam **{name}** could not be opened", e)
-            return
+            raise commands.BadArgument(f"Error opening the beam `{self.e(name)}`", e)
 
     @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx: commands.Context, name: str):
         """Close beam"""
         try:
+            await self.send(
+                ctx.message, name, "> The current wormhole beam has been closed.", system=True,
+            )
             repo_b.set(name=name, active=False)
             await self.console.info(f'Beam "{name}" closed')
-            await self.send(
-                ctx.message,
-                name,
-                "> The current wormhole beam has been closed.",
-                announcement=True,
-            )
         except Exception as e:
-            await self.console.error(f'Beam "{name}" could not be closed', e)
-            await self.embed.error(ctx, f"Beam **{self.e(name)}** could not be closed", e)
-            return
+            raise commands.BadArgument(f"Error closing the beam `{self.e(name)}`", e)
 
     @beam.command(name="edit", aliases=["alter"])
     async def beam_edit(self, ctx: commands.Context, name: str, *args):
@@ -98,31 +86,23 @@ class Admin(wormcog.Wormcog):
                 value = True if value == "true" else False
                 repo_b.set(name, replace=value)
             else:
-                await self.console.error(f"Beam {name} update error: {key} = {value}")
-                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}")
-                return
+                raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
         elif key == "anonymity":
             if value in ["none", "guild", "full"]:
                 repo_b.set(name, anonymity=value)
             else:
-                await self.console.error(f"Beam {name} update error: {key} = {value}")
-                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}")
-                return
+                raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
         elif key == "timeout":
             try:
                 value = int(value)
                 value = 0 if value < 0 else value
             except Exception as e:
-                await self.console.error(f"Beam {name} update error: {key} = {value}", e)
-                await self.embed.error(ctx, f"Beam **{name}** update error: {key} = {value}", e)
-                return
+                raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
         else:
-            await self.console.error(f"Beam {name} update error: invalid key {key}")
-            await self.embed.error(ctx, f"Beam **{name}** update error: invalid key {key}")
-            return
+            raise commands.BadArgument(f"Invalid key `{key}`")
 
+        await self.send(ctx, f"Beam **{name}** updated: {key} = {value}", system=True)
         await self.console.info(f"Beam {name} updated: {key} = {value}")
-        await self.embed.info(ctx, f"Beam **{name}** updated: {key} = {value}")
 
     @beam.command(name="list")
     async def beam_list(self, ctx: commands.Context):
@@ -144,7 +124,6 @@ class Admin(wormcog.Wormcog):
     async def wormhole(self, ctx: commands.Context):
         """Manage wormholes"""
         if ctx.invoked_subcommand is None:
-            # TODO Make Rubbergoddess-like help embed
             pass
 
     @wormhole.command(name="add", aliases=["create"])
@@ -154,9 +133,7 @@ class Admin(wormcog.Wormcog):
         """Open new wormhole"""
         beam = repo_b.get(beam)
         if not beam:
-            await self.console.error(f'Beam "{name}" not found')
-            await self.embed.error(ctx, f"Beam **{name}** not found")
-            return
+            raise commands.BadArgument("No such beam")
 
         if channel is None:
             channel = ctx.channel
@@ -170,16 +147,12 @@ class Admin(wormcog.Wormcog):
                 ctx.message,
                 beam.name,
                 f"> New wormhole opened: **{self.e(channel.name)}** in **{self.e(channel.guild.name)}**.",
-                announcement=True,
+                system=True,
             )
         except errors.DatabaseException as e:
-            await self.console.error(f"Channel {channel.id} is already registered as a wormhole", e)
-            await self.embed.error(
-                ctx, f"Channel **{channel.id}** is already registered as a wormhole", e
-            )
-            return
+            raise commands.BadArgument("Already a wormhole")
 
-    @wormhole.command(name="open")
+    @wormhole.command(name="open", aliases=["enable"])
     async def wormhole_open(self, ctx: commands.Context, channel: discord.TextChannel = None):
         """Reopen existing wormhole"""
         if channel is None:
@@ -187,9 +160,7 @@ class Admin(wormcog.Wormcog):
 
         w = repo_w.get(channel=channel.id)
         if w is None:
-            await self.console.error(f"No wormhole {channel.id} found. Has it been added?")
-            await self.embed.error(ctx, f"No wormhole **{channel.id}** found. Has it been added?")
-            return
+            raise commands.BadArgument("No such wormhole")
 
         try:
             repo_w.set(channel=channel.id, active=True)
@@ -198,32 +169,28 @@ class Admin(wormcog.Wormcog):
                 ctx.message,
                 None,
                 f"> Wormhole opened: **{self.e(channel.name)}** in **{self.e(channel.guild.name)}**.",
-                announcement=True,
+                system=True,
             )
         except errors.DatabaseException as e:
-            await self.console.error(f"Wormhole {channel.id} could not be opened", e)
-            await self.embed.error(ctx, f"Wormhole **{channel.id}** could not be opened", e)
-            return
+            raise commands.BadArgument("Could not open the wormhole", e)
 
-    @wormhole.command(name="close")
+    @wormhole.command(name="close", aliases=["disable"])
     async def wormhole_close(self, ctx: commands.Context, channel: discord.TextChannel = None):
         """Close wormhole"""
         if channel is None:
             channel = ctx.channel
 
         try:
-            repo_w.set(channel=channel.id, active=False)
-            await self.console.info(f"Wormhole {channel.id} closed")
             await self.send(
                 ctx.message,
                 None,
                 f"> Wormhole closed: **{self.e(channel.name)}** in **{self.e(channel.guild.name)}**.",
-                announcement=True,
+                system=True,
             )
+            repo_w.set(channel=channel.id, active=False)
+            await self.console.info(f"Wormhole {channel.id} closed")
         except errors.DatabaseException as e:
-            await self.console.error(f"Wormhole {channel.id} could not be closed", e)
-            await self.embed.error(ctx, f"Wormhole **{channel.id}** could not be closed", e)
-            return
+            raise commands.BadArgument("Could not open the wormhole", e)
 
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx: commands.Context, channel: discord.TextChannel = None):
@@ -233,19 +200,17 @@ class Admin(wormcog.Wormcog):
 
         try:
             beam = repo_w.get(channel.id).beam
-            repo_w.remove(channel.id)
-            await self.console.info(f"Wormhole {channel.id} removed")
             await self.send(
                 ctx.message,
                 beam,
                 f"> Wormhole removed: **{self.e(channel.name)}** in **{self.e(channel.guild.name)}**.",
-                announcement=True,
+                system=True,
             )
+            repo_w.remove(channel.id)
+            await self.console.info(f"Wormhole {channel.id} removed")
             await ctx.send("> Wormhole removed.")
         except errors.DatabaseException as e:
-            await self.console.error(f"Wormhole {channel.id} could not be removed", e)
-            await self.embed.error(ctx, f"Wormhole **{channel.id}** could not be removed", e)
-            return
+            raise commands.BadArgument("Could not remove the wormhole", e)
 
     @wormhole.command(name="edit")
     async def wormhole_edit(self, ctx: commands.Context, channel: discord.TextChannel, *args):
@@ -257,7 +222,6 @@ class Admin(wormcog.Wormcog):
         - logo: <emote>
         """
         g = discord.utils.escape_markdown(channel.guild.name)
-        channel = channel.id
 
         if len(args) != 2:
             raise commands.BadArgument("Expecting key and value")
@@ -265,35 +229,32 @@ class Admin(wormcog.Wormcog):
         key = args[0]
         value = args[1]
 
+        msg = ""
         if key == "readonly":
             if value in ["true", "false"]:
                 value = True if value == "true" else False
                 try:
-                    repo_w.set(channel, readonly=value)
+                    repo_w.set(channel.id, readonly=value)
+                    if value == True:
+                        msg = "read only"
+                    else:
+                        msg = "read-write"
                 except errors.DatabaseException as e:
-                    await self.console.error(f"Wormhole update error: {key} = {value}")
-                    await self.embed.error(ctx, f"Wormhole update error: {key} = {value}")
-                    return
+                    raise commands.BadArgument("Updating error", e)
             else:
-                await self.console.error(f"Wormhole update error: {key} = {value}")
-                await self.embed.error(ctx, f"Wormhole update error: {key} = {value}")
-                return
+                raise commands.BadArgument("Expecting `true` or `false`")
         elif key == "logo":
             try:
-                repo_w.set(channel, logo=value)
+                repo_w.set(channel.id, logo=value)
+                msg = f"logo is now {value}"
             except errors.DatabaseException as e:
-                await self.console.error(f"Wormhole update error: {key} = {value}")
-                await self.embed.error(ctx, f"Wormhole update error: {key} = {value}")
-                return
+                raise commands.BadArgument("Updating error", e)
         else:
-            await self.console.error(f"Wormhole update error: invalid key {key}")
-            await self.embed.error(ctx, f"Wormhole update error: invalid key {key}")
-            return
+            raise commands.BadArgument(f"Expecting an emote or a string")
 
-        await self.console.info(f"Wormhole {channel} updated: {key} = {value}")
-        await self.embed.info(ctx, f"Wormhole **{channel}** updated: {key} = {value}")
-
-        await self.send(ctx.message, None, f"> Wormhole in **{g}** updated: {key} is {value}")
+        await self.console.info(f"Wormhole {channel.id} updated: {key} = {value}")
+        beam = repo_w.get(channel.id).beam
+        await self.send(ctx.message, beam, f"> Wormhole in **{g}** updated: {msg}", system=True)
 
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx: commands.Context):
@@ -304,7 +265,7 @@ class Admin(wormcog.Wormcog):
         for w in ws:
             ch = self.bot.get_channel(w.channel)
             name = "\u200B"
-            value = f"**{ch.mention}** ({self.e(ch.guild.namme)}): "
+            value = f"**{ch.mention}** ({self.e(ch.guild.name)}): "
             value += f"{'in' if not w.active else ''}active"
             value += ", read only" if w.readonly else ""
             value += f", {w.logo}" if w.logo else ""
@@ -327,10 +288,7 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f"User {self.e(member.name)} ({member.id}) added")
             await self.embed.info(f"User **{self.e(member.name)}** added")
         except Exception as e:
-            await self.console.error(
-                f"User {self.e(member.name)} ({member.id}) could not be added", e
-            )
-            await self.embed.error(ctx, f"User **{self.e(member.name)}** could not be added", e)
+            raise commands.BadArgument(f"Could not add the user {member.id}", e)
 
     @user.command(name="remove", aliases=["delete"])
     async def user_remove(self, ctx: commands.Context, member: discord.Member):
@@ -340,10 +298,7 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f"User {self.e(member.name)} ({member.id}) removed")
             await self.embed.info(f"User **{self.e(member.name)}** removed")
         except Exception as e:
-            await self.console.error(
-                f"User {self.e(member.name)} ({member.id}) could not be removed", e
-            )
-            await self.embed.error(ctx, f"User **{self.e(member.name)}** could not be removed", e)
+            raise commands.BadArgument(f"Could not remove the user {member.id}", e)
 
     @user.command(name="edit")
     async def user_edit(self, ctx: commands.Context, member: discord.Member, *args):
@@ -373,12 +328,25 @@ class Admin(wormcog.Wormcog):
             if value.lower() in ["true", "false"]:
                 value = True if value.lower() == "true" else False
                 repo_u.set(member.id, mod=value)
+                if value == True:
+                    await self.send(
+                        ctx.message, None, f"> New mod: **{self.e(member.name)}**", system=True
+                    )
+                    await member.send("You are now a Wormhole mod!")
+                else:
+                    await member.send("You are no longer a Wormhole mod.")
             else:
                 raise commands.BadArgument("Expecting true or false")
         elif key == "readonly":
             if value in ["true", "false"]:
                 value = True if value == "true" else False
                 repo_u.set(member.id, readonly=value)
+                if value == True:
+                    await member.send(
+                        "You have been silenced. Wormhole won't accept your messages."
+                    )
+                else:
+                    await member.send("You are no longer silenced.")
             else:
                 raise commands.BadArgument("Expecting true or false")
         elif key == "home":
@@ -388,6 +356,9 @@ class Admin(wormcog.Wormcog):
                 converter = commands.TextChannelConverter()
                 home = await converter.convert(ctx=ctx, argument=value)
                 repo_u.set(member.id, home=home.id)
+                await member.send(
+                    f"Your home wormhole has been set to {home.mention} in **{self.e(home.guild.name)}**"
+                )
             except commands.errors.BadArgument:
                 raise commands.BadArgument(f"{value} is not valid channel")
         else:

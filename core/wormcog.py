@@ -7,9 +7,8 @@ import discord
 from discord.ext import commands
 
 from core import database, errors, output
-from core.database import repo_b, repo_w
+from core.database import repo_b, repo_u, repo_w
 
-# TODO Download and re-upload images that fit under the limit - and delete them afterwards
 # TODO When the message is removed, remove it from sent[], too
 
 
@@ -60,23 +59,33 @@ class Wormcog(commands.Cog):
         text: str,
         files: list = None,
         announcement: bool = False,
+        system: bool = False,
     ):
         """Distribute the message"""
+
+        # get variables
         msgs = [message]
-        if beam is None:
-            wormhole = database.repo_w.get(message.channel.id)
-            if wormhole is None:
-                return self.console.error(f"Channel {message.channel.id} is not a wormhole")
-            beam = database.repo_b.get(wormhole.beam)
-        elif isinstance(beam, str):
-            beam = database.repo_b.get(beam)
+        user = repo_u.get(message.author.id)
+        wormhole = repo_w.get(message.channel.id)
+        if beam == None and wormhole != None:
+            # try to get information from message
+            beam = repo_b.get(wormhole.beam)
         else:
-            raise errors.WormholeException(f"Unexpected beam object {type(beam)}")
-        if beam is None:
-            raise errors.WormholeException(f"Missing beam (channel {message.channel.id})")
+            # use supplied information
+            beam = repo_b.get(beam)
+
+        # access control
+        if beam == None:
+            return
+        if not system and (not beam.active or (wormhole != None and not wormhole.active)):
+            return
+        if not system and (
+            (wormhole != None and wormhole.readonly) or (user != None and user.readonly)
+        ):
+            return
 
         # if the bot has 'Manage messages' permission, remove the original
-        if beam and beam.replace and not files:
+        if beam.replace and not files:
             try:
                 msgs[0] = message.author
                 await self.delete(message)
@@ -97,6 +106,8 @@ class Wormcog(commands.Cog):
             ws = self.wormholes[beam.name]
         for w in ws:
             if w.id == message.channel.id and not announcement:
+                continue
+            if not repo_w.get(w.id).active:
                 continue
             m = await w.send(content=text)
             msgs.append(m)

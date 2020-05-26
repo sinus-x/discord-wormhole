@@ -141,6 +141,7 @@ class WormholeRepository:
             raise DatabaseException(f"Wormhole {channel} not found", table="wormholes")
 
         ch_logo     = logo     if logo     is not None else ch.logo
+        ch_active   = active   if active   is not None else ch.active
         ch_readonly = readonly if readonly is not None else ch.readonly
         ch_messages = messages if messages is not None else ch.messages
         # fmt: on
@@ -148,6 +149,7 @@ class WormholeRepository:
             session.query(Wormhole).filter(Wormhole.channel == channel).update(
                 {
                     Wormhole.logo: ch_logo,
+                    Wormhole.active: ch_active,
                     Wormhole.readonly: ch_readonly,
                     Wormhole.messages: ch_messages,
                 }
@@ -178,7 +180,6 @@ class User(database.base):
     mod        = Column(Boolean,    default=False)
     home       = Column(BigInteger, default=None )
     readonly   = Column(Boolean,    default=False)
-    banned     = Column(Boolean,    default=False)
     # fmt: on
 
 
