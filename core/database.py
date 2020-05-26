@@ -36,9 +36,9 @@ class BeamRepository:
         try:
             session.add(Beam(name=name))
             session.commit()
-        except:
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f'Beam "{name}" already exists', table="beams")
+            raise DatabaseException(f'Beam "{name}" already exists', table="beams", error=e)
 
     def get(self, name: str):
         return session.query(Beam).filter(Beam.name == name).one_or_none()
@@ -76,16 +76,16 @@ class BeamRepository:
                 }
             )
             session.commit()
-        except:
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f'Update of beam "{name}" failed', table="beams")
+            raise DatabaseException(f'Update of beam "{name}" failed', table="beams", error=e)
 
     def remove(self, name: str):
         try:
-            session.query(Beam).filter(Beam.name == name).delete()
-        except:
+            return session.query(Beam).filter(Beam.name == name).delete()
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f"Beam {name} not found", table="beams")
+            raise DatabaseException(f"Beam {name} not found", table="beams", error=e)
 
 
 class Wormhole(database.base):
@@ -109,7 +109,9 @@ class WormholeRepository:
         except Exception as e:
             session.rollback()
             print(e)
-            raise DatabaseException(f"Channel {channel} is already a wormhole", table="wormholes")
+            raise DatabaseException(
+                f"Channel {channel} is already a wormhole", table="wormholes", error=e
+            )
 
     def get(self, channel: int):
         return session.query(Wormhole).filter(Wormhole.channel == channel).one_or_none()
@@ -151,16 +153,20 @@ class WormholeRepository:
                 }
             )
             session.commit()
-        except:
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f"Update for wormhole {channel} failed", table="wormholes")
+            raise DatabaseException(
+                f"Update for wormhole {channel} failed", table="wormholes", error=e
+            )
 
     def remove(self, channel: int):
         try:
-            session.query(Wormhole).filter(Wormhole.channel == channel).delete()
-        except:
+            return session.query(Wormhole).filter(Wormhole.channel == channel).delete()
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f"Wormhole {channel} found", table="wormholes")
+            raise DatabaseException(
+                f"Wormhole {channel} could not be deleted", table="wormholes", error=e
+            )
 
 
 class User(database.base):
@@ -181,9 +187,9 @@ class UserRepository:
         try:
             session.add(User(id=id))
             session.commit()
-        except:
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f"User {id} already exists", table="users")
+            raise DatabaseException(f"User {id} already exists", table="users", error=e)
 
     def get(self, id: int):
         return session.query(User).filter(User.id == id).one_or_none()
@@ -221,16 +227,16 @@ class UserRepository:
                 }
             )
             session.commit()
-        except:
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f"User {id} could not be updated", table="users")
+            raise DatabaseException(f"User {id} could not be updated", table="users", error=e)
 
-    def delete(self, id: int):
+    def remove(self, id: int):
         try:
-            session.query(User).filter(User.id == id).delete()
-        except:
+            return session.query(User).filter(User.id == id).delete()
+        except Exception as e:
             session.rollback()
-            raise DatabaseException(f"Use {id} found", table="users")
+            raise DatabaseException(f"User {id} could not be deleted", table="users", error=e)
 
 
 database.base.metadata.create_all(database.db)

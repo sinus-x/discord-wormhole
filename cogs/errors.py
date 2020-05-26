@@ -25,7 +25,7 @@ class Errors(wormcog.Wormcog):
         error = getattr(error, "original", error)
 
         # ignore some errors
-        ignored = (commands.CommandNotFound, commands.UserInputError)
+        ignored = commands.CommandNotFound
         if isinstance(error, ignored):
             return
 
@@ -47,6 +47,9 @@ class Errors(wormcog.Wormcog):
 
         elif isinstance(error, commands.CommandOnCooldown):
             return await self.send(ctx, error, "Slow down")
+
+        elif isinstance(error, commands.UserInputError):
+            return await self.send(ctx, error, "Wrong input")
 
         # cog loading
         elif isinstance(error, commands.ExtensionAlreadyLoaded):

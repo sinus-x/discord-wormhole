@@ -282,15 +282,19 @@ class Wormhole(wormcog.Wormcog):
 
         for u in users:
             try:
-                #TODO Can we use fetch_user, or would it be API intensive?
+                # TODO Can we use fetch_user, or would it be API intensive?
                 #     Should it cache all users that sent something, and clean it every x hours?
-                user = str(self.bot.get_user(int(u.replace("<@!", "").replace(">", ""))))
+                user = str(
+                    self.bot.get_user(int(u.replace("<@!", "").replace(">", "")))
+                )
             except:
                 user = "unknown-user"
             content = content.replace(u, user)
         for r in roles:
             try:
-                role = message.guild.get_role(int(r.replace("<@&", "").replace(">", ""))).name
+                role = message.guild.get_role(
+                    int(r.replace("<@&", "").replace(">", ""))
+                ).name
             except:
                 role = "unknown-role"
             content = content.replace(r, role)
