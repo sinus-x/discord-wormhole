@@ -3,6 +3,10 @@
 		"tab_size": 4,
 		"translate_tabs_to_spaces": true,
 		"ensure_newline_at_eof_on_save": true,
-		"default_line_ending": "unix"
+		"default_line_ending": "unix",
+
+		"sublack.black_on_save": true,
+		"sublack.black_line_length": 100,
+		"sublack.black_log": "error"
 	}
 }
