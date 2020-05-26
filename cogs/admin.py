@@ -286,7 +286,7 @@ class Admin(wormcog.Wormcog):
         try:
             repo_u.add(member.id)
             await self.console.info(f"User {self.e(member.name)} ({member.id}) added")
-            await self.embed.info(f"User **{self.e(member.name)}** added")
+            await self.embed.info(ctx, f"User **{self.e(member.name)}** added")
         except Exception as e:
             raise commands.BadArgument(f"Could not add the user {member.id}", e)
 
@@ -296,7 +296,7 @@ class Admin(wormcog.Wormcog):
         try:
             repo_u.remove(member.id)
             await self.console.info(f"User {self.e(member.name)} ({member.id}) removed")
-            await self.embed.info(f"User **{self.e(member.name)}** removed")
+            await self.embed.info(ctx, f"User **{self.e(member.name)}** removed")
         except Exception as e:
             raise commands.BadArgument(f"Could not remove the user {member.id}", e)
 
