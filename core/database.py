@@ -176,7 +176,7 @@ class User(database.base):
 
     # fmt: off
     id         = Column(BigInteger, primary_key=True)
-    nickname   = Column(String,     default=None )
+    nickname   = Column(String,     default=None, unique=True)
     mod        = Column(Boolean,    default=False)
     home       = Column(BigInteger, default=None )
     readonly   = Column(Boolean,    default=False)
@@ -184,16 +184,19 @@ class User(database.base):
 
 
 class UserRepository:
-    def add(self, id: int):
+    def add(self, id: int, nickname=None, home=None):
         try:
-            session.add(User(id=id))
+            session.add(User(id=id, nickname=nickname, home=home))
             session.commit()
         except Exception as e:
             session.rollback()
-            raise DatabaseException(f"User {id} already exists", table="users", error=e)
+            raise DatabaseException("User already exists", table="users", error=e)
 
     def get(self, id: int):
         return session.query(User).filter(User.id == id).one_or_none()
+
+    def getByNickname(self, nickname: str):
+        return session.query(User).filter(User.nickname == nickname).one_or_none()
 
     def getMods(self):
         return session.query(User).filter(User.mod == True).all()
