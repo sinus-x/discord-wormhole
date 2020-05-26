@@ -25,19 +25,24 @@ class Embed:
         self.bot = bot
 
     async def debug(self, ctx, msg, error=None):
-        await ctx.send(embed=self.getEmbed(ctx, "Debug", msg, error), delete_after=120)
+        if self.level <= logging.DEBUG:
+            await ctx.send(embed=self.getEmbed(ctx, "Debug", msg, error), delete_after=120)
 
     async def info(self, ctx, msg, error=None):
-        await ctx.send(embed=self.getEmbed(ctx, "Info", msg, error), delete_after=120)
+        if self.level <= logging.INFO:
+            await ctx.send(embed=self.getEmbed(ctx, "Info", msg, error), delete_after=120)
 
     async def warning(self, ctx, msg, error=None):
-        await ctx.send(embed=self.getEmbed(ctx, "Warning", msg, error), delete_after=120)
+        if self.level <= logging.WARINNG:
+            await ctx.send(embed=self.getEmbed(ctx, "Warning", msg, error), delete_after=120)
 
     async def error(self, ctx, msg, error=None):
-        await ctx.send(embed=self.getEmbed(ctx, "Error", msg, error), delete_after=120)
+        if self.level <= logging.ERROR:
+            await ctx.send(embed=self.getEmbed(ctx, "Error", msg, error), delete_after=120)
 
     async def critical(self, ctx, msg, error=None):
-        await ctx.send(embed=self.getEmbed(ctx, "Critical", msg, error), delete_after=120)
+        if self.level <= logging.CRITICAL:
+            await ctx.send(embed=self.getEmbed(ctx, "Critical", msg, error), delete_after=120)
 
     def getEmbed(self, ctx, level, msg, error=None):
         colors = {
@@ -53,10 +58,12 @@ class Embed:
 
         if error is not None:
             embed.add_field(name="Reason", value=str(error), inline=False)
-            tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
-            if len(tr) > 1900:
-                tr = tr[-1900:]
-                embed.set_footer(text=f"{str(error)}\n{tr}")
+
+            if level == "Debug":
+                tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+                if len(tr) > 1900:
+                    tr = tr[-1900:]
+                    embed.set_footer(text=f"{str(error)}\n{tr}")
         return embed
 
 
