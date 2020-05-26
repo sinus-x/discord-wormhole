@@ -136,7 +136,7 @@ class WormholeRepository:
         # fmt: off
         ch = self.get(channel)
         if ch == None:
-            raise DatabaseException("Wormhole {channel} not found", table="wormholes")
+            raise DatabaseException(f"Wormhole {channel} not found", table="wormholes")
 
         ch_logo     = logo     if logo     is not None else ch.logo
         ch_readonly = readonly if readonly is not None else ch.readonly

@@ -24,42 +24,22 @@ class Embed:
     def bot(self, bot: discord.ext.commands.Bot):
         self.bot = bot
 
-    async def debug(self, ctx, msg):
-        await ctx.send(embed=self._getEmbed(ctx, "Debug", msg), delete_after=120)
+    async def debug(self, ctx, msg, error=None):
+        await ctx.send(embed=self.getEmbed(ctx, "Debug", msg, error), delete_after=120)
 
-    async def info(self, ctx, msg):
-        await ctx.send(embed=self._getEmbed(ctx, "Info", msg), delete_after=120)
+    async def info(self, ctx, msg, error=None):
+        await ctx.send(embed=self.getEmbed(ctx, "Info", msg, error), delete_after=120)
 
-    async def warning(self, ctx, msg):
-        await ctx.send(embed=self._getEmbed(ctx, "Warning", msg), delete_after=120)
+    async def warning(self, ctx, msg, error=None):
+        await ctx.send(embed=self.getEmbed(ctx, "Warning", msg, error), delete_after=120)
 
     async def error(self, ctx, msg, error=None):
-        embed = self._getEmbed(ctx, "Error", msg)
-
-        # TODO Use error description, not whole traceback
-        if error:
-            tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
-            if len(tr) > 1900:
-                tr = tr[-1900:]
-                embed.set_footer(text=f"{str(error)}\n{tr}")
-
-        await ctx.send(embed=embed, delete_after=120)
+        await ctx.send(embed=self.getEmbed(ctx, "Error", msg, error), delete_after=120)
 
     async def critical(self, ctx, msg, error=None):
-        embed = self._getEmbed(ctx, "Critical", msg)
+        await ctx.send(embed=self.getEmbed(ctx, "Critical", msg, error), delete_after=120)
 
-        # TODO Use error description, not whole traceback
-        if error:
-            tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
-            if len(tr) > 1900:
-                tr = tr[-1900:]
-                embed.set_footer(text=f"{str(error)}\n{tr}")
-
-        await ctx.send(embed=embed, delete_after=120)
-
-    def _getEmbed(
-        self, ctx, level, msg,
-    ):
+    def getEmbed(self, ctx, level, msg, error=None):
         colors = {
             "DEBUG": 0xEFE19B,
             "INFO": 0x91C42B,
@@ -67,9 +47,16 @@ class Embed:
             "ERROR": 0xEF4A13,
             "CRITICAL": 0xFC0509,
         }
-        embed = discord.Embed(title="Wormhole output", color=colors[level.upper()])
-        embed.add_field(name=level, value=msg)
+        embed = discord.Embed(title="Wormhole", color=colors[level.upper()])
+        embed.add_field(name=level, value=msg, inline=False)
         embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
+
+        if error is not None:
+            embed.add_field(name="Reason", value=str(error), inline=False)
+            tr = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            if len(tr) > 1900:
+                tr = tr[-1900:]
+                embed.set_footer(text=f"{str(error)}\n{tr}")
         return embed
 
 
