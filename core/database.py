@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from core.errors import DatabaseAddException, DatabaseUpdateException
+from core.errors import DatabaseException
 
 
 class Database:
@@ -38,7 +38,7 @@ class BeamRepository:
             session.commit()
         except:
             session.rollback()
-            raise DatabaseAddException(f"{name} already exists", table="beam")
+            raise DatabaseException(f'Beam "{name}" already exists', table="beams")
 
     def get(self, name: str):
         return session.query(Beam).filter(Beam.name == name).one_or_none()
@@ -78,10 +78,14 @@ class BeamRepository:
             session.commit()
         except:
             session.rollback()
-            raise DatabaseUpdateException("Update failed", table="beam")
+            raise DatabaseException(f'Update of beam "{name}" failed', table="beams")
 
     def remove(self, name: str):
-        session.query(Beam).filter(Beam.name == name).delete()
+        try:
+            session.query(Beam).filter(Beam.name == name).delete()
+        except:
+            session.rollback()
+            raise DatabaseException(f"Beam {name} not found", table="beams")
 
 
 class Wormhole(database.base):
@@ -105,9 +109,7 @@ class WormholeRepository:
         except Exception as e:
             session.rollback()
             print(e)
-            raise DatabaseAddException(
-                f"Channel {channel} is already a wormhole", table="wormholes"
-            )
+            raise DatabaseException(f"Channel {channel} is already a wormhole", table="wormholes")
 
     def get(self, channel: int):
         return session.query(Wormhole).filter(Wormhole.channel == channel).one_or_none()
@@ -133,6 +135,9 @@ class WormholeRepository:
     ):
         # fmt: off
         ch = self.get(channel)
+        if ch == None:
+            raise DatabaseException("Wormhole {channel} not found", table="wormholes")
+
         ch_logo     = logo     if logo     is not None else ch.logo
         ch_readonly = readonly if readonly is not None else ch.readonly
         ch_messages = messages if messages is not None else ch.messages
@@ -140,7 +145,7 @@ class WormholeRepository:
         try:
             session.query(Wormhole).filter(Wormhole.channel == channel).update(
                 {
-                    Wormhole.logo:     ch_logo,
+                    Wormhole.logo: ch_logo,
                     Wormhole.readonly: ch_readonly,
                     Wormhole.messages: ch_messages,
                 }
@@ -148,10 +153,14 @@ class WormholeRepository:
             session.commit()
         except:
             session.rollback()
-            raise DatabaseUpdateException("{channel} update failed", table="wormholes")
+            raise DatabaseException(f"Update for wormhole {channel} failed", table="wormholes")
 
     def remove(self, channel: int):
-        session.query(Wormhole).filter(Wormhole.channel == channel).delete()
+        try:
+            session.query(Wormhole).filter(Wormhole.channel == channel).delete()
+        except:
+            session.rollback()
+            raise DatabaseException(f"Wormhole {channel} found", table="wormholes")
 
 
 class User(database.base):
@@ -161,7 +170,7 @@ class User(database.base):
     id         = Column(BigInteger, primary_key=True)
     nickname   = Column(String,     default=None )
     mod        = Column(Boolean,    default=False)
-    restricted = Column(BigInteger, default=None )
+    home       = Column(BigInteger, default=None )
     readonly   = Column(Boolean,    default=False)
     banned     = Column(Boolean,    default=False)
     # fmt: on
@@ -174,7 +183,7 @@ class UserRepository:
             session.commit()
         except:
             session.rollback()
-            raise DatabaseAddException(f"{id} already exists", table="users")
+            raise DatabaseException(f"User {id} already exists", table="users")
 
     def get(self, id: int):
         return session.query(User).filter(User.id == id).one_or_none()
@@ -188,65 +197,40 @@ class UserRepository:
     def set(
         # fmt: off
         self,
-        id:         int,
-        nickname:   str  = None,
-        mod:        bool = None,
-        restricted: int  = None,
-        readonly:   bool = None,
+        id:       int,
+        nickname: str  = None,
+        mod:      bool = None,
+        home:     int  = None,
+        readonly: bool = None,
         # fmt: on
     ):
         # fmt: off
         u = self.get(id)
-        u_nickname   = nickname   if nickname   is not None else u.nickname
-        u_mod        = mod        if mod        is not None else u.mod
-        u_restricted = restricted if restricted is not None else u.restricted
-        u_readonly   = readonly   if readonly   is not None else u.readonly
+        u_nickname = nickname if nickname is not None else u.nickname
+        u_mod      = mod      if mod      is not None else u.mod
+        u_home     = home     if home     is not None else u.home
+        u_readonly = readonly if readonly is not None else u.readonly
         # fmt: on
         try:
             session.query(User).filter(User.id == id).update(
-                {User.nickname: u_nickname, User.mod: u_mod, User.readonly: u_readonly,}
+                {
+                    User.nickname: u_nickname,
+                    User.mod: u_mod,
+                    User.home: u_home,
+                    User.readonly: u_readonly,
+                }
             )
             session.commit()
         except:
             session.rollback()
-            raise DatabaseUpdateException("Update of {id} failed", table="users")
+            raise DatabaseException(f"User {id} could not be updated", table="users")
 
     def delete(self, id: int):
-        session.query(User).filter(User.id == id).delete()
-
-
-class Log(database.base):
-    __tablename__ = "log"
-
-    # fmt: off
-    id        = Column(Integer,  primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=datetime.now)
-    author    = Column(BigInteger)
-    table     = Column(String    )
-    key       = Column(String    )
-    old       = Column(String    )
-    new       = Column(String    )
-    # fmt: on
-
-
-class LogRepository:
-    def log(self, author: int, table: str, key: str, old: str, new: str):
-        session.add(Log(author=author, table=table, key=key, old=old, new=new))
-
-    def get(
-        # fmt: off
-        self,
-        author: int = None,
-        table:  str = None,
-        key:    str = None,
-        old:    str = None,
-        new:    str = None,
-        before: datetime = None,
-        after:  datetime = None,
-        # fmt: on
-    ):
-        # TODO
-        return
+        try:
+            session.query(User).filter(User.id == id).delete()
+        except:
+            session.rollback()
+            raise DatabaseException(f"Use {id} found", table="users")
 
 
 database.base.metadata.create_all(database.db)
@@ -255,4 +239,3 @@ session.commit()
 repo_b = BeamRepository()
 repo_w = WormholeRepository()
 repo_u = UserRepository()
-repo_l = LogRepository()

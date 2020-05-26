@@ -7,7 +7,6 @@ import discord
 from discord.ext import commands
 
 from core import wormcog, output
-from core.database import repo_u
 
 config = json.load(open("config.json"))
 bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
