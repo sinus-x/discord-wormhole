@@ -116,60 +116,33 @@ class Wormhole(wormcog.Wormcog):
         # TODO React with check, wait, and delete
 
     @commands.check(checks.in_wormhole)
-    @commands.command(aliases=["stat", "stats"])
-    async def info(self, ctx: commands.Context):
-        """Display information about wormholes"""
-
-        if len(self.wormholes) == 0:
-            self.reconnect()
-            await asyncio.sleep(0.25)
-
-        if len(self.wormholes) == 0:
-            m = "> No wormhole has been opened."
-        else:
-            # get total message count
-            total = 0
-            for i in self.stats:
-                total += self.stats[i]
-            m = "> {} messages sent since the formation (**{}**); ping **{:.2f} s**.\n".format(
-                self.transferred, started, self.bot.latency
-            )
-
-            m += "> Currently opened wormholes:"
-            # FIXME What happens if the guild/channel does not exist?
-            for w in self.wormholes:
-                # get logo
-                logo = repo_w.get(w.id).logo
-                if not logo:
-                    logo = ""
-
-                # get names
-                g = discord.utils.escape_markdown(w.guild.name)
-                c = discord.utils.escape_markdown(w.name)
-
-                # get message count
-                try:
-                    cnt = self.stats[str(w.id)]
-                except KeyError:
-                    cnt = 0
-
-                # get message
-                m += f"\n> {logo} **{g}** (#{c}): **{cnt}** messages"
-        await ctx.send(m, delete_after=self.removalDelay())
-        await self.delete(ctx.message)
-
-    @commands.check(checks.in_wormhole)
     @commands.command()
     async def help(self, ctx: commands.Context):
         """Display help"""
         embed = discord.Embed(title="Wormhole", color=discord.Color.light_grey())
         p = config["prefix"]
-        embed.add_field(value=f"**{p}e** | **{p}edit**", name="Edit last message")
+        # fmt: off
+        embed.add_field(value=f"**{p}e** | **{p}edit**",   name="Edit last message")
         embed.add_field(value=f"**{p}d** | **{p}delete**", name="Delete last message")
-        embed.add_field(value=f"**{p}info**", name="Connection information")
-        embed.add_field(value=f"**{p}settings**", name="Display current settings")
-        embed.add_field(value=f"**{p}link**", name="Link to GitHub repository")
-        embed.add_field(value=f"**{p}invite**", name="Bot invite link")
+        embed.add_field(value=f"**{p}info**",              name="Connection information")
+        embed.add_field(value=f"**{p}settings**",          name="Display current settings")
+        embed.add_field(value=f"**{p}link**",              name="Link to GitHub repository")
+        embed.add_field(value=f"**{p}invite**",            name="Bot invite link")
+        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) == None:
+            embed.add_field(value=f"USER COMMANDS",   name="_\u200b" * 4, inline=False)
+            embed.add_field(value=f"**{p}register**", name="Register your username")
+        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) != None:
+            embed.add_field(value=f"USER COMMANDS",   name="_\u200b" * 4, inline=False)
+            embed.add_field(value=f"**{p}set**",      name="Edit your nickname or home wormhole")
+            embed.add_field(value=f"**{p}me**",       name="Get your information")
+            embed.add_field(value=f"**{p}whois**",    name="Get information about user")
+        if "Admin" in self.bot.cogs and ctx.author.id in [x.id for x in repo_u.getMods()]:
+            embed.add_field(value=f"ADMIN COMMANDS",  name="_\u200b" * 4,    inline=False)
+            embed.add_field(value=f"**{p}user add**",                        name="Add user to database")
+            embed.add_field(value=f"**{p}user edit nickname [name]**",       name="Change user's nickname")
+            embed.add_field(value=f"**{p}user edit readonly [true|false]**", name="Change user's write permission")
+            embed.add_field(value=f"**{p}user edit home** [wormhole]",       name="Change user's home guild")
+        # fmt: on
         await ctx.send(embed=embed, delete_after=self.removalDelay())
         await self.delete(ctx.message)
 
@@ -222,13 +195,85 @@ class Wormhole(wormcog.Wormcog):
                 return
 
     @commands.check(checks.in_wormhole)
+    @commands.command(aliases=["stat", "stats"])
+    async def info(self, ctx: commands.Context):
+        """Display information about wormholes"""
+        # heading
+        msg = [
+            f">>> **[[total]]** messages sent in total "
+            f"(**{self.transferred}** since {started}); "
+            f"ping **{self.bot.latency:.2f}s**",
+            "",
+            "Currently opened wormholes:",
+        ]
+        beam = self.message2Beam(ctx.message).name
+        wormholes = repo_w.getByBeam(beam)
+        # loop over wormholes in current beam
+        count = 0
+        for wormhole in wormholes:
+            count += wormhole.messages
+            line = []
+            # logo
+            if wormhole.logo != None:
+                line.append(wormhole.logo)
+            # guild, channel, counter
+            channel = self.bot.get_channel(wormhole.channel)
+            line.append(
+                f"**{discord.utils.escape_markdown(channel.guild.name)}** "
+                f"(#{discord.utils.escape_markdown(channel.name)}): "
+                f"**{wormhole.messages}** messages"
+            )
+            # inactive, ro
+            pars = []
+            if wormhole.active == False:
+                pars.append("inactive")
+            if wormhole.readonly == True:
+                pars.append("read only")
+            if len(pars) > 0:
+                line.append(f"({', '.join(pars)})")
+            # join and send
+            msg.append(" ".join(line))
+
+        # in total count, include messages not yet saved into the database
+        count = count + self.transferred % 50
+        await ctx.send(
+            "\n".join(msg).replace("[[total]]", str(count)), delete_after=self.removalDelay()
+        )
+
+    @commands.check(checks.in_wormhole)
     @commands.command()
     async def settings(self, ctx: commands.Context):
-        return
-        # TODO Update
-        m = "> **Wormhole settings**: anonymity level **{}**, edit/delete timer **{}s**"
-        await ctx.send(m.format(config["anonymity"], config["message window"]))
-        await self.delete(ctx.message)
+        """Display settings for current beam"""
+
+        # beam settings
+        beam = self.message2Beam(ctx.message)
+        msg = ">>> **Settings**:\n"
+        pars = []
+        # fmt: off
+        pars.append("active" if beam.active else "inactive")
+        pars.append(f"replacing (timeout **{beam.timeout} s**)" if beam.replace else "not replacing")
+        pars.append(f"anonymity level **{beam.anonymity}**")
+        # fmt: on
+        msg += ", ".join(pars)
+
+        # wormhole settings
+        wormhole = repo_w.get(ctx.channel.id)
+        pars = []
+        if wormhole.active == False:
+            pars.append("inactive")
+        if wormhole.readonly == True:
+            pars.append("read only")
+        if len(pars) > 0:
+            msg += "\n**Wormhole overrides**:\n"
+            msg += ", ".join(pars)
+
+        # user settings
+        user = repo_u.get(ctx.author.id)
+        if user != None and user.readonly == True:
+            msg += "\n**User overrides**:\n"
+            msg += "read only"
+
+        await ctx.send(msg, delete_after=self.removalDelay())
 
     @commands.check(checks.in_wormhole)
     @commands.command()
