@@ -185,6 +185,9 @@ class User(database.base):
 
 class UserRepository:
     def add(self, id: int, nickname=None, home=None):
+        if nickname is not None:
+            nickname = nickname.replace("(", "").replace(")", "")
+
         try:
             session.add(User(id=id, nickname=nickname, home=home))
             session.commit()
@@ -216,6 +219,12 @@ class UserRepository:
     ):
         # fmt: off
         u = self.get(id)
+        if u == None:
+            raise DatabaseException("User not found")
+
+        if nickname is not None and ("(" in nickname or ")" in nickname):
+            raise DatabaseException("Invalid character in nickname")
+
         u_nickname = nickname if nickname is not None else u.nickname
         u_mod      = mod      if mod      is not None else u.mod
         u_home     = home     if home     is not None else u.home

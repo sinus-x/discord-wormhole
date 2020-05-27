@@ -1,7 +1,8 @@
 import asyncio
+import git
 import json
 import logging
-import git
+import re
 
 import discord
 from discord.ext import commands
@@ -109,12 +110,33 @@ class Wormcog(commands.Cog):
             if not beam.name in self.wormholes:
                 self.reconnect(beam.name)
             ws = self.wormholes[beam.name]
+
+        # get tags in the message
+        tags = re.findall(r"\(\(([^\(\)]*)\)\)", text)
+        if len(tags) > 5:
+            await ctx.send(f"> {message.author.mention}, you can only use five tags in one message")
+            tags = tags[:5]
+        users = [
+            u for u in [repo_u.getByNickname(t) for t in tags] if (u != None and u.home != None)
+        ]
+
         for w in ws:
+            # filter out wormholes
             if w.id == message.channel.id and not announcement:
                 continue
             if not repo_w.get(w.id).active:
                 continue
-            m = await w.send(content=text)
+
+            # apply tags
+            w_text = text
+            for u in users:
+                if w.id == u.home:
+                    w_text = w_text.replace(f"(({u.nickname}))", f"<@!{u.id}>")
+                else:
+                    w_text = w_text.replace(f"(({u.nickname}))", f"**__{u.nickname}__**")
+
+            # send message
+            m = await w.send(content=w_text)
             msgs.append(m)
 
         # save message objects in case of editing/deletion

@@ -322,7 +322,9 @@ class Admin(wormcog.Wormcog):
         value = args[1]
 
         if key == "nickname":
-            value = None if value == "None" else value
+            if "(" in name or ")" in name:
+                return await ctx.send("The name cannot contain `(` or `)`")
+
             repo_u.set(member.id, nickname=value)
         if key == "mod":
             if value.lower() in ["true", "false"]:

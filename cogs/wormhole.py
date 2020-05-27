@@ -128,20 +128,22 @@ class Wormhole(wormcog.Wormcog):
         embed.add_field(value=f"**{p}settings**",          name="Display current settings")
         embed.add_field(value=f"**{p}link**",              name="Link to GitHub repository")
         embed.add_field(value=f"**{p}invite**",            name="Bot invite link")
+
         if "User" in self.bot.cogs and repo_u.get(ctx.author.id) == None:
-            embed.add_field(value=f"USER COMMANDS",   name="_\u200b" * 4, inline=False)
+            embed.add_field(value=f"**VISITOR COMMANDS**", name="\u200b", inline=False)
             embed.add_field(value=f"**{p}register**", name="Register your username")
+            embed.add_field(value=f"**{p}whois**",    name="Get information about user")
         if "User" in self.bot.cogs and repo_u.get(ctx.author.id) != None:
-            embed.add_field(value=f"USER COMMANDS",   name="_\u200b" * 4, inline=False)
-            embed.add_field(value=f"**{p}set**",      name="Edit your nickname or home wormhole")
+            embed.add_field(value=f"**USER COMMANDS**",   name="\u200b", inline=False)
             embed.add_field(value=f"**{p}me**",       name="Get your information")
             embed.add_field(value=f"**{p}whois**",    name="Get information about user")
+            embed.add_field(value=f"**{p}set**",      name="Edit nickname or home")
+
         if "Admin" in self.bot.cogs and ctx.author.id in [x.id for x in repo_u.getMods()]:
-            embed.add_field(value=f"ADMIN COMMANDS",  name="_\u200b" * 4,    inline=False)
-            embed.add_field(value=f"**{p}user add**",                        name="Add user to database")
-            embed.add_field(value=f"**{p}user edit nickname [name]**",       name="Change user's nickname")
-            embed.add_field(value=f"**{p}user edit readonly [true|false]**", name="Change user's write permission")
-            embed.add_field(value=f"**{p}user edit home** [wormhole]",       name="Change user's home guild")
+            embed.add_field(value=f"**MOD COMMANDS   |   {p}user edit ...**", name="\u200b", inline=False)
+            embed.add_field(value=f"... **nickname [name]**",       name="Nickname")
+            embed.add_field(value=f"... **readonly [true|false]**", name="Write permission")
+            embed.add_field(value=f"... **home [wormhole]**",       name="Home guild")
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.removalDelay())
         await self.delete(ctx.message)

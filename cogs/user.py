@@ -27,6 +27,7 @@ class User(wormcog.Wormcog):
             f"{channel.mention} on server **{discord.utils.escape_markdown(channel.guild.name)}**"
         )
 
+    @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     @commands.command()
     async def register(self, ctx):
         """Add yourself to the database"""
@@ -34,7 +35,7 @@ class User(wormcog.Wormcog):
         if u != None:
             raise errors.WormholeException("You are already registered")
 
-        name = discord.utils.escape_markdown(ctx.author.name)
+        name = discord.utils.escape_markdown(ctx.author.name).replace("]", "").replace("[", "")
 
         # get first available nickname
         u = repo_u.getByNickname(name)
@@ -54,7 +55,7 @@ class User(wormcog.Wormcog):
                 "You are now registered. "
                 f"You can display your information with `{self.p}me`.\n"
                 f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
-                f"You can tag others with `[[nickname]]`, if they have set their home guild."
+                f"You can tag others with `((nickname))`, if they have set their home guild."
             )
         except errors.DatabaseException as e:
             await ctx.author.send("There was an error: " + str(e))
@@ -74,13 +75,12 @@ class User(wormcog.Wormcog):
         embed = discord.Embed(
             title="Wormhole: **set**", description=d, color=discord.Color.light_grey()
         )
-        embed.add_field(
-            name=f"**{p}set home**", value="Set current channel as home wormhole", inline=False
-        )
-        embed.add_field(name=f"**{p}set name**", value="Set new nickname", inline=False)
+        embed.add_field(value=f"**{p}set home**", name="Set home wormhole", inline=False)
+        embed.add_field(value=f"**{p}set name [new name]**", name="Set new nickname", inline=False)
         await ctx.send(embed=embed, delete_after=self.removalDelay())
         await self.delete(ctx.message)
 
+    @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     @set.command(name="home")
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
@@ -92,6 +92,7 @@ class User(wormcog.Wormcog):
         repo_u.set(ctx.author.id, home=ctx.channel.id)
         await ctx.author.send(f"Your home wormhole is " + self.getHomeString(ctx.channel))
 
+    @commands.cooldown(rate=2, per=3600, type=commands.BucketType.user)
     @set.command(name="name", aliases=["nick", "nickname"])
     async def set_name(self, ctx, *, name: str):
         """Set new display name"""
@@ -99,15 +100,20 @@ class User(wormcog.Wormcog):
         u = repo_u.getByNickname(name)
         if u != None:
             return await ctx.author.send("This name is already used by someone")
+        if "(" in name or ")" in name:
+            return await ctx.author.send("The name cannot contain `(` or `)`")
+
         repo_u.set(ctx.author.id, nickname=name)
         await ctx.author.send(f"Your nickname was changed to **{name}**")
 
+    @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     @commands.command()
     async def me(self, ctx):
         """See your information"""
         me = self.getUserObject(ctx)
         await self.displayUserInfo(ctx, me)
 
+    @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.command(aliases=["whois"])
     async def stalk(self, ctx, member: str):
         """Get information about member"""
@@ -120,7 +126,7 @@ class User(wormcog.Wormcog):
         """Display user info"""
         msg = [
             f"User **{user.nickname}**:",
-            f"_Taggable via_ `[[{user.nickname}]]`",
+            f"_Taggable via_ `(({user.nickname}))`",
             "Information: ",
         ]
 

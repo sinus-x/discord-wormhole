@@ -30,22 +30,26 @@ async def on_ready():
     m = "INFO: Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
     print(m)
 
-    # do not spam logging channel while testing
-    level = getattr(logging, config["log level"])
-    if level >= logging.INFO:
-        ch = output.getLogChannel(bot)
-        await ch.send(f"```{m}```")
-
+    ch = bot.get_channel(config["log channel"])
+    await ch.send(f"```{m}```")
     await wormcog.presence(bot)
 
 
 @bot.event
 async def on_error(event, *args, **kwargs):
-    if config["suppress errors"]:
+    if config["log level"] == "CRITICAL":
         return
 
     tb = traceback.format_exc()
     print(tb)
+
+    ch = bot.get_channel(config["error channel"])
+    if ch == None:
+        print("ERROR: Error channel not found")
+        return
+    output = list(output[0 + i : 1980 + i] for i in range(0, len(output), 1980))
+    for o in output:
+        await ch.send(f"```{o}```")
 
 
 ##
@@ -53,19 +57,18 @@ async def on_error(event, *args, **kwargs):
 ##
 
 
-@bot.command()
+@bot.command(hidden=True)
 async def reload(ctx: commands.Context, cog: str):
     """Reload the wormhole"""
     if ctx.author.id != config["admin id"]:
-        await ctx.send("You do not have permission to do this!")
+        await ctx.send("You do not have permission to do this!", delete_after=5)
         return
     try:
         bot.reload_extension(f"cogs.{cog}")
-        m = f"**{cog.upper()}** reloaded."
-        print(m)
-        await ctx.send(m)
+        print(f"{cog.upper()} reloaded.")
+        await ctx.send(f"**{cog.upper()}** reloaded.", delete_after=5)
     except Exception as e:
-        await ctx.send(f"An error occured: ```\n{e}```")
+        await ctx.send(f"An error occured: ```\n{e}```", delete_after=20)
 
 
 ##
