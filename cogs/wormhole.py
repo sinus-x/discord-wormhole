@@ -25,7 +25,8 @@ class Wormhole(wormcog.Wormcog):
         """Global message counter"""
         self.stats = {}
         """Per-channel message couter"""
-        # TODO Load stats from database
+        for w in repo_w.getAll():
+            self.stats[str(w.channel)] = w.messages
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -39,6 +40,7 @@ class Wormhole(wormcog.Wormcog):
 
         # do not act if message is bot command
         if message.content.startswith(config["prefix"]):
+            await self.delete(message)
             return
 
         # get current beam
@@ -52,9 +54,15 @@ class Wormhole(wormcog.Wormcog):
         content = self.__process(message)
 
         # convert attachments to links
+        firstline = True
         if message.attachments:
             for f in message.attachments:
-                content += "\n" + f.url
+                # don't add newline if message has only attachments
+                if firstline:
+                    content += " " + f.url
+                    firstline = False
+                else:
+                    content += "\n" + f.url
 
         if len(content) < 1:
             return
@@ -284,17 +292,13 @@ class Wormhole(wormcog.Wormcog):
             try:
                 # TODO Can we use fetch_user, or would it be API intensive?
                 #     Should it cache all users that sent something, and clean it every x hours?
-                user = str(
-                    self.bot.get_user(int(u.replace("<@!", "").replace(">", "")))
-                )
+                user = str(self.bot.get_user(int(u.replace("<@!", "").replace(">", ""))))
             except:
                 user = "unknown-user"
             content = content.replace(u, user)
         for r in roles:
             try:
-                role = message.guild.get_role(
-                    int(r.replace("<@&", "").replace(">", ""))
-                ).name
+                role = message.guild.get_role(int(r.replace("<@&", "").replace(">", ""))).name
             except:
                 role = "unknown-role"
             content = content.replace(r, role)
@@ -339,9 +343,8 @@ class Wormhole(wormcog.Wormcog):
 
     def __saveStats(self):
         """Save message statistics to the database"""
-        for w, n in self.stats.values():
-            repo_w.set(int(w), n)
-        return
+        for w, n in self.stats.items():
+            repo_w.set(int(w), messages=n)
 
 
 def setup(bot):

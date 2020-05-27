@@ -15,4 +15,6 @@ def is_mod(ctx: commands.Context):
 
 
 def in_wormhole(ctx: commands.Context):
-    return ctx.author.id == config["admin id"] or ctx.channel.id in config["wormholes"]
+    return ctx.author.id == config["admin id"] or ctx.channel.id in [
+        x.channel for x in repo_w.getAll()
+    ]
