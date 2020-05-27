@@ -306,7 +306,11 @@ class Wormhole(wormcog.Wormcog):
         wormhole = repo_w.get(message.channel.id)
 
         a = beam.anonymity
-        u = discord.utils.escape_markdown(message.author.name)
+        db_u = repo_u.get(message.author.id)
+        if db_u != None:
+            u = db_u.nickname
+        else:
+            u = discord.utils.escape_markdown(message.author.name)
         g = str(message.guild.id)
         if wormhole.logo:
             if not firstline:

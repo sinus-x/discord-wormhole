@@ -124,8 +124,9 @@ class User(wormcog.Wormcog):
 
     async def displayUserInfo(self, ctx, user: object):
         """Display user info"""
+        u = self.bot.get_user(user.id)
         msg = [
-            f"User **{user.nickname}**:",
+            f"User **{discord.utils.escape_markdown(u.name)}**",
             f"_Taggable via_ `(({user.nickname}))`",
             "Information: ",
         ]
