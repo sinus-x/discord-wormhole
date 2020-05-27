@@ -41,16 +41,21 @@ class Wormcog(commands.Cog):
     ## FUNCTIONS
     ##
 
-    def reconnect(self, beam: str):
-        self.wormholes[beam] = []
+    def reconnect(self, beam: str = None):
+        if beam == None:
+            self.wormholes = {}
+            ws = repo_w.getAll()
+        else:
+            self.wormholes[beam] = []
+            ws = repo_w.getByBeam(beam)
         for w in repo_w.getByBeam(beam):
             self.wormholes[beam].append(self.bot.get_channel(w.channel))
 
     def removalDelay(self, key: str = "user"):
         if key == "user":
-            return 60
+            return 20
         if key == "admin":
-            return 15
+            return 10
 
     async def send(
         self,

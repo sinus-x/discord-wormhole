@@ -212,7 +212,7 @@ class Admin(wormcog.Wormcog):
         except errors.DatabaseException as e:
             raise commands.BadArgument("Could not remove the wormhole", e)
 
-    @wormhole.command(name="edit")
+    @wormhole.command(name="edit", aliases=["alter"])
     async def wormhole_edit(self, ctx: commands.Context, channel: discord.TextChannel, *args):
         """Edit wormhole
 
@@ -300,7 +300,7 @@ class Admin(wormcog.Wormcog):
         except Exception as e:
             raise commands.BadArgument(f"Could not remove the user {member.id}", e)
 
-    @user.command(name="edit")
+    @user.command(name="edit", aliases=["alter"])
     async def user_edit(self, ctx: commands.Context, member: discord.Member, *args):
         """Edit user
 

@@ -176,7 +176,7 @@ class User(database.base):
 
     # fmt: off
     id         = Column(BigInteger, primary_key=True)
-    nickname   = Column(String,     default=None, unique=True)
+    nickname   = Column(String,     default=None )
     mod        = Column(Boolean,    default=False)
     home       = Column(BigInteger, default=None )
     readonly   = Column(Boolean,    default=False)
