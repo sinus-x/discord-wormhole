@@ -528,23 +528,15 @@ class Wormhole(commands.Cog):
 			content = content.replace(c, channel)
 
 		# line preprocessor (code)
-		content_ = content.split('\n')
-		if '```' in content:
-			content = []
-			for line in content_:
-				# do not allow code block starting on text line
-				line.replace(' ```', '\n```')
-				# do not alow text on code block end
-				line.replace('``` ', '```\n')
-				line = line.split('\n')
-				for l in line:
-					content.append(l)
-		else:
-			content = content_
+		if "```" in content:
+			backticks = re.findall(r"```[a-z0-9]*", content)
+			for b in backticks:
+				content = content.replace(f" {b}", f"\n{b}", 1)
+				content = content.replace(f"{b} ", f"{b}\n", 1)
 
 		# apply prefixes
-		content_ = content.copy()
-		content = ''
+		content_ = content.split("\n")
+		content = ""
 		p = self.__getPrefix(message)
 		code = False
 		for i in range(len(content_)):
@@ -553,20 +545,18 @@ class Wormhole(commands.Cog):
 				p = self.__getPrefix(message, firstline=False)
 			line = content_[i]
 			# add prefix if message starts with code block
-			if i == 0 and line.startswith('```'):
-				content += self.__getPrefix(message) + '\n'
-			if line.startswith('```'):
+			if i == 0 and line.startswith("```"):
+				content += self.__getPrefix(message) + "\n"
+			if line.startswith("```"):
 				code = True
 			if code:
-				content += line + '\n'
+				content += line + "\n"
 			else:
-				content += p + line + '\n'
-			if line.endswith('```') and code and len(line) > 3:
+				content += p + line + "\n"
+			if line.endswith("```") and code:
 				code = False
-		if code:
-			content += '```'
 
-		return content.replace('@','@_')
+		return content.replace("@", "@_")
 
 	async def send(self, message: discord.Message, text: str, files: list = None, announcement: bool = False):
 		msgs = [message]
