@@ -298,30 +298,34 @@ class Wormhole(wormcog.Wormcog):
         """Get prefix for message"""
         beam = self.message2Beam(message)
         wormhole = repo_w.get(message.channel.id)
+        user = repo_u.get(message.author.id)
 
-        a = beam.anonymity
-        db_u = repo_u.get(message.author.id)
-        if db_u != None:
-            u = db_u.nickname
+        # get user nickname
+        if user is not None:
+            name = user.nickname
         else:
-            u = discord.utils.escape_markdown(message.author.name)
-        g = str(message.guild.id)
-        if wormhole.logo:
-            if not firstline:
-                g = config["logo fill"]
+            name = discord.utils.escape_markdown(message.author.name)
+
+        # get logo
+        if wormhole.logo is not None:
+            if firstline:
+                logo = wormhole.logo
             else:
-                g = wormhole.logo
+                logo = config["logo fill"]
         else:
-            g = discord.utils.escape_markdown(message.guild.name) + ","
+            logo = None
 
-        if a == "none":
-            return f"{g} **{u}**: "
-
-        if a == "guild" and logo:
-            return f"**{g}** "
-        if a == "guild":
-            return f"**{g}**: "
-
+        # get prefix
+        if beam.anonymity == "none":
+            # display everything
+            return f"{logo} **{name}**: "
+        if beam.anonymity == "guild" and logo is not None:
+            # display guild logo
+            return logo + " "
+        if beam.anonymity == "guild" and logo is None:
+            # display guild name
+            return f"{discord.utils.escape_markdown(message.guild.name)}, **{name}**"
+        # wrong configuration or full anonymity
         return ""
 
     def __process(self, message: discord.Message):
