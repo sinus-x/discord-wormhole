@@ -68,13 +68,7 @@ class Wormhole(wormcog.Wormcog):
             return
 
         # count the message
-        self.transferred += 1
-        if self.transferred % 50 == 0:
-            self.__saveStats()
-        try:
-            self.stats[str(message.channel.id)] += 1
-        except KeyError:
-            self.stats[str(message.channel.id)] = 1
+        self.__updateStats(message)
 
         # send the message
         await self.send(message, beam, content, files=message.attachments)
@@ -392,10 +386,29 @@ class Wormhole(wormcog.Wormcog):
 
         return content.replace("@", "@_")
 
+    def __updateStats(self, message: discord.Message):
+        """Increment wormhole's statistics"""
+        # get wormhole ID
+        author = repo_u.get(message.channel.id)
+        if author is not None:
+            wormhole_id = author.home
+        else:
+            wormhole_id = message.channel.id
+
+        try:
+            self.stats[str(wormhole_id)] += 1
+        except KeyError:
+            self.stats[str(wormhole_id)] = 1
+
+        # save
+        self.transferred += 1
+        if self.transferred % 50 == 0:
+            self.__saveStats()
+
     def __saveStats(self):
         """Save message statistics to the database"""
-        for w, n in self.stats.items():
-            repo_w.set(int(w), messages=n)
+        for wormhole, count in self.stats.items():
+            repo_w.set(int(wormhole), messages=count)
 
 
 def setup(bot):
