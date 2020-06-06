@@ -303,14 +303,15 @@ class Wormhole(wormcog.Wormcog):
     def __getPrefix(self, message: discord.Message, firstline: bool = True):
         """Get prefix for message"""
         beam = self.message2Beam(message)
-        wormhole = repo_w.get(message.channel.id)
         user = repo_u.get(message.author.id)
 
         # get user nickname
         if user is not None:
             name = user.nickname
+            wormhole = repo_w.get(user.home)
         else:
             name = discord.utils.escape_markdown(message.author.name)
+            wormhole = repo_w.get(message.channel.id)
 
         # get logo
         if wormhole.logo is not None:
@@ -338,10 +339,11 @@ class Wormhole(wormcog.Wormcog):
         """Escape mentions and apply anonymity"""
         content = message.content
 
-        # FIXME This is not pretty at all
         users = re.findall(r"<@![0-9]+>", content)
         roles = re.findall(r"<@&[0-9]+>", content)
+        channels = re.findall(r"<#[0-9]+>", content)
 
+        # prevent tagging
         for u in users:
             try:
                 user = str(self.bot.get_user(int(u.replace("<@!", "").replace(">", ""))))
@@ -354,6 +356,14 @@ class Wormhole(wormcog.Wormcog):
             except:
                 role = "unknown-role"
             content = content.replace(r, role)
+        # add guild to channel tag
+        for channel in channels:
+            try:
+                ch = self.bot.get_channel(int(channel.replace("<#", "").replace(">", "")))
+                guild_name = discord.utils.escape_markdown(ch.guild.name)
+                content = content.replace(channel, f"{channel} __**({guild_name})**__")
+            except:
+                pass
 
         # line preprocessor (code)
         if "```" in content:
