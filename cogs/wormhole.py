@@ -1,14 +1,12 @@
 import re
 import json
-import asyncio
 from datetime import datetime
-from io import BytesIO
 
 import discord
 from discord.ext import commands
 
 from core import checks, wormcog
-from core.database import repo_b, repo_u, repo_w
+from core.database import repo_u, repo_w
 
 started = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -47,7 +45,7 @@ class Wormhole(wormcog.Wormcog):
         beam = self.message2Beam(message).name
 
         # get wormhole channel objects
-        if not beam in self.wormholes or len(self.wormholes[beam]) == 0:
+        if beam not in self.wormholes or len(self.wormholes[beam]) == 0:
             self.reconnect(beam)
 
         # process incoming message
@@ -123,21 +121,22 @@ class Wormhole(wormcog.Wormcog):
         embed.add_field(value=f"**{p}link**",              name="Link to GitHub repository")
         embed.add_field(value=f"**{p}invite**",            name="Bot invite link")
 
-        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) == None:
-            embed.add_field(value=f"**VISITOR COMMANDS**", name="\u200b", inline=False)
+        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) is None:
+            embed.add_field(value="**VISITOR COMMANDS**", name="\u200b", inline=False)
             embed.add_field(value=f"**{p}register**", name="Register your username")
             embed.add_field(value=f"**{p}whois**",    name="Get information about user")
-        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) != None:
-            embed.add_field(value=f"**USER COMMANDS**",   name="\u200b", inline=False)
+
+        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) is not None:
+            embed.add_field(value="**USER COMMANDS**",   name="\u200b", inline=False)
             embed.add_field(value=f"**{p}me**",       name="Get your information")
             embed.add_field(value=f"**{p}whois**",    name="Get information about user")
             embed.add_field(value=f"**{p}set**",      name="Edit nickname or home")
 
         if "Admin" in self.bot.cogs and ctx.author.id in [x.id for x in repo_u.getMods()]:
             embed.add_field(value=f"**MOD COMMANDS   |   {p}user edit ...**", name="\u200b", inline=False)
-            embed.add_field(value=f"... **nickname [name]**",       name="Nickname")
-            embed.add_field(value=f"... **readonly [true|false]**", name="Write permission")
-            embed.add_field(value=f"... **home [wormhole]**",       name="Home guild")
+            embed.add_field(value="... **nickname [name]**",       name="Nickname")
+            embed.add_field(value="... **readonly [true|false]**", name="Write permission")
+            embed.add_field(value="... **home [wormhole]**",       name="Home guild")
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.removalDelay())
         await self.delete(ctx.message)
@@ -158,7 +157,12 @@ class Wormhole(wormcog.Wormcog):
             ):
                 await self.delete(ctx.message)
                 for m in msgs:
-                    await self.delete(m)
+                    try:
+                        await self.delete(m)
+                    except Exception as e:
+                        await self.console.critical(
+                            f"Could not delete message in {m.channel.id}", error=e
+                        )
                 return
 
     @commands.check(checks.in_wormhole)
@@ -186,8 +190,9 @@ class Wormhole(wormcog.Wormcog):
                     try:
                         await m.edit(content=c)
                     except Exception as e:
-                        print(e)
-                        pass
+                        await self.console.critical(
+                            f"Could not edit message in {m.channel.id}", error=e
+                        )
                 return
 
     @commands.check(checks.in_wormhole)
@@ -210,7 +215,7 @@ class Wormhole(wormcog.Wormcog):
             count += wormhole.messages
             line = []
             # logo
-            if wormhole.logo != None:
+            if wormhole.logo is not None:
                 line.append(wormhole.logo)
             # guild, channel, counter
             channel = self.bot.get_channel(wormhole.channel)
@@ -221,9 +226,9 @@ class Wormhole(wormcog.Wormcog):
             )
             # inactive, ro
             pars = []
-            if wormhole.active == False:
+            if wormhole.active is False:
                 pars.append("inactive")
-            if wormhole.readonly == True:
+            if wormhole.readonly is True:
                 pars.append("read only")
             if len(pars) > 0:
                 line.append(f"({', '.join(pars)})")
@@ -255,9 +260,9 @@ class Wormhole(wormcog.Wormcog):
         # wormhole settings
         wormhole = repo_w.get(ctx.channel.id)
         pars = []
-        if wormhole.active == False:
+        if wormhole.active is False:
             pars.append("inactive")
-        if wormhole.readonly == True:
+        if wormhole.readonly is True:
             pars.append("read only")
         if len(pars) > 0:
             msg += "\n**Wormhole overrides**:\n"
@@ -265,7 +270,7 @@ class Wormhole(wormcog.Wormcog):
 
         # user settings
         user = repo_u.get(ctx.author.id)
-        if user != None and user.readonly == True:
+        if user is not None and user.readonly is True:
             msg += "\n**User overrides**:\n"
             msg += "read only"
 
@@ -335,12 +340,9 @@ class Wormhole(wormcog.Wormcog):
         # FIXME This is not pretty at all
         users = re.findall(r"<@![0-9]+>", content)
         roles = re.findall(r"<@&[0-9]+>", content)
-        chnls = re.findall(r"<#[0-9]+>", content)
 
         for u in users:
             try:
-                # TODO Can we use fetch_user, or would it be API intensive?
-                #     Should it cache all users that sent something, and clean it every x hours?
                 user = str(self.bot.get_user(int(u.replace("<@!", "").replace(">", ""))))
             except:
                 user = "unknown-user"
@@ -351,13 +353,6 @@ class Wormhole(wormcog.Wormcog):
             except:
                 role = "unknown-role"
             content = content.replace(r, role)
-        for c in chnls:
-            try:
-                ch = self.bot.get_channel(int(c.replace("<#", "").replace(">", "")))
-                channel = "#[" + ch.guild.name + ":" + ch.name + "]"
-            except:
-                channel = "unknown-channel"
-            content = content.replace(c, channel)
 
         # line preprocessor (code)
         if "```" in content:

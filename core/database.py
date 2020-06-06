@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, ForeignKey
+from sqlalchemy import BigInteger, Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -108,7 +106,6 @@ class WormholeRepository:
             session.commit()
         except Exception as e:
             session.rollback()
-            print(e)
             raise DatabaseException(
                 f"Channel {channel} is already a wormhole", table="wormholes", error=e
             )
@@ -120,7 +117,7 @@ class WormholeRepository:
         return session.query(Wormhole).filter(Wormhole.beam == beam).all()
 
     def getByActive(self):
-        return session.query(Wormhole).filter(Wormhole.active == True).all()
+        return session.query(Wormhole).filter(Wormhole.active is True).all()
 
     def getAll(self):
         return session.query(Wormhole).all()
@@ -137,7 +134,7 @@ class WormholeRepository:
     ):
         # fmt: off
         ch = self.get(channel)
-        if ch == None:
+        if ch is None:
             raise DatabaseException(f"Wormhole {channel} not found", table="wormholes")
 
         ch_logo     = logo     if logo     is not None else ch.logo
@@ -202,7 +199,7 @@ class UserRepository:
         return session.query(User).filter(User.nickname == nickname).one_or_none()
 
     def getMods(self):
-        return session.query(User).filter(User.mod == True).all()
+        return session.query(User).filter(User.mod is True).all()
 
     def getAll(self):
         return session.query(User).all()
@@ -219,7 +216,7 @@ class UserRepository:
     ):
         # fmt: off
         u = self.get(id)
-        if u == None:
+        if u is None:
             raise DatabaseException("User not found")
 
         if nickname is not None and ("(" in nickname or ")" in nickname):

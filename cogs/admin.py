@@ -1,6 +1,4 @@
-import asyncio
 import json
-from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -96,7 +94,7 @@ class Admin(wormcog.Wormcog):
             try:
                 value = int(value)
                 value = 0 if value < 0 else value
-            except Exception as e:
+            except:
                 raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
         else:
             raise commands.BadArgument(f"Invalid key `{key}`")
@@ -149,7 +147,7 @@ class Admin(wormcog.Wormcog):
                 f"> New wormhole opened: **{self.e(channel.name)}** in **{self.e(channel.guild.name)}**.",
                 system=True,
             )
-        except errors.DatabaseException as e:
+        except errors.DatabaseException:
             raise commands.BadArgument("Already a wormhole")
 
     @wormhole.command(name="open", aliases=["enable"])
@@ -235,7 +233,7 @@ class Admin(wormcog.Wormcog):
                 value = True if value == "true" else False
                 try:
                     repo_w.set(channel.id, readonly=value)
-                    if value == True:
+                    if value is True:
                         msg = "read only"
                     else:
                         msg = "read-write"
@@ -250,7 +248,7 @@ class Admin(wormcog.Wormcog):
             except errors.DatabaseException as e:
                 raise commands.BadArgument("Updating error", e)
         else:
-            raise commands.BadArgument(f"Expecting an emote or a string")
+            raise commands.BadArgument("Expecting an emote or a string")
 
         await self.console.info(f"Wormhole {channel.id} updated: {key} = {value}")
         beam = repo_w.get(channel.id).beam
@@ -277,7 +275,7 @@ class Admin(wormcog.Wormcog):
     async def user(self, ctx: commands.Context):
         """Manage users"""
         if ctx.invoked_subcommand is None:
-            # TODO Make Rubbergoddess-like help embed
+            # TODO Help embed
             pass
 
     @user.command(name="add")
@@ -322,15 +320,14 @@ class Admin(wormcog.Wormcog):
         value = args[1]
 
         if key == "nickname":
-            if "(" in name or ")" in name:
+            if "(" in value or ")" in value:
                 return await ctx.send("The name cannot contain `(` or `)`")
-
             repo_u.set(member.id, nickname=value)
         if key == "mod":
             if value.lower() in ["true", "false"]:
                 value = True if value.lower() == "true" else False
                 repo_u.set(member.id, mod=value)
-                if value == True:
+                if value is True:
                     await self.send(
                         ctx.message, None, f"> New mod: **{self.e(member.name)}**", system=True
                     )
@@ -343,7 +340,7 @@ class Admin(wormcog.Wormcog):
             if value in ["true", "false"]:
                 value = True if value == "true" else False
                 repo_u.set(member.id, readonly=value)
-                if value == True:
+                if value is True:
                     await member.send(
                         "You have been silenced. Wormhole won't accept your messages."
                     )

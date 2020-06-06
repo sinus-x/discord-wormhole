@@ -3,7 +3,6 @@ import json
 import sys
 
 
-import discord
 from discord.ext import commands
 
 from core import wormcog
@@ -16,7 +15,7 @@ class Errors(wormcog.Wormcog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx, error):  # noqa: C901
         # ignore local handlers
         if hasattr(ctx.command, "on_error"):
             return

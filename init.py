@@ -1,9 +1,7 @@
 import json
-import logging
 import traceback
 from datetime import datetime
 
-import discord
 from discord.ext import commands
 
 from core import wormcog, output
@@ -43,13 +41,13 @@ async def on_error(event, *args, **kwargs):
     tb = traceback.format_exc()
     print(tb)
 
-    ch = bot.get_channel(config["error channel"])
-    if ch == None:
+    channel = bot.get_channel(config["error channel"])
+    if channel is None:
         print("ERROR: Error channel not found")
         return
     output = list(output[0 + i : 1980 + i] for i in range(0, len(output), 1980))
     for o in output:
-        await ch.send(f"```{o}```")
+        await channel.send(f"```{o}```")
 
 
 ##

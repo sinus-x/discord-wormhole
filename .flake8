@@ -5,7 +5,7 @@ enable-extensions =
 ignore =
 	# continuation line indentation
 	E12,
-	# whitespace before or after (, ). :
+	# whitespace before or after ():
 	E20,
 	# multiple spaces before operator
 	E221,
@@ -28,6 +28,11 @@ ignore =
 exclude =
 	# .py files here are deprecated
 	config/*
+per-file-ignores = 
+	# print (logging)
+	init.py:T001
+	cogs/errors.py:T001
+	core/output.py:T001
 count = True
 max-complexity = 13
 max-line-length = 110

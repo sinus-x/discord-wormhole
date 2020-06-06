@@ -1,7 +1,7 @@
 import json
 
 from discord.ext import commands
-from core.database import repo_u
+from core.database import repo_u, repo_w
 
 config = json.load(open("config.json"))
 
