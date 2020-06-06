@@ -19,10 +19,11 @@ class Wormhole(wormcog.Wormcog):
     def __init__(self, bot):
         super().__init__(bot)
 
+        # Global message counter
         self.transferred = 0
-        """Global message counter"""
+
+        # Per-channel message couter
         self.stats = {}
-        """Per-channel message couter"""
         for w in repo_w.getAll():
             self.stats[str(w.channel)] = w.messages
 
@@ -222,7 +223,7 @@ class Wormhole(wormcog.Wormcog):
             line.append(
                 f"**{discord.utils.escape_markdown(channel.guild.name)}** "
                 f"(#{discord.utils.escape_markdown(channel.name)}): "
-                f"**{wormhole.messages}** messages"
+                f"**{self.stats[str(wormhole.channel)]}** messages"
             )
             # inactive, ro
             pars = []
