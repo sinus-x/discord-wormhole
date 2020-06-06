@@ -1,3 +1,4 @@
+import re
 import json
 
 import discord
@@ -33,16 +34,25 @@ class Admin(wormcog.Wormcog):
     @beam.command(name="add", aliases=["create"])
     async def beam_add(self, ctx: commands.Context, name: str):
         """Add new beam"""
+        # check names
+        pattern = r"[a-zA-Z0-9_]+"
+        if re.fullmatch(pattern, name) is None:
+            raise commands.BadArgument(f"Beam name must match `{pattern}`")
+
+        # add
         try:
             repo_b.add(name)
             await self.console.info(f'Beam "{name}" created and opened')
-            await self.embed.info(ctx, f"Beam **{self.e(name)}** created and opened")
+            await self.embed.info(ctx, f"Beam **{name}** created and opened")
         except errors.DatabaseException as e:
-            raise commands.BadArgument(f"Error creating the beam `{self.e(name)}`", e)
+            raise commands.BadArgument(f"Error creating the beam **{name}**", e)
 
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx: commands.Context, name: str):
         """Open closed beam"""
+        if repo_b.get(name) is None:
+            raise commands.BadArgument("Invalid beam")
+
         try:
             repo_b.set(name=name, active=True)
             await self.console.info(f'Beam "{name}" opened')
@@ -50,11 +60,14 @@ class Admin(wormcog.Wormcog):
                 ctx.message, name, "> The current wormhole beam has been opened.", system=True,
             )
         except Exception as e:
-            raise commands.BadArgument(f"Error opening the beam `{self.e(name)}`", e)
+            raise commands.BadArgument(f"Error opening the beam **{name}**", e)
 
     @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx: commands.Context, name: str):
         """Close beam"""
+        if repo_b.get(name) is None:
+            raise commands.BadArgument("Invalid beam")
+
         try:
             await self.send(
                 ctx.message, name, "> The current wormhole beam has been closed.", system=True,
@@ -62,7 +75,7 @@ class Admin(wormcog.Wormcog):
             repo_b.set(name=name, active=False)
             await self.console.info(f'Beam "{name}" closed')
         except Exception as e:
-            raise commands.BadArgument(f"Error closing the beam `{self.e(name)}`", e)
+            raise commands.BadArgument(f"Error closing the beam **{name}**", e)
 
     @beam.command(name="edit", aliases=["alter"])
     async def beam_edit(self, ctx: commands.Context, name: str, *args):
@@ -75,6 +88,9 @@ class Admin(wormcog.Wormcog):
         """
         if len(args) != 2:
             raise commands.BadArgument("Expecting key and value")
+
+        if repo_b.get(name) is None:
+            raise commands.BadArgument("Invalid beam")
 
         key = args[0]
         value = args[1]
