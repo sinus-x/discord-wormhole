@@ -28,7 +28,7 @@ ignore =
 exclude =
 	# .py files here are deprecated
 	config/*
-per-file-ignores = 
+per-file-ignores =
 	# print (logging)
 	init.py:T001
 	cogs/errors.py:T001
