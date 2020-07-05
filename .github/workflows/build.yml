@@ -48,4 +48,4 @@ jobs:
         flake8 . --count --exit-zero \
         --ignore=E12,E20,E221,E222,E241,E251,E266,E271,E272,E30,E722,W50 \
         --per-file-ignores="init.py:T001 cogs/errors.py:T001 core/output.py:T001" \
-        --max-complexity=13 --max-line-length=110 --statistics
+        --max-complexity=20 --max-line-length=110 --statistics
