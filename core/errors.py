@@ -9,19 +9,18 @@ class WormholeException(Exception):
 
 
 class DatabaseException(WormholeException):
-    def __init__(self, message, table, key=None, value=None, error=None):
+    def __init__(self, message, key=None, value=None, error=None):
         super().__init__(message)
-        self.table = table
         self.key = key
         self.value = value
         self.error = error
 
     def __str__(self):
         if self.key and self.value:
-            return f"{self.message} (table `{self.table}` > `{self.key} = {self.value}`)"
+            return f"{self.message} (`{self.key} = {self.value}`)"
         if self.key:
-            return f"{self.message} (table `{self.table}` > `{self.key}`)"
-        return f"{self.message} (table `{self.table}`)"
+            return f"{self.message} (`{self.key}`)"
+        return self.message
 
 
 class NotRegistered(WormholeException):

@@ -23,9 +23,7 @@ class User(wormcog.Wormcog):
         return u
 
     def getHomeString(self, channel: discord.TextChannel):
-        return (
-            f"{channel.mention} on server **{discord.utils.escape_markdown(channel.guild.name)}**"
-        )
+        return f"{channel.mention} @ **{discord.utils.escape_markdown(channel.guild.name)}**"
 
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     @commands.command()
@@ -35,16 +33,14 @@ class User(wormcog.Wormcog):
         if u is not None:
             raise errors.WormholeException("You are already registered")
 
-        name = discord.utils.escape_markdown(ctx.author.name).replace("]", "").replace("[", "")
+        name = discord.utils.escape_markdown(ctx.author.name).replace(")", "").replace("(", "")
 
         # get first available nickname
-        u = repo_u.getByNickname(name)
         i = 0
-        while u is not None:
-            u = repo_u.getByNickname(f"{name}{i}")
+        name_orig = name
+        while repo_u.nicknameIsUsed(name):
+            name = f"{name_orig}{i}"
             i += 1
-        if i > 0:
-            name = f"{name}{i}"
 
         # register
         try:
@@ -96,11 +92,18 @@ class User(wormcog.Wormcog):
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
         if self.getUserObject(ctx) is None:
-            return await ctx.author.send(f"You have to register first with `{self.p}register`")
+            return await ctx.author.send(
+                f"{ctx.author.mention}, you have to register first with `{self.p}register`",
+                delete_after=5,
+            )
         if not isinstance(ctx.channel, discord.TextChannel):
-            return await ctx.author.send("Home has to be a text channel")
+            return await ctx.author.send(
+                f"{ctx.author.mention}, home has to be a text channel", delete_after=5
+            )
         if repo_w.get(ctx.channel.id) is None:
-            return await ctx.author.send("Home has to be a wormhole")
+            return await ctx.author.send(
+                f"{ctx.author.mention}, home has to be a wormhole", delete_after=5
+            )
 
         repo_u.set(ctx.author.id, home=ctx.channel.id)
         await ctx.author.send("Your home wormhole is " + self.getHomeString(ctx.channel))
@@ -139,7 +142,7 @@ class User(wormcog.Wormcog):
         """Display user info"""
         u = self.bot.get_user(user.id)
         msg = [
-            f"User **{discord.utils.escape_markdown(u.name)}**",
+            f"User **{discord.utils.escape_markdown(u.nickname)}**",
             f"_Taggable via_ `(({user.nickname}))`",
             "Information: ",
         ]

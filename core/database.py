@@ -20,13 +20,20 @@ class BeamRepository(Database):
 
     def add(self, *, name: str, admin_id: int):
         self._name_check(name)
+        self._availability_check(name)
 
-        self.set(
-            name=name, admin_id=admin_id, active=0, replace=1, anonymity="none", timeout=60,
+        self.db.mset(
+            {
+                f"beam:{name}:active": 0,
+                f"beam:{name}:admin_id": admin_id,
+                f"beam:{name}:anonymity": "none",
+                f"beam:{name}:replace": 1,
+                f"beam:{name}:timeout": 60,
+            }
         )
 
     def get(self, name: str) -> objects.Beam:
-        self._availability_check(name)
+        self._existence_check(name)
 
         result = objects.Beam(name)
         result.active = self.getAttribute(name, "active")
@@ -68,10 +75,10 @@ class BeamRepository(Database):
     def isValidAttribute(self, key: str, value):
         # fmt: off
         if key not in self.attributes \
-        or key in ("active", "replace")    and value not in (0, 1) \
-        or key in ("anonymity")            and value not in ("none", "guild", "full") \
-        or key in ("admin_id", "timeout")  and type(value) != int \
-        or key in ("name") and type(value) != str:
+        or key in ("active", "replace")   and value not in (0, 1) \
+        or key in ("anonymity")           and value not in ("none", "guild", "full") \
+        or key in ("admin_id", "timeout") and type(value) != int \
+        or key in ("name")                and type(value) != str:
             return False
         return True
         # fmt:on
@@ -83,6 +90,10 @@ class BeamRepository(Database):
     def _getBeamName(self, string: str):
         return string.split(":")[1]
 
+    def _name_check(self, name: str):
+        if ":" in name:
+            raise DatabaseException("Beam name cannot contain semicolon.")
+
     def _availability_check(self, name: str):
         result = self.db.get(f"beam:{name}:active")
         if result is not None:
@@ -92,10 +103,6 @@ class BeamRepository(Database):
         result = self.db.get(f"beam:{name}:active")
         if result is None:
             raise DatabaseException("Beam name not found.")
-
-    def _name_check(self, name: str):
-        if ":" in name:
-            raise DatabaseException("Beam name cannot contain semicolon.")
 
 
 class WormholeRepository(Database):
@@ -109,14 +116,15 @@ class WormholeRepository(Database):
 
     def add(self, *, beam: str, discord_id: int):
         self._availability_check(discord_id)
-        self.set(
-            beam=beam,
-            discord_id=discord_id,
-            active=1,
-            admin_id=None,
-            logo=None,
-            messages=0,
-            readonly=0,
+
+        self.db.mset(
+            {
+                f"wormhole:{discord_id}:active": 1,
+                f"wormhole:{discord_id}:admin_id": None,
+                f"wormhole:{discord_id}:anonymity": "none",
+                f"wormhole:{discord_id}:replace": 1,
+                f"wormhole:{discord_id}:timeout": 60,
+            }
         )
 
     def get(self, discord_id: int) -> objects.Wormhole:
@@ -200,8 +208,13 @@ class UserRepository(Database):
     def add(self, *, discord_id: int, nickname: str, home_id: int = None):
         self._availability_check(discord_id)
 
-        self.set(
-            discord_id=discord_id, nickname=nickname, home_id=home_id, mod=0, readonly=0,
+        self.db.mset(
+            {
+                f"user:{discord_id}:home_id": home_id,
+                f"user:{discord_id}:mod": 0,
+                f"user:{discord_id}:nickname": nickname,
+                f"user:{discord_id}:readonly": 0,
+            }
         )
 
     def get(self, discord_id: int) -> objects.User:
@@ -214,6 +227,13 @@ class UserRepository(Database):
         result.readonly = self.getAttribute(discord_id, "readonly")
 
         return result
+
+    def getByNickname(self, nickname: str) -> objects.User:
+        result = self.db.scan("user:*:nickname")
+        for key, value in result:
+            if value == nickname:
+                return self.get(self._getUserDiscordId(key))
+        return None
 
     def getAttribute(self, discord_id: int, attribute: str):
         if attribute not in self.attributes:
@@ -238,6 +258,10 @@ class UserRepository(Database):
         self._existence_check(discord_id)
         for attribute in self.attributes:
             self.db.delete(f"user:{discord_id}:{attribute}")
+
+    def nicknameIsUsed(self, nickname: str) -> bool:
+        result = self.db.scan("user:*:nickname").values()
+        return nickname in result
 
     ##
     ## Logic
@@ -266,6 +290,9 @@ class UserRepository(Database):
         result = self.db.get(f"user:{discord_id}:readonly")
         if result is None:
             raise DatabaseException(f"User ID unknown: {discord_id}.")
+
+    def _getUserDiscordId(self, string: str):
+        return int(string.split(":")[1])
 
 
 repo_b = BeamRepository()
