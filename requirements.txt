@@ -1,3 +1,4 @@
 discord
 gitpython
+redis
 sqlalchemy

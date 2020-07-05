@@ -16,10 +16,10 @@ A discord bot to connect multiple guilds.
 
 Features:
 
-- Three levels of anonymity
+- Various levels of anonymity
 - Edit sent messages on all connected servers
-- Use custom emotes instead of guild names
-- Full control over your data by hosting it on your own server
+- Wormhole aliases (emoji and guild emote support)
+- Full control over your data by self-hosting
 
 Required permissions:
 
@@ -32,6 +32,8 @@ Required permissions:
 
 ## Set up
 - Clone the repository
+- Install redis: `apt install redis-server`
+- Install requirements: `pip3 install -r requirements.txt`
 - Create `config.json` file with `config.default.json` as a reference
 - Run the bot with `python3 bot.py`
 
