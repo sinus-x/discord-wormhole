@@ -4,5 +4,3 @@ __pycache__
 config.json
 # database
 *.db
-# sourcetrail
-*.srctrl*
