@@ -23,7 +23,7 @@ class DatabaseException(WormholeException):
         return self.message
 
 
-class ArgumentException(WormholeException):
+class BadArgument(WormholeException):
     pass
 
 

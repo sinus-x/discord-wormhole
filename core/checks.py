@@ -11,7 +11,7 @@ def is_admin(ctx: commands.Context):
 
 
 def is_mod(ctx: commands.Context):
-    return repo_u.getAttribute(ctx.author.id, "mod") == 1
+    return is_admin(ctx) or repo_u.getAttribute(ctx.author.id, "mod") == 1
 
 
 def in_wormhole(ctx: commands.Context):

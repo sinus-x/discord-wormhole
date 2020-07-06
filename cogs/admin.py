@@ -36,7 +36,7 @@ class Admin(wormcog.Wormcog):
             "list",
         ]
 
-        embed = self.embed(ctx=ctx, title="Beams", description=prefix)
+        embed = self.getEmbed(ctx=ctx, title="Beams", description=prefix)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
@@ -46,7 +46,7 @@ class Admin(wormcog.Wormcog):
         # check names
         pattern = r"[a-zA-Z0-9_]+"
         if re.fullmatch(pattern, name) is None:
-            raise commands.BadArgument(f"Beam name must match `{pattern}`")
+            raise errors.BadArgument(f"Beam name must match `{pattern}`")
 
         # add
         try:
@@ -54,7 +54,7 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f'Beam "{name}" created and opened')
             await self.embed.info(ctx, f"Beam **{name}** created and opened")
         except errors.DatabaseException as e:
-            raise commands.BadArgument(f"Error creating the beam **{name}**", e)
+            raise errors.BadArgument(f"Error creating the beam **{name}**", e)
 
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx: commands.Context, name: str):
@@ -66,13 +66,13 @@ class Admin(wormcog.Wormcog):
                 ctx.message, name, "> The current wormhole beam has been opened.", system=True,
             )
         except Exception as e:
-            raise commands.BadArgument(f"Error opening the beam **{name}**", e)
+            raise errors.BadArgument(f"Error opening the beam **{name}**", e)
 
     @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx: commands.Context, name: str):
         """Close beam"""
         if repo_b.get(name) is None:
-            raise commands.BadArgument("Invalid beam")
+            raise errors.BadArgument("Invalid beam")
 
         try:
             await self.send(
@@ -81,23 +81,19 @@ class Admin(wormcog.Wormcog):
             repo_b.set(name=name, active=0)
             await self.console.info(f'Beam "{name}" closed')
         except Exception as e:
-            raise commands.BadArgument(f"Error closing the beam **{name}**", e)
+            raise errors.BadArgument(f"Error closing the beam **{name}**", e)
 
     @beam.command(name="edit", aliases=["alter"])
     async def beam_edit(self, ctx: commands.Context, name: str, key: str, value: str):
-        """Edit beam
-
-        key:value
-        - admin_id: [int] (user ID)
-        - anonymity: [none | guild | full]
-        - replace: [0 | 1]
-        - timeout: [int] (seconds)
-        """
-        if repo_b.get(name) is None:
-            raise commands.BadArgument("Invalid beam")
+        """Edit beam"""
+        if not repo_b.exists(name):
+            raise errors.BadArgument("Invalid beam")
 
         if value in ("active", "admin_id", "replace", "timeout"):
-            value = int(value)
+            try:
+                value = int(value)
+            except ValueError:
+                raise errors.BadArgument("Value has to be integer.")
 
         repo_b.set(name=name, key=key, value=value)
 
@@ -109,8 +105,9 @@ class Admin(wormcog.Wormcog):
         """List all wormholes"""
         embed = discord.Embed(title="Beam list")
 
-        beams = repo_b.listNames()
-        for beam in beams:
+        beam_names = repo_b.listNames()
+        for beam_name in beam_names:
+            beam = repo_b.get(beam_name)
             ws = len(repo_w.listIDs(beam=beam.name))
             name = f"**{beam.name}** ({'in' if not beam.active else ''}active) | {ws} wormholes"
             value = f"Anonymity _{beam.anonymity}_, " + f"timeout _{beam.timeout} s_ "
@@ -138,7 +135,7 @@ class Admin(wormcog.Wormcog):
             "list",
         ]
 
-        embed = self.embed(ctx=ctx, title="Wormholes", description=description)
+        embed = self.getEmbed(ctx=ctx, title="Wormholes", description=description)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
@@ -149,7 +146,7 @@ class Admin(wormcog.Wormcog):
         """Open new wormhole"""
         db_b = repo_b.get(beam)
         if not db_b:
-            raise commands.BadArgument("No such beam")
+            raise errors.BadArgument("No such beam")
 
         if channel is None:
             channel = ctx.channel
@@ -166,7 +163,7 @@ class Admin(wormcog.Wormcog):
                 system=True,
             )
         except errors.DatabaseException:
-            raise commands.BadArgument("Already a wormhole")
+            raise errors.BadArgument("Already a wormhole")
 
     @wormhole.command(name="open", aliases=["enable"])
     async def wormhole_open(self, ctx: commands.Context, channel: discord.TextChannel = None):
@@ -176,7 +173,7 @@ class Admin(wormcog.Wormcog):
 
         w = repo_w.get(channel=channel.id)
         if w is None:
-            raise commands.BadArgument("No such wormhole")
+            raise errors.BadArgument("No such wormhole")
 
         try:
             repo_w.set(channel=channel.id, active=True)
@@ -188,7 +185,7 @@ class Admin(wormcog.Wormcog):
                 system=True,
             )
         except errors.DatabaseException as e:
-            raise commands.BadArgument("Could not open the wormhole", e)
+            raise errors.BadArgument("Could not open the wormhole", e)
 
     @wormhole.command(name="close", aliases=["disable"])
     async def wormhole_close(self, ctx: commands.Context, channel: discord.TextChannel = None):
@@ -206,7 +203,7 @@ class Admin(wormcog.Wormcog):
             repo_w.set(channel=channel.id, active=False)
             await self.console.info(f"Wormhole {channel.id} closed")
         except errors.DatabaseException as e:
-            raise commands.BadArgument("Could not open the wormhole", e)
+            raise errors.BadArgument("Could not open the wormhole", e)
 
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx: commands.Context, channel: discord.TextChannel = None):
@@ -226,51 +223,28 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f"Wormhole {channel.id} removed")
             await ctx.send("> Wormhole removed.")
         except errors.DatabaseException as e:
-            raise commands.BadArgument("Could not remove the wormhole", e)
+            raise errors.BadArgument("Could not remove the wormhole", e)
 
     @wormhole.command(name="edit", aliases=["alter"])
-    async def wormhole_edit(self, ctx: commands.Context, channel: discord.TextChannel, *args):
-        """Edit wormhole
+    async def wormhole_edit(self, ctx, channel: discord.TextChannel, key: str, value: str):
+        """Edit wormhole"""
+        if not repo_w.exists(channel.id):
+            raise errors.BadArgument("Invalid wormhole")
 
-        channel: A text channel
-        key:value
-        - readonly: [true | false]
-        - logo: <emote>
-        """
-        g = discord.utils.escape_markdown(channel.guild.name)
-
-        if len(args) != 2:
-            raise commands.BadArgument("Expecting key and value")
-
-        key = args[0]
-        value = args[1]
-
-        msg = ""
-        if key == "readonly":
-            if value in ["true", "false"]:
-                value = True if value == "true" else False
-                try:
-                    repo_w.set(channel.id, readonly=value)
-                    if value is True:
-                        msg = "read only"
-                    else:
-                        msg = "read-write"
-                except errors.DatabaseException as e:
-                    raise commands.BadArgument("Updating error", e)
-            else:
-                raise commands.BadArgument("Expecting `true` or `false`")
-        elif key == "logo":
+        if value in ("admin_id", "active", "readonly", "messages"):
             try:
-                repo_w.set(channel.id, logo=value)
-                msg = f"logo is now {value}"
-            except errors.DatabaseException as e:
-                raise commands.BadArgument("Updating error", e)
-        else:
-            raise commands.BadArgument("Expecting an emote or a string")
+                value = int(value)
+            except ValueError:
+                raise errors.BadArgument("Value has to be integer.")
 
+        repo_w.set(discord_id=channel.id, key=key, value=value)
+
+        g = self.sanitise(channel.guild.name)
         await self.console.info(f"Wormhole {channel.id} updated: {key} = {value}")
         beam = repo_w.get(channel.id).beam
-        await self.send(ctx.message, beam, f"> Wormhole in **{g}** updated: {msg}", system=True)
+        await self.send(
+            ctx.message, beam, f"> Wormhole in **{g}** updated: {key} is {value}", system=True
+        )
 
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx: commands.Context):
@@ -307,7 +281,7 @@ class Admin(wormcog.Wormcog):
             "list",
         ]
 
-        embed = self.embed(ctx=ctx, title="Users", description=description)
+        embed = self.getEmbed(ctx=ctx, title="Users", description=description)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
@@ -319,7 +293,7 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f"User {self.e(member.name)} ({member.id}) added")
             await self.embed.info(ctx, f"User **{self.e(member.name)}** added")
         except Exception as e:
-            raise commands.BadArgument(f"Could not add the user {member.id}", e)
+            raise errors.BadArgument(f"Could not add the user {member.id}", e)
 
     @user.command(name="remove", aliases=["delete"])
     async def user_remove(self, ctx: commands.Context, member: discord.Member):
@@ -329,72 +303,26 @@ class Admin(wormcog.Wormcog):
             await self.console.info(f"User {self.e(member.name)} ({member.id}) removed")
             await self.embed.info(ctx, f"User **{self.e(member.name)}** removed")
         except Exception as e:
-            raise commands.BadArgument(f"Could not remove the user {member.id}", e)
+            raise errors.BadArgument(f"Could not remove the user {member.id}", e)
 
     @user.command(name="edit", aliases=["alter"])
-    async def user_edit(self, ctx: commands.Context, member: discord.Member, *args):
-        """Edit user
+    async def user_edit(self, ctx, member: discord.Member, key: str, value: str):
+        """Edit user"""
+        if not repo_u.exists(member.id):
+            raise errors.BadArgument("Invalid user")
 
-        member: A discord member
-        key:value:
-            nickname: string or None
-            mod:      true or false
-            readonly: true or false
-        """
         if ctx.author.id != config["admin id"] and repo_u.getAttribute(member.id, "mod") == 1:
             return await ctx.send("> You do not have permission to alter mod accounts")
         if ctx.author.id != config["admin id"] and member.id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
-        if len(args) != 2:
-            raise commands.BadArgument("Expecting key and value")
-
-        key = args[0]
-        value = args[1]
-
-        if key == "nickname":
-            if "(" in value or ")" in value:
-                return await ctx.send("The name cannot contain `(` or `)`")
-            repo_u.set(member.id, nickname=value)
-        if key == "mod":
-            if value.lower() in ["true", "false"]:
-                value = True if value.lower() == "true" else False
-                repo_u.set(member.id, mod=value)
-                if value is True:
-                    await self.send(
-                        ctx.message, None, f"> New mod: **{self.e(member.name)}**", system=True
-                    )
-                    await member.send("You are now a Wormhole mod!")
-                else:
-                    await member.send("You are no longer a Wormhole mod.")
-            else:
-                raise commands.BadArgument("Expecting true or false")
-        elif key == "readonly":
-            if value in ["true", "false"]:
-                value = True if value == "true" else False
-                repo_u.set(member.id, readonly=value)
-                if value is True:
-                    await member.send(
-                        "You have been silenced. Wormhole won't accept your messages."
-                    )
-                else:
-                    await member.send("You are no longer silenced.")
-            else:
-                raise commands.BadArgument("Expecting true or false")
-        elif key == "home":
-            if value.lower() == "none":
-                repo_u.set(member.id, home=None)
+        if value in ("home_id", "mod", "readonly", "restricted"):
             try:
-                converter = commands.TextChannelConverter()
-                home = await converter.convert(ctx=ctx, argument=value)
-                repo_u.set(member.id, home=home.id)
-                await member.send(
-                    f"Your home wormhole has been set to {home.mention} in **{self.e(home.guild.name)}**"
-                )
-            except commands.errors.BadArgument:
-                raise commands.BadArgument(f"{value} is not valid channel")
-        else:
-            raise commands.BadArgument("Unknown key")
+                value = int(value)
+            except ValueError:
+                raise errors.BadArgument("Value has to be integer.")
+
+        repo_u.set(discord_id=member.id, key=key, value=value)
 
         await self.console.info(
             f"User {self.e(member.name)} ({member.id}) updated: {key} = {value}"
@@ -403,28 +331,60 @@ class Admin(wormcog.Wormcog):
     @user.command(name="list")
     async def user_list(self, ctx):
         """List all registered users"""
-        us = repo_u.getAll()
-        embed = discord.Embed(title="User list")
-        for u in us:
-            user = self.bot.get_user(u.id)
-            name = "MOD" if u.mod else "\u200B"
-            value = f"{user.mention}"
-            value += f" {discord.utils.escape_markdown(u.nickname)}. " if u.nickname else ". "
-            value += "Read only. " if u.readonly else ""
-            if u.home:
-                ch = self.bot.get_channel(u.home)
-                g = discord.utils.escape_markdown(ch.guild.name)
-                value += f"home in {ch.mention} ({g})"
-            embed.add_field(name=name, value=value, inline=False)
-        await ctx.send(embed=embed)
+        db_users = repo_u.listObjects()
 
-    def str2int(self, s):
-        if isinstance(s, discord.TextChannel):
-            return s.id
-        try:
-            return int(s)
-        except:
-            raise commands.UserInputError("Could not convert to int: " + str(s))
+        # TODO This is not good enough
+
+        template = "{name:>12}/{nickname:<12} | {mod:>3} {ro:>3} {restr:>3} | {home} ({guild})"
+        title = template.format(
+            name="NAME",
+            nickname="NICKNAME",
+            mod="MOD",
+            ro="RO",
+            restr="RES",
+            home="HOME",
+            guild="GUILD",
+        )
+
+        wormholes = {}
+
+        result = []
+        for db_user in db_users:
+            # get user
+            user = self.bot.get_user(db_user.discord_id)
+            user_name = user.name if hasattr(user, "name") else "---"
+            # get wormhole's guild
+            if str(db_user.home_id) not in wormholes.keys():
+                channel = self.bot.get_channel(db_user.home_id)
+                if isinstance(channel, discord.TextChannel):
+                    wormholes[str(db_user.home_id)] = self.sanitise(channel.guild.name)
+                else:
+                    wormholes[str(db_user.home_id)] = "---"
+
+            # add string
+            result.append(
+                template.format(
+                    name=user_name,
+                    nickname=db_user.nickname,
+                    mod=db_user.mod,
+                    ro=db_user.readonly,
+                    restr=db_user.restricted,
+                    home=db_user.home_id,
+                    guild=wormholes[str(db_user.home_id)],
+                )
+            )
+
+        async def sendOutput(output: str):
+            await ctx.send("```" + title + "\n" + output + "```")
+
+        # iterate over the result
+        output = ""
+        for line in result:
+            if len(output) > 1900:
+                await sendOutput(output)
+                output = ""
+            output += "\n" + line
+        await sendOutput(output)
 
 
 def setup(bot):

@@ -24,7 +24,7 @@ class Wormhole(wormcog.Wormcog):
 
         # Per-channel message couter
         self.stats = {}
-        for w in repo_w.getAllIDs():
+        for w in repo_w.listIDs():
             self.stats[str(w)] = w.messages
 
     @commands.Cog.listener()

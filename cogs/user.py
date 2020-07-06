@@ -3,9 +3,8 @@ import json
 import discord
 from discord.ext import commands
 
-from core import errors, wormcog
+from core import errors, objects, wormcog
 from core.database import repo_u, repo_w
-import objects
 
 config = json.load(open("config.json"))
 

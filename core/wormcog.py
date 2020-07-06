@@ -161,7 +161,7 @@ class Wormcog(commands.Cog):
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
 
-    def embed(
+    def getEmbed(
         self,
         *,
         ctx: commands.Context = None,
@@ -169,7 +169,6 @@ class Wormcog(commands.Cog):
         author: discord.User = None,
         title: str = None,
         description: str = None,
-        color: int = None,
         url: str = None,
     ) -> discord.Embed:
         """Create embed"""
@@ -200,12 +199,8 @@ class Wormcog(commands.Cog):
         else:
             description = ""
 
-        # color
-        if color is None:
-            color = config.color
-
         # create embed
-        embed = discord.Embed(title=title, description=description, color=color, url=url)
+        embed = discord.Embed(title=title, description=description, url=url)
         if discord.Embed.Empty not in (footer_image, footer_text):
             embed.set_footer(icon_url=footer_image, text=footer_text)
 
