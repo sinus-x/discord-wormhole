@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from core import errors, wormcog
 from core.database import repo_u, repo_w
+import objects
 
 config = json.load(open("config.json"))
 
@@ -23,38 +24,38 @@ class User(wormcog.Wormcog):
         return u
 
     def getHomeString(self, channel: discord.TextChannel):
-        return f"{channel.mention} @ **{discord.utils.escape_markdown(channel.guild.name)}**"
+        return f"{channel.mention} in **{self.sanitise(channel.guild.name)}**"
 
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     @commands.command()
     async def register(self, ctx):
         """Add yourself to the database"""
-        u = repo_u.get(ctx.author.id)
-        if u is not None:
+        db_u = repo_u.get(ctx.author.id)
+        if db_u is not None:
             raise errors.WormholeException("You are already registered")
 
-        name = discord.utils.escape_markdown(ctx.author.name).replace(")", "").replace("(", "")
+        nickname = self.sanitise(ctx.author.name, limit=12).replace(")", "").replace("(", "")
 
         # get first available nickname
         i = 0
-        name_orig = name
-        while repo_u.nicknameIsUsed(name):
-            name = f"{name_orig}{i}"
+        name_orig = nickname
+        while repo_u.nicknameIsUsed(nickname):
+            nickname = f"{name_orig}{i}"
             i += 1
 
         # register
-        try:
-            home = ctx.channel.id if isinstance(ctx.channel, discord.TextChannel) else None
-            home = home if repo_w.get(home) is not None else None
-            repo_u.add(ctx.author.id, nickname=ctx.author.name, home=home)
-            await ctx.author.send(
-                "You are now registered. "
-                f"You can display your information with `{self.p}me`.\n"
-                f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
-                f"You can tag others with `((nickname))`, if they have set their home guild."
-            )
-        except errors.DatabaseException as e:
-            await ctx.author.send("There was an error: " + str(e))
+        if isinstance(ctx.channel, discord.TextChannel) and repo_w.get(ctx.channel.id):
+            home_id = ctx.channel.id
+        else:
+            home_id = 0
+
+        repo_u.add(ctx.author.id, nickname=nickname, home_id=home_id)
+        await ctx.author.send(
+            "You are now registered. "
+            f"You can display your information with `{self.p}me`.\n"
+            f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
+            f"You can tag others with `((nickname))`, if they have set their home guild."
+        )
 
     @commands.group(name="set")
     async def set(self, ctx):
@@ -105,7 +106,7 @@ class User(wormcog.Wormcog):
                 f"{ctx.author.mention}, home has to be a wormhole", delete_after=5
             )
 
-        repo_u.set(ctx.author.id, home=ctx.channel.id)
+        repo_u.set(ctx.author.id, home_id=ctx.channel.id)
         await ctx.author.send("Your home wormhole is " + self.getHomeString(ctx.channel))
 
     @commands.cooldown(rate=2, per=3600, type=commands.BucketType.user)
@@ -114,10 +115,10 @@ class User(wormcog.Wormcog):
         """Set new display name"""
         name = discord.utils.escape_markdown(name)
         u = repo_u.getByNickname(name)
-        if u is not None:
+        if u:
             return await ctx.author.send("This name is already used by someone")
-        if "(" in name or ")" in name:
-            return await ctx.author.send("The name cannot contain `(` or `)`")
+        if "(" in name or ")" in name or "@" in name:
+            return await ctx.author.send("The name cannot contain characters `()@`")
 
         repo_u.set(ctx.author.id, nickname=name)
         await ctx.author.send(f"Your nickname was changed to **{name}**")
@@ -134,29 +135,29 @@ class User(wormcog.Wormcog):
     async def whois(self, ctx, member: str):
         """Get information about member"""
         u = repo_u.getByNickname(member)
-        if u is not None:
+        if u:
             return await self.displayUserInfo(ctx, u)
         await ctx.author.send("User not found")
 
-    async def displayUserInfo(self, ctx, user: object):
+    async def displayUserInfo(self, ctx, user: objects.User):
         """Display user info"""
         u = self.bot.get_user(user.id)
         msg = [
-            f"User **{discord.utils.escape_markdown(u.nickname)}**",
+            f"User **{self.sanitise(u.nickname)}**",
             f"_Taggable via_ `(({user.nickname}))`",
             "Information: ",
         ]
 
         par = []
-        if user.mod is not None:
+        if user.mod:
             par.append("**MOD**")
-        if user.readonly is True:
+        if user.readonly:
             par.append("silenced")
-        if user.home is None:
-            msg[1] += "_, once they have set their home wormhole_"
-        else:
+        if user.home:
             home = self.bot.get_channel(user.home)
             par.append("their home wormhole is " + self.getHomeString(home))
+        else:
+            msg[1] += "_, once they have set their home wormhole_"
         msg[2] += ", ".join(par)
 
         await ctx.author.send("\n".join(msg))
