@@ -9,8 +9,6 @@ from core.database import repo_b, repo_u, repo_w
 
 config = json.load(open("config.json"))
 
-# TODO Raise WormholeException instead of BadArgument
-
 
 class Admin(wormcog.Wormcog):
     """Manage wormholes"""
@@ -22,9 +20,25 @@ class Admin(wormcog.Wormcog):
     @commands.group(name="beam")
     async def beam(self, ctx: commands.Context):
         """Manage beams"""
-        if ctx.invoked_subcommand is None:
-            # TODO Help embed
-            pass
+        if ctx.invoked_subcommand is not None:
+            return
+
+        prefix = config["prefix"] + "beam…"
+        values = [
+            "add <name>",
+            "open <name>",
+            "close <name>",
+            "edit <name> active [0, 1]",
+            "edit <name> admin_id <member ID>",
+            "edit <name> anonymity [none, guild, full]",
+            "edit <name> replace [0, 1]",
+            "edit <name> timeout <int>",
+            "list",
+        ]
+
+        embed = self.embed(ctx=ctx, title="Beams", description=prefix)
+        embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
+        await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @beam.command(name="add", aliases=["create"])
     async def beam_add(self, ctx: commands.Context, name: str):
@@ -107,8 +121,26 @@ class Admin(wormcog.Wormcog):
     @commands.group(name="wormhole")
     async def wormhole(self, ctx: commands.Context):
         """Manage wormholes"""
-        if ctx.invoked_subcommand is None:
-            pass
+        if ctx.invoked_subcommand is not None:
+            return
+
+        description = config["prefix"] + "wormhole…"
+        values = [
+            "add <beam> [<channel ID>, None]",
+            "close [<channel ID>, None]",
+            "remove [<channel ID>, None]",
+            "edit <channel ID> beam <beam>",
+            "edit <channel ID> admin_id <member ID>",
+            "edit <channel ID> active [0, 1]",
+            "edit <channel ID> logo <string>",
+            "edit <channel ID> readonly [0, 1]",
+            "edit <channel ID> messages <int>",
+            "list",
+        ]
+
+        embed = self.embed(ctx=ctx, title="Wormholes", description=description)
+        embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
+        await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @wormhole.command(name="add", aliases=["create"])
     async def wormhole_add(
@@ -260,9 +292,24 @@ class Admin(wormcog.Wormcog):
     @commands.group(name="user")
     async def user(self, ctx: commands.Context):
         """Manage users"""
-        if ctx.invoked_subcommand is None:
-            # TODO Help embed
-            pass
+        if ctx.invoked_subcommand is not None:
+            return
+
+        description = config["prefix"] + "user…"
+        values = [
+            "add <member ID>",
+            "remove <member ID>",
+            "edit <member ID> home_id <channel ID>",
+            "edit <member ID> mod [0, 1]",
+            "edit <member ID> nickname <string>",
+            "edit <member ID> readonly [0, 1]",
+            "edit <member ID> restricted [0, 1]",
+            "list",
+        ]
+
+        embed = self.embed(ctx=ctx, title="Users", description=description)
+        embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
+        await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @user.command(name="add")
     async def user_add(self, ctx: commands.Context, member: discord.Member):

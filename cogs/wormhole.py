@@ -144,7 +144,7 @@ class Wormhole(wormcog.Wormcog):
             embed.add_field(value="... **readonly [true|false]**", name="Write permission")
             embed.add_field(value="... **home [wormhole]**",       name="Home guild")
         # fmt: on
-        await ctx.send(embed=embed, delete_after=self.removalDelay())
+        await ctx.send(embed=embed, delete_after=self.delay())
         await self.delete(ctx.message)
 
     @commands.guild_only()
@@ -242,9 +242,7 @@ class Wormhole(wormcog.Wormcog):
 
         # in total count, include messages not yet saved into the database
         count = count + self.transferred % 50
-        await ctx.send(
-            "\n".join(msg).replace("[[total]]", str(count)), delete_after=self.removalDelay()
-        )
+        await ctx.send("\n".join(msg).replace("[[total]]", str(count)), delete_after=self.delay())
 
     @commands.guild_only()
     @commands.check(checks.in_wormhole)
@@ -280,7 +278,7 @@ class Wormhole(wormcog.Wormcog):
             msg += "\n**User overrides**:\n"
             msg += "read only"
 
-        await ctx.send(msg, delete_after=self.removalDelay())
+        await ctx.send(msg, delete_after=self.delay())
 
     @commands.command()
     async def link(self, ctx: commands.Context):

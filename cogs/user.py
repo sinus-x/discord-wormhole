@@ -85,7 +85,7 @@ class User(wormcog.Wormcog):
             inline=False
         )
         # fmt: on
-        await ctx.send(embed=embed, delete_after=self.removalDelay())
+        await ctx.send(embed=embed, delete_after=self.delay())
         await self.delete(ctx.message)
 
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
