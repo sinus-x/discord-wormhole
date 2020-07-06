@@ -44,13 +44,12 @@ class Wormcog(commands.Cog):
     def reconnect(self, beam: str = None):
         if beam is None:
             self.wormholes = {}
-            wormholes = repo_w.getAll()
         else:
             self.wormholes[beam] = []
-            wormholes = repo_w.getByBeam(beam)
 
+        wormholes = repo_w.listObjects(beam)
         for wormhole in wormholes:
-            self.wormholes[beam].append(self.bot.get_channel(wormhole.channel))
+            self.wormholes[beam].append(self.bot.get_channel(wormhole.discord_id))
 
     def delay(self, key: str = "user"):
         if key == "user":

@@ -45,7 +45,7 @@ async def on_error(event, *args, **kwargs):
     if channel is None:
         print("ERROR: Error channel not found")
         return
-    output = list(output[0 + i : 1980 + i] for i in range(0, len(output), 1980))
+    output = list(tb[0 + i : 1980 + i] for i in range(0, len(tb), 1980))
     for o in output:
         await channel.send(f"```{o}```")
 

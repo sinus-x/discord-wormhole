@@ -20,6 +20,8 @@ class Admin(wormcog.Wormcog):
     @commands.group(name="beam")
     async def beam(self, ctx):
         """Manage beams"""
+        await self.delete(ctx)
+
         if ctx.invoked_subcommand is not None:
             return
 
@@ -118,6 +120,8 @@ class Admin(wormcog.Wormcog):
     @commands.group(name="wormhole")
     async def wormhole(self, ctx):
         """Manage wormholes"""
+        await self.delete(ctx)
+
         if ctx.invoked_subcommand is not None:
             return
 
@@ -188,19 +192,21 @@ class Admin(wormcog.Wormcog):
         beams = repo_b.listNames()
         for beam in beams:
             wormholes = repo_w.listObjects(beam=beam)
-            value = ""
+            value = []
             for db_w in wormholes:
                 wormhole = self.bot.get_channel(db_w.discord_id)
                 if wormhole is None:
-                    value += "Missing: " + str(db_w)
+                    value.append("Missing: " + str(db_w))
                     continue
-                value += template.format(
-                    mention=wormhole.mention,
-                    guild=wormhole.guild.name,
-                    active=db_w.active,
-                    readonly=db_w.readonly,
+                value.append(
+                    template.format(
+                        mention=wormhole.mention,
+                        guild=wormhole.guild.name,
+                        active=db_w.active,
+                        readonly=db_w.readonly,
+                    )
                 )
-            embed.add_field(name=beam, value=value, inline=False)
+            embed.add_field(name=beam, value="\n".join(value), inline=False)
 
         await ctx.send(embed=embed, delete_after=self.delay())
 
@@ -208,6 +214,8 @@ class Admin(wormcog.Wormcog):
     @commands.group(name="user")
     async def user(self, ctx):
         """Manage users"""
+        await self.delete(ctx)
+
         if ctx.invoked_subcommand is not None:
             return
 
