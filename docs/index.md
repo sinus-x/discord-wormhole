@@ -23,11 +23,11 @@ Fill the config file and run the bot with `python3 init.py`. You can set up a sy
 
 Generally, user's shouldn't need to do anything to interact with the wormhole. To display available commands, run **~help**. The prefix may be different, depending on configuration; the bot's presence (in-game activity) is showing the prefix.
 
-**~e [text]** | **~edit [text]**
+**~e [text]** (**~edit [text]**)
 
 Edit your last message. For technical reasons, full message will be replaced with the new content, and this command has to be invoked within the defined limit, which is by-default 60 seconds.
 
-**~d** | **~delete**
+**~d** (**~delete**)
 
 Delete your last message. For technical reasons, this command has to be infoked within the defined limit, which is by-default 60 seconds.
 
