@@ -52,6 +52,7 @@ class Wormcog(commands.Cog):
         for wormhole in wormholes:
             self.wormholes[beam].append(self.bot.get_channel(wormhole.channel))
 
+    # FIXME Rename to delay()
     def removalDelay(self, key: str = "user"):
         if key == "user":
             return 20
@@ -156,6 +157,10 @@ class Wormcog(commands.Cog):
             await message.delete()
         except:
             return
+
+    def sanitise(self, string: str, *, limit: int = 500):
+        """Return cleaned-up string ready for output"""
+        return discord.utils.escape_markdown(string).replace("@", "")[:limit]
 
     def message2Beam(self, message: discord.Message):
         wormhole = repo_w.get(message.channel.id)

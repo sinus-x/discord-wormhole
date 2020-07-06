@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 
 from core import checks, wormcog
-from core.database import repo_u, repo_w
+from core.database import repo_b, repo_u, repo_w
 
 started = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -24,30 +24,34 @@ class Wormhole(wormcog.Wormcog):
 
         # Per-channel message couter
         self.stats = {}
-        for w in repo_w.getAll():
-            self.stats[str(w.channel)] = w.messages
+        for w in repo_w.getAllIDs():
+            self.stats[str(w)] = w.messages
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        # do not act if channel is not wormhole channel
-        if message.channel.id not in [w.channel for w in repo_w.getAll()]:
+        # ignore non-textchannel sources
+        if not isinstance(message.channel, discord.TextChannel):
             return
 
         # do not act if author is bot
         if message.author.bot:
             return
 
+        # get wormhole
+        db_w = repo_w.get(message.channel.id)
+        if db_w is None:
+            return
+        # get additional information
+        db_b = repo_b.get(db_w.beam)
+        db_u = repo_u.get(message.author.id)
+
         # do not act if message is bot command
         if message.content.startswith(config["prefix"]):
-            await self.delete(message)
-            return
-
-        # get current beam
-        beam = self.message2Beam(message).name
+            return await self.delete(message)
 
         # get wormhole channel objects
-        if beam not in self.wormholes or len(self.wormholes[beam]) == 0:
-            self.reconnect(beam)
+        if db_b.name not in self.wormholes or len(self.wormholes[db_b.name]) == 0:
+            self.reconnect(db_b.name)
 
         # process incoming message
         content = self.__process(message)
@@ -70,7 +74,7 @@ class Wormhole(wormcog.Wormcog):
         self.__updateStats(message)
 
         # send the message
-        await self.send(message, beam, content, files=message.attachments)
+        await self.send(message, db_b.name, content, files=message.attachments)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -108,7 +112,6 @@ class Wormhole(wormcog.Wormcog):
             await m.delete()
         # TODO React with check, wait, and delete
 
-    @commands.check(checks.in_wormhole)
     @commands.command()
     async def help(self, ctx: commands.Context):
         """Display help"""
@@ -122,18 +125,20 @@ class Wormhole(wormcog.Wormcog):
         embed.add_field(value=f"**{p}link**",              name="Link to GitHub repository")
         embed.add_field(value=f"**{p}invite**",            name="Bot invite link")
 
-        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) is None:
+        db_u = repo_u.get(ctx.author.id)
+        if "User" in self.bot.cogs and db_u is None:
             embed.add_field(value="**VISITOR COMMANDS**", name="\u200b", inline=False)
             embed.add_field(value=f"**{p}register**", name="Register your username")
             embed.add_field(value=f"**{p}whois**",    name="Get information about user")
 
-        if "User" in self.bot.cogs and repo_u.get(ctx.author.id) is not None:
+        if "User" in self.bot.cogs and db_u is not None:
             embed.add_field(value="**USER COMMANDS**",   name="\u200b", inline=False)
-            embed.add_field(value=f"**{p}me**",       name="Get your information")
-            embed.add_field(value=f"**{p}whois**",    name="Get information about user")
-            embed.add_field(value=f"**{p}set**",      name="Edit nickname or home")
+            embed.add_field(value=f"**{p}me**",          name="Get your information")
+            embed.add_field(value=f"**{p}whois**",       name="Get information about user")
+            embed.add_field(value=f"**{p}set**",         name="Edit nickname or home")
 
-        if "Admin" in self.bot.cogs and ctx.author.id in [x.id for x in repo_u.getMods()]:
+        # TODO Rewrite
+        if "Admin" in self.bot.cogs and db_u.mod == 1:
             embed.add_field(value=f"**MOD COMMANDS   |   {p}user edit ...**", name="\u200b", inline=False)
             embed.add_field(value="... **nickname [name]**",       name="Nickname")
             embed.add_field(value="... **readonly [true|false]**", name="Write permission")
@@ -142,6 +147,7 @@ class Wormhole(wormcog.Wormcog):
         await ctx.send(embed=embed, delete_after=self.removalDelay())
         await self.delete(ctx.message)
 
+    @commands.guild_only()
     @commands.check(checks.in_wormhole)
     @commands.command(name="remove", aliases=["d", "delete", "r"])
     async def remove(self, ctx: commands.Context):
@@ -150,22 +156,18 @@ class Wormhole(wormcog.Wormcog):
             return
 
         for msgs in self.sent[::-1]:
-            if (
-                isinstance(msgs[0], discord.Member)
-                and ctx.author.id == msgs[0].id
-                or isinstance(msgs[0], discord.Message)
-                and ctx.author.id == msgs[0].author.id
-            ):
+            # fmt: off
+            if isinstance(msgs[0], discord.Member) and ctx.author.id == msgs[0].id \
+            or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
                 await self.delete(ctx.message)
                 for m in msgs:
-                    try:
-                        await self.delete(m)
-                    except Exception as e:
-                        await self.console.critical(
-                            f"Could not delete message in {m.channel.id}", error=e
-                        )
-                return
+                    await self.delete(m)
+                break
+            # fmt: on
 
+        # TODO Remove from self.sent
+
+    @commands.guild_only()
     @commands.check(checks.in_wormhole)
     @commands.command(name="edit", aliases=["e"])
     async def edit(self, ctx: commands.Context, *, text: str):
@@ -177,25 +179,24 @@ class Wormhole(wormcog.Wormcog):
             return
 
         for msgs in self.sent[::-1]:
-            if (
-                isinstance(msgs[0], discord.Member)
-                and ctx.author.id == msgs[0].id
-                or isinstance(msgs[0], discord.Message)
-                and ctx.author.id == msgs[0].author.id
-            ):
+            # fmt: off
+            if isinstance(msgs[0], discord.Member)  and ctx.author.id == msgs[0].id \
+            or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
                 await self.delete(ctx.message)
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
-                c = self.__process(m)
+                content = self.__process(m)
                 for m in msgs:
                     try:
-                        await m.edit(content=c)
+                        await m.edit(content=content)
                     except Exception as e:
                         await self.console.critical(
                             f"Could not edit message in {m.channel.id}", error=e
                         )
-                return
+                break
+            # fmt: on
 
+    @commands.guild_only()
     @commands.check(checks.in_wormhole)
     @commands.command(aliases=["stat", "stats"])
     async def info(self, ctx: commands.Context):
@@ -208,21 +209,24 @@ class Wormhole(wormcog.Wormcog):
             "",
             "Currently opened wormholes:",
         ]
-        beam = self.message2Beam(ctx.message).name
-        wormholes = repo_w.getByBeam(beam)
+        db_w = repo_w.get(ctx.channel.id)
+        db_b = repo_b.get(db_w.beam)
+
+        wormholes = repo_w.getObjects(db_w.beam)
+
         # loop over wormholes in current beam
         count = 0
         for wormhole in wormholes:
             count += wormhole.messages
             line = []
             # logo
-            if wormhole.logo is not None:
+            if len(wormhole.logo):
                 line.append(wormhole.logo)
             # guild, channel, counter
             channel = self.bot.get_channel(wormhole.channel)
             line.append(
                 f"**{discord.utils.escape_markdown(channel.guild.name)}** "
-                f"(#{discord.utils.escape_markdown(channel.name)}): "
+                f"({channel.mention}): "
                 f"**{self.stats[str(wormhole.channel)]}** messages"
             )
             # inactive, ro
@@ -242,49 +246,48 @@ class Wormhole(wormcog.Wormcog):
             "\n".join(msg).replace("[[total]]", str(count)), delete_after=self.removalDelay()
         )
 
+    @commands.guild_only()
     @commands.check(checks.in_wormhole)
     @commands.command()
     async def settings(self, ctx: commands.Context):
         """Display settings for current beam"""
+        db_w = repo_w.get(ctx.channel.id)
+        db_b = repo_b.get(db_w.beam)
+        db_u = repo_u.get(ctx.author.id)
 
-        # beam settings
-        beam = self.message2Beam(ctx.message)
         msg = ">>> **Settings**:\n"
+        # beam settings
         pars = []
         # fmt: off
-        pars.append("active" if beam.active else "inactive")
-        pars.append(f"replacing (timeout **{beam.timeout} s**)" if beam.replace else "not replacing")
-        pars.append(f"anonymity level **{beam.anonymity}**")
+        pars.append("active" if db_b.active else "inactive")
+        pars.append(f"replacing (timeout **{db_b.timeout} s**)" if db_b.replace else "not replacing")
+        pars.append(f"anonymity level **{db_b.anonymity}**")
         # fmt: on
         msg += ", ".join(pars)
 
         # wormhole settings
-        wormhole = repo_w.get(ctx.channel.id)
         pars = []
-        if wormhole.active is False:
+        if db_w.active is False:
             pars.append("inactive")
-        if wormhole.readonly is True:
+        if db_w.readonly is True:
             pars.append("read only")
         if len(pars) > 0:
             msg += "\n**Wormhole overrides**:\n"
             msg += ", ".join(pars)
 
         # user settings
-        user = repo_u.get(ctx.author.id)
-        if user is not None and user.readonly is True:
+        if db_u is not None and db_u.readonly is True:
             msg += "\n**User overrides**:\n"
             msg += "read only"
 
         await ctx.send(msg, delete_after=self.removalDelay())
 
-    @commands.check(checks.in_wormhole)
     @commands.command()
     async def link(self, ctx: commands.Context):
         """Send a message with link to the bot"""
         await ctx.send("> **GitHub link:** https://github.com/sinus-x/discord-wormhole")
         await self.delete(ctx.message)
 
-    @commands.check(checks.in_wormhole)
     @commands.command()
     async def invite(self, ctx: commands.Context):
         """Invite the wormhole to your guild"""
@@ -302,36 +305,37 @@ class Wormhole(wormcog.Wormcog):
 
     def __getPrefix(self, message: discord.Message, firstline: bool = True):
         """Get prefix for message"""
-        beam = self.message2Beam(message)
-        user = repo_u.get(message.author.id)
+        db_w = repo_w.get(message.channel.id)
+        db_b = repo_b.get(db_w.beam)
+        db_u = repo_u.get(message.author.id)
 
         # get user nickname
-        if user is not None:
-            name = user.nickname
-            wormhole = repo_w.get(user.home)
+        if db_u is not None:
+            name = db_u.nickname
+            home = repo_w.get(db_u.home_id)
         else:
-            name = discord.utils.escape_markdown(message.author.name)
-            wormhole = repo_w.get(message.channel.id)
+            name = self.sanitise(message.author.name, limit=32)
+            home = db_w
 
         # get logo
-        if wormhole.logo is not None:
+        if len(home.logo):
             if firstline:
-                logo = wormhole.logo
+                logo = home.logo
             else:
                 logo = config["logo fill"]
         else:
             logo = None
 
         # get prefix
-        if beam.anonymity == "none":
+        if db_b.anonymity == "none":
             # display everything
             return f"{logo} **{name}**: "
-        if beam.anonymity == "guild" and logo is not None:
+        if db_b.anonymity == "guild" and logo is not None:
             # display guild logo
             return logo + " "
-        if beam.anonymity == "guild" and logo is None:
+        if db_b.anonymity == "guild" and logo is None:
             # display guild name
-            return f"{discord.utils.escape_markdown(message.guild.name)}, **{name}**"
+            return f"{self.sanitise(message.guild.name)}, **{name}**"
         # wrong configuration or full anonymity
         return ""
 
@@ -365,7 +369,7 @@ class Wormhole(wormcog.Wormcog):
             except:
                 pass
 
-        # line preprocessor (code)
+        # line preprocessor for codeblocks
         if "```" in content:
             backticks = re.findall(r"```[a-z0-9]*", content)
             for b in backticks:
@@ -401,7 +405,7 @@ class Wormhole(wormcog.Wormcog):
         # get wormhole ID
         author = repo_u.get(message.channel.id)
         if author is not None:
-            wormhole_id = author.home
+            wormhole_id = author.home_id
         else:
             wormhole_id = message.channel.id
 
