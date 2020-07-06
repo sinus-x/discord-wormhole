@@ -15,6 +15,9 @@ class BeamRepository:
     ## Interface
     ##
 
+    def exists(self, name: str) -> bool:
+        return db.exists(f"beam:{name}:active")
+
     def add(self, *, name: str, admin_id: int):
         self._name_check(name)
         self._availability_check(name)
@@ -30,7 +33,7 @@ class BeamRepository:
         )
 
     def get(self, name: str) -> objects.Beam:
-        if not self._exists(name):
+        if not self.exists(name):
             return None
 
         result = objects.Beam(name)
@@ -109,9 +112,6 @@ class BeamRepository:
         if result is not None:
             raise DatabaseException(f"Beam name `{name}` already exists.")
 
-    def _exists(self, name: str):
-        return db.get(f"beam:{name}:active") is not None
-
     def _existence_check(self, name: str):
         result = db.get(f"beam:{name}:active")
         if result is None:
@@ -125,6 +125,9 @@ class WormholeRepository:
     ##
     ## Interface
     ##
+
+    def exists(self, discord_id: int):
+        return db.exists(f"wormhole:{discord_id}:active")
 
     def add(self, *, beam: str, discord_id: int):
         self._availability_check(discord_id)
@@ -141,7 +144,7 @@ class WormholeRepository:
         )
 
     def get(self, discord_id: int) -> objects.Wormhole:
-        if not self._exists(discord_id):
+        if not self.exists(discord_id):
             return None
 
         result = objects.Wormhole(discord_id)
@@ -209,9 +212,6 @@ class WormholeRepository:
         if result is not None:
             raise DatabaseException(f"Channel `{discord_id}` is already a wormhole.")
 
-    def _exists(self, discord_id: int):
-        return db.get(f"wormhole:{discord_id}:active") is not None
-
     def _existence_check(self, discord_id: int):
         result = db.get(f"wormhole:{discord_id}:active")
         if result is None:
@@ -225,6 +225,9 @@ class UserRepository:
     ##
     ## Interface
     ##
+
+    def exists(self, discord_id: int) -> bool:
+        return db.exists(f"user:{discord_id}:readonly")
 
     def add(self, *, discord_id: int, nickname: str, home_id: int = None):
         self._availability_check(discord_id)
@@ -240,7 +243,7 @@ class UserRepository:
         )
 
     def get(self, discord_id: int) -> objects.User:
-        if not self._exists(discord_id):
+        if not self.exists(discord_id):
             return None
 
         result = objects.User(discord_id)
@@ -310,9 +313,6 @@ class UserRepository:
         result = db.get(f"user:{discord_id}:readonly")
         if result is not None:
             raise DatabaseException(f"User ID `{discord_id}` is already known.")
-
-    def _exists(self, discord_id: int):
-        return db.get(f"user:{discord_id}:readonly") is not None
 
     def _existence_check(self, discord_id: int):
         result = db.get(f"user:{discord_id}:readonly")

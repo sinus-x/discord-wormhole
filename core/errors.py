@@ -23,6 +23,10 @@ class DatabaseException(WormholeException):
         return self.message
 
 
+class ArgumentException(WormholeException):
+    pass
+
+
 class NotRegistered(WormholeException):
     def __init__(self):
         super().__init__("Not registered")

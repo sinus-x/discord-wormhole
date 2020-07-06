@@ -7,14 +7,12 @@ config = json.load(open("config.json"))
 
 
 def is_admin(ctx: commands.Context):
-    return ctx.author.id == config["admin id"]
+    return ctx.author.id == config["admin id"] or commands.is_owner(ctx)
 
 
 def is_mod(ctx: commands.Context):
-    return is_admin(ctx) or ctx.author.id in [u.id for u in repo_u.getMods()]
+    return repo_u.getAttribute(ctx.author.id, "mod") == 1
 
 
 def in_wormhole(ctx: commands.Context):
-    return ctx.author.id == config["admin id"] or ctx.channel.id in [
-        x.channel for x in repo_w.getAll()
-    ]
+    return hasattr(ctx.channel, "id") and repo_w.exists(ctx.channel.id)

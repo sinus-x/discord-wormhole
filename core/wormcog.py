@@ -52,8 +52,7 @@ class Wormcog(commands.Cog):
         for wormhole in wormholes:
             self.wormholes[beam].append(self.bot.get_channel(wormhole.channel))
 
-    # FIXME Rename to delay()
-    def removalDelay(self, key: str = "user"):
+    def delay(self, key: str = "user"):
         if key == "user":
             return 20
         if key == "admin":
@@ -117,7 +116,7 @@ class Wormcog(commands.Cog):
         if len(tags) > 5:
             await message.channel.send(
                 f"> {message.author.mention}, you can only use five tags in one message",
-                delete_after=self.removalDelay(),
+                delete_after=self.delay(),
             )
             tags = tags[:5]
         users = [
@@ -161,3 +160,54 @@ class Wormcog(commands.Cog):
     def sanitise(self, string: str, *, limit: int = 500):
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
+
+    def embed(
+        self,
+        *,
+        ctx: commands.Context = None,
+        message: discord.Message = None,
+        author: discord.User = None,
+        title: str = None,
+        description: str = None,
+        color: int = None,
+        url: str = None,
+    ) -> discord.Embed:
+        """Create embed"""
+        # author
+        if hasattr(ctx, "author"):
+            footer_text = str(ctx.author)
+            footer_image = ctx.author.avatar_url
+        elif hasattr(message, "author"):
+            footer_text = str(message.author)
+            footer_image = message.author.avatar_url
+        else:
+            footer_text = discord.Embed.Empty
+            footer_image = discord.Embed.Empty
+
+        # title
+        if title is not None:
+            pass
+        elif hasattr(ctx, "command") and hasattr(ctx.command, "qualified_name"):
+            title = config.prefix + ctx.command.qualified_name
+        else:
+            title = "Wormhole"
+
+        # description
+        if description is not None:
+            pass
+        elif hasattr(ctx, "cog_name"):
+            description = f"**{ctx.cog_name}**"
+        else:
+            description = ""
+
+        # color
+        if color is None:
+            color = config.color
+
+        # create embed
+        embed = discord.Embed(title=title, description=description, color=color, url=url)
+        if discord.Embed.Empty not in (footer_image, footer_text):
+            embed.set_footer(icon_url=footer_image, text=footer_text)
+
+        # done
+        return embed
