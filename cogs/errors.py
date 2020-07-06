@@ -2,7 +2,6 @@ import traceback
 import json
 import sys
 
-
 from discord.ext import commands
 
 from core import wormcog
@@ -60,7 +59,7 @@ class Errors(wormcog.Wormcog):
         elif isinstance(error, commands.ExtensionNotLoaded):
             return await self.send(ctx, error, "The cog is not loaded")
         elif isinstance(error, commands.ExtensionFailed):
-            return await self.send(ctx, error, "The cog failed")
+            await self.send(ctx, error, "The cog failed")
         elif isinstance(error, commands.ExtensionNotFound):
             return await self.send(ctx, error, "No such cog")
         # fmt: on

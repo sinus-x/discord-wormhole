@@ -159,14 +159,14 @@ class WormholeRepository:
             raise DatabaseException(f"Invalid wormhole attribute: {attribute}.")
         return db.get(f"wormhole:{discord_id}:{attribute}")
 
-    def listIDs(self):
-        return [int(x.split(":")[1]) for x in db.scan(match="wormhole:*:active")[1]]
-
-    def listObjects(self, beam: str = None):
-        result = [self.get(x) for x in self.listIDs()]
+    def listIDs(self, beam: str = None):
+        result = [int(x.split(":")[1]) for x in db.scan(match="wormhole:*:active")[1]]
         if beam is None:
             return result
         return [w for w in result if w.beam == beam]
+
+    def listObjects(self, beam: str = None):
+        return [self.get(x) for x in self.listIDs(beam)]
 
     def set(self, discord_id: int, **kwargs):
         self._existence_check(discord_id)

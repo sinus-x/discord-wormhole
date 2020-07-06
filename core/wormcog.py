@@ -161,8 +161,3 @@ class Wormcog(commands.Cog):
     def sanitise(self, string: str, *, limit: int = 500):
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
-
-    def message2Beam(self, message: discord.Message):
-        wormhole = repo_w.get(message.channel.id)
-        beam = repo_b.get(wormhole.beam)
-        return beam

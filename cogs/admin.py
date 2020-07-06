@@ -9,7 +9,7 @@ from core.database import repo_b, repo_u, repo_w
 
 config = json.load(open("config.json"))
 
-# TODO Clear markdown on save, not on every print
+# TODO Raise WormholeException instead of BadArgument
 
 
 class Admin(wormcog.Wormcog):
@@ -17,11 +17,6 @@ class Admin(wormcog.Wormcog):
 
     def __init__(self, bot):
         super().__init__(bot)
-        self.mod_ids = [m.id for m in repo_u.getMods()]
-
-    def e(self, s: str):
-        """Shortcut for markdown escape function"""
-        return discord.utils.escape_markdown(s)
 
     @commands.check(checks.is_admin)
     @commands.group(name="beam")
@@ -41,7 +36,7 @@ class Admin(wormcog.Wormcog):
 
         # add
         try:
-            repo_b.add(name)
+            repo_b.add(name=name, admin_id=ctx.author.id)
             await self.console.info(f'Beam "{name}" created and opened')
             await self.embed.info(ctx, f"Beam **{name}** created and opened")
         except errors.DatabaseException as e:
@@ -50,11 +45,8 @@ class Admin(wormcog.Wormcog):
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx: commands.Context, name: str):
         """Open closed beam"""
-        if repo_b.get(name) is None:
-            raise commands.BadArgument("Invalid beam")
-
         try:
-            repo_b.set(name=name, active=True)
+            repo_b.set(name=name, active=1)
             await self.console.info(f'Beam "{name}" opened')
             await self.send(
                 ctx.message, name, "> The current wormhole beam has been opened.", system=True,
@@ -72,48 +64,28 @@ class Admin(wormcog.Wormcog):
             await self.send(
                 ctx.message, name, "> The current wormhole beam has been closed.", system=True,
             )
-            repo_b.set(name=name, active=False)
+            repo_b.set(name=name, active=0)
             await self.console.info(f'Beam "{name}" closed')
         except Exception as e:
             raise commands.BadArgument(f"Error closing the beam **{name}**", e)
 
     @beam.command(name="edit", aliases=["alter"])
-    async def beam_edit(self, ctx: commands.Context, name: str, *args):
+    async def beam_edit(self, ctx: commands.Context, name: str, key: str, value: str):
         """Edit beam
 
         key:value
-        - replace: [true | false]
+        - admin_id: [int] (user ID)
         - anonymity: [none | guild | full]
-        - timeout: <int> (seconds)
+        - replace: [0 | 1]
+        - timeout: [int] (seconds)
         """
-        if len(args) != 2:
-            raise commands.BadArgument("Expecting key and value")
-
         if repo_b.get(name) is None:
             raise commands.BadArgument("Invalid beam")
 
-        key = args[0]
-        value = args[1]
+        if value in ("active", "admin_id", "replace", "timeout"):
+            value = int(value)
 
-        if key == "replace":
-            if value in ["true", "false"]:
-                value = True if value == "true" else False
-                repo_b.set(name, replace=value)
-            else:
-                raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
-        elif key == "anonymity":
-            if value in ["none", "guild", "full"]:
-                repo_b.set(name, anonymity=value)
-            else:
-                raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
-        elif key == "timeout":
-            try:
-                value = int(value)
-                value = 0 if value < 0 else value
-            except:
-                raise commands.BadArgument(f"Invalid value `{value}` for key `{key}`")
-        else:
-            raise commands.BadArgument(f"Invalid key `{key}`")
+        repo_b.set(name=name, key=key, value=value)
 
         await self.send(ctx, f"Beam **{name}** updated: {key} = {value}", system=True)
         await self.console.info(f"Beam {name} updated: {key} = {value}")
@@ -121,15 +93,13 @@ class Admin(wormcog.Wormcog):
     @beam.command(name="list")
     async def beam_list(self, ctx: commands.Context):
         """List all wormholes"""
-        bs = repo_b.getAll()
-
         embed = discord.Embed(title="Beam list")
 
-        for b in bs:
-            ws = len(repo_w.getByBeam(b.name))
-            name = f"**{b.name}** ({'in' if not b.active else ''}active) | {ws} wormholes"
-
-            value = f"Anonymity _{b.anonymity}_, " + f"timeout _{b.timeout} s_ "
+        beams = repo_b.listNames()
+        for beam in beams:
+            ws = len(repo_w.listIDs(beam=beam.name))
+            name = f"**{beam.name}** ({'in' if not beam.active else ''}active) | {ws} wormholes"
+            value = f"Anonymity _{beam.anonymity}_, " + f"timeout _{beam.timeout} s_ "
             embed.add_field(name=name, value=value, inline=False)
         await ctx.send(embed=embed)
 
@@ -145,21 +115,21 @@ class Admin(wormcog.Wormcog):
         self, ctx: commands.Context, beam: str, channel: discord.TextChannel = None
     ):
         """Open new wormhole"""
-        beam = repo_b.get(beam)
-        if not beam:
+        db_b = repo_b.get(beam)
+        if not db_b:
             raise commands.BadArgument("No such beam")
 
         if channel is None:
             channel = ctx.channel
 
         try:
-            repo_w.add(beam=beam.name, channel=channel.id)
+            repo_w.add(beam=db_b.name, channel=channel.id)
             await self.console.info(
-                f'Channel {channel.id} in "{self.e(channel.guild.name)}" added to beam "{beam.name}"'
+                f'Channel {channel.id} in "{self.e(channel.guild.name)}" added to beam "{db_b.name}"'
             )
             await self.send(
                 ctx.message,
-                beam.name,
+                db_b.name,
                 f"> New wormhole opened: **{self.e(channel.name)}** in **{self.e(channel.guild.name)}**.",
                 system=True,
             )
@@ -324,7 +294,7 @@ class Admin(wormcog.Wormcog):
             mod:      true or false
             readonly: true or false
         """
-        if ctx.author.id != config["admin id"] and member.id in self.mod_ids:
+        if ctx.author.id != config["admin id"] and repo_u.getAttribute(member.id, "mod") == 1:
             return await ctx.send("> You do not have permission to alter mod accounts")
         if ctx.author.id != config["admin id"] and member.id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
