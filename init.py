@@ -28,7 +28,7 @@ async def on_ready():
     m = "INFO: Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
     print(m)
 
-    ch = bot.get_channel(config["log channel"])
+    ch = bot.get_channel(config["error channel"])
     await ch.send(f"```{m}```")
     await wormcog.presence(bot)
 

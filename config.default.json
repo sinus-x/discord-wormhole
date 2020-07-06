@@ -14,11 +14,8 @@
 	"__comment": "Empty emote to print on multiline comments instead of guild logo",
 	"logo fill": null,
 
-	"__comment": "Where the bot should send its logs",
+	"__comment": "Where the bot should send its logs and errors",
 	"log channel": null,
-
-	"__comment": "Where the bot should send its errors",
-	"error channel": null,
 
 	"__comment": "Output level. DEBUG | INFO | WARNING | ERROR | CRITICAL",
 	"log level": "ERROR"
