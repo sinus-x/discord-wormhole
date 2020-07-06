@@ -3,7 +3,6 @@ import redis
 from core import objects
 from core.errors import DatabaseException
 
-
 db = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 
 
@@ -48,14 +47,16 @@ class BeamRepository:
     def getAttribute(self, name: str, attribute: str):
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid beam attribute: {attribute}.")
-        return db.get(f"beam:{name}:{attribute}")
+        result = db.get(f"beam:{name}:{attribute}")
+        if attribute in ("active", "admin_id", "replace", "timeout"):
+            result = int(result)
+        return result
 
     def listNames(self):
-        try:
-            result = db.scan(match="beam:*:active")[1]
-            return [x.split(":")[1] for x in result]
-        except redis.exceptions.ResponseError as e:
-            return []
+        result = []
+        for r in db.scan_iter(match="beam:*:active"):
+            result.append(r)
+        return [x.split(":")[1] for x in result]
 
     def listObjects(self):
         names = self.listNames()
@@ -160,10 +161,20 @@ class WormholeRepository:
     def getAttribute(self, discord_id: int, attribute: str):
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid wormhole attribute: {attribute}.")
-        return db.get(f"wormhole:{discord_id}:{attribute}")
+        result = db.get(f"wormhole:{discord_id}:{attribute}")
+
+        # get data types
+        if attribute in ("active", "admin_id", "messages", "readonly"):
+            result = int(result)
+
+        return result
 
     def listIDs(self, beam: str = None):
-        result = [int(x.split(":")[1]) for x in db.scan(match="wormhole:*:active")[1]]
+        result = []
+        for r in db.scan_iter(match="wormhole:*:active"):
+            result.append(r)
+
+        result = [int(x.split(":")[1]) for x in result]
         if beam is None:
             return result
         return [w for w in result if self.getAttribute(w, "beam") == beam]
@@ -265,10 +276,16 @@ class UserRepository:
     def getAttribute(self, discord_id: int, attribute: str):
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid user attribute: {attribute}.")
-        return db.get(f"user:{discord_id}:{attribute}")
+        result = db.get(f"user:{discord_id}:{attribute}")
+        if attribute in ("home_id", "mod", "readonly", "restricted"):
+            result = int(result)
+        return result
 
     def listIDs(self):
-        return [int(x.split(":")[1]) for x in db.scan(match="user:*:readonly")[1]]
+        result = []
+        for r in db.scan_iter(match="user:*:readonly"):
+            result.append(r)
+        return [int(x.split(":")[1]) for x in result]
 
     def listObjects(self):
         return [self.get(x) for x in self.listIDs()]
