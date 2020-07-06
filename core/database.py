@@ -166,7 +166,7 @@ class WormholeRepository:
         result = [int(x.split(":")[1]) for x in db.scan(match="wormhole:*:active")[1]]
         if beam is None:
             return result
-        return [w for w in result if w.beam == beam]
+        return [w for w in result if self.getAttribute(w, "beam") == beam]
 
     def listObjects(self, beam: str = None):
         return [self.get(x) for x in self.listIDs(beam)]

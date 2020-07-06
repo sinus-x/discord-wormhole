@@ -16,21 +16,11 @@ class User(wormcog.Wormcog):
         super().__init__(bot)
         self.p = config["prefix"]
 
-    def getUserObject(self, ctx):
-        u = repo_u.get(ctx.author.id)
-        if u is None:
-            raise errors.NotRegistered()
-        return u
-
-    def getHomeString(self, channel: discord.TextChannel):
-        return f"{channel.mention} in **{self.sanitise(channel.guild.name)}**"
-
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     @commands.command()
     async def register(self, ctx):
         """Add yourself to the database"""
-        db_u = repo_u.get(ctx.author.id)
-        if db_u is not None:
+        if repo_u.exists(ctx.author.id):
             raise errors.WormholeException("You are already registered")
 
         nickname = self.sanitise(ctx.author.name, limit=12).replace(")", "").replace("(", "")
@@ -59,6 +49,8 @@ class User(wormcog.Wormcog):
     @commands.group(name="set")
     async def set(self, ctx):
         """Edit your information"""
+        await self.delete(ctx.message)
+
         if ctx.invoked_subcommand is not None:
             return
 
@@ -68,10 +60,9 @@ class User(wormcog.Wormcog):
             else ""
         )
         # fmt: off
-        embed = discord.Embed(
+        embed = self.getEmbed(
             title="Wormhole: **set**",
             description=description,
-            color=discord.Color.light_grey()
         )
         embed.add_field(
             name="Set home wormhole",
@@ -85,25 +76,15 @@ class User(wormcog.Wormcog):
         )
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.delay())
-        await self.delete(ctx.message)
 
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     @set.command(name="home")
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
-        if self.getUserObject(ctx) is None:
-            return await ctx.author.send(
-                f"{ctx.author.mention}, you have to register first with `{self.p}register`",
-                delete_after=5,
-            )
-        if not isinstance(ctx.channel, discord.TextChannel):
-            return await ctx.author.send(
-                f"{ctx.author.mention}, home has to be a text channel", delete_after=5
-            )
-        if repo_w.get(ctx.channel.id) is None:
-            return await ctx.author.send(
-                f"{ctx.author.mention}, home has to be a wormhole", delete_after=5
-            )
+        if not repo_u.exists(ctx.author.id):
+            return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5,)
+        if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
+            return await ctx.author.send(f"Home has to be a wormhole", delete_after=5)
 
         repo_u.set(ctx.author.id, home_id=ctx.channel.id)
         await ctx.author.send("Your home wormhole is " + self.getHomeString(ctx.channel))
@@ -112,11 +93,11 @@ class User(wormcog.Wormcog):
     @set.command(name="name", aliases=["nick", "nickname"])
     async def set_name(self, ctx, *, name: str):
         """Set new display name"""
-        name = discord.utils.escape_markdown(name)
+        name = self.sanitise(name)
         u = repo_u.getByNickname(name)
         if u:
             return await ctx.author.send("This name is already used by someone")
-        if "(" in name or ")" in name or "@" in name:
+        if "(" in name or ")" in name:
             return await ctx.author.send("The name cannot contain characters `()@`")
 
         repo_u.set(ctx.author.id, nickname=name)
@@ -126,40 +107,52 @@ class User(wormcog.Wormcog):
     @commands.command()
     async def me(self, ctx):
         """See your information"""
-        me = self.getUserObject(ctx)
-        await self.displayUserInfo(ctx, me)
+        await self.delete(ctx.message)
+        db_u = repo_u.get(ctx.author.id)
+        if db_u is None:
+            return await ctx.author.send("You are not registered.")
+        await self.displayUserInfo(ctx, db_u)
 
     @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.command()
     async def whois(self, ctx, member: str):
         """Get information about member"""
+        await self.delete(ctx.message)
+
         u = repo_u.getByNickname(member)
         if u:
             return await self.displayUserInfo(ctx, u)
         await ctx.author.send("User not found")
 
-    async def displayUserInfo(self, ctx, user: objects.User):
+    async def displayUserInfo(self, ctx, db_u: objects.User):
         """Display user info"""
-        u = self.bot.get_user(user.id)
-        msg = [
-            f"User **{self.sanitise(u.nickname)}**",
-            f"_Taggable via_ `(({user.nickname}))`",
-            "Information: ",
-        ]
+        user = self.bot.get_user(db_u.discord_id)
+        if db_u is None:
+            return await ctx.author.send("User not in database.")
+        if user is None:
+            return await ctx.author.send("User not found.")
 
-        par = []
+        description = f"_Taggable via_ `(({db_u.nickname}))`"
+        if db_u.home_id == 0:
+            description += "_, once they've set their home wormhole_"
+        embed = self.getEmbed(ctx=ctx, title=db_u.nickname, description=description)
+
+        information = []
         if user.mod:
-            par.append("**MOD**")
+            information.append("mod")
         if user.readonly:
-            par.append("silenced")
-        if user.home:
-            home = self.bot.get_channel(user.home)
-            par.append("their home wormhole is " + self.getHomeString(home))
-        else:
-            msg[1] += "_, once they have set their home wormhole_"
-        msg[2] += ", ".join(par)
+            information.append("read only")
+        if user.resticted:
+            information.append("restricted")
+        if len(information):
+            embed.add_field(name="Information", value=", ".join(information))
 
-        await ctx.author.send("\n".join(msg))
+        if user.home_id:
+            channel = self.bot.get_channel(user.home_id)
+            value = "{}, {}".format(channel.mention, channel.guild.name)
+            embed.add_field(name="Home wormhole", value=value)
+
+        await ctx.author.send(embed=embed)
 
 
 def setup(bot):

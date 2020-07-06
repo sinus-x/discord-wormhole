@@ -65,7 +65,13 @@ class Errors(wormcog.Wormcog):
         # fmt: on
 
         # print the rest
-        print(f"Unhandled Wormhole exception: {config['prefix']}{ctx.command}", file=sys.stderr)
+        s = "Wormhole error: {prefix}{command} by {author} in {channel}".format(
+            prefix=config["prefix"],
+            command=ctx.command,
+            author=str(ctx.author),
+            channel=ctx.channel.id if hasattr(ctx.channel, "id") else type(ctx.channel).__name__,
+        )
+        print(s, file=sys.stderr)
         if config["log level"] == "CRITICAL":
             return
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)

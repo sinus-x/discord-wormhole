@@ -24,8 +24,8 @@ class Wormhole(wormcog.Wormcog):
 
         # Per-channel message couter
         self.stats = {}
-        for w in repo_w.listIDs():
-            self.stats[str(w)] = w.messages
+        for w in repo_w.listObjects():
+            self.stats[str(w.discord_id)] = w.messages
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -136,13 +136,6 @@ class Wormhole(wormcog.Wormcog):
             embed.add_field(value=f"**{p}me**",          name="Get your information")
             embed.add_field(value=f"**{p}whois**",       name="Get information about user")
             embed.add_field(value=f"**{p}set**",         name="Edit nickname or home")
-
-        # TODO Rewrite
-        if "Admin" in self.bot.cogs and db_u.mod == 1:
-            embed.add_field(value=f"**MOD COMMANDS   |   {p}user edit ...**", name="\u200b", inline=False)
-            embed.add_field(value="... **nickname [name]**",       name="Nickname")
-            embed.add_field(value="... **readonly [true|false]**", name="Write permission")
-            embed.add_field(value="... **home [wormhole]**",       name="Home guild")
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.delay())
         await self.delete(ctx.message)
