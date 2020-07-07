@@ -1,5 +1,5 @@
 # Wormhole
-A discord bot to connect multiple guilds.
+A Discord bot able to connect multiple guilds with one shared chat.
 
 <p align="center">
   <!-- Discord -->
@@ -41,15 +41,6 @@ Required permissions:
 - Use external emojis
 - Attach files
 - Embed links
-
-## Contributing
-
-**NOTE:**
-
-This master branch is frozen. Only bugfixes will be merged.
-
-Development is focused on `split` branch, which is for now considered unstable
-and may change in following weeks. Please, be patient.
 
 ## Set up
 - Clone the repository
