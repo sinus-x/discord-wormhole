@@ -105,18 +105,12 @@ class User(wormcog.Wormcog):
         u = repo_u.getByNickname(name)
         if u is not None:
             return await ctx.author.send("This name is already used by someone.")
+        # fmt: off
         disallowed = (
-            "(",
-            ")",
-            "`",
-            "@",
-            "\u200B",
-            "\u200C",
-            "\u200D",
-            "\u2028",
-            "\u2060",
-            "\uFEFF",
+            "(", ")", "*", "/", "@", "\\", "_", "`",
+            "\u200B", "\u200C", "\u200D", "\u2028", "\u2060", "\uFEFF",
         )
+        # fmt: on
         for char in disallowed:
             if char in name:
                 return await ctx.author.send("The name contains forbidden characters.")
