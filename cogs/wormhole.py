@@ -296,7 +296,7 @@ class Wormhole(wormcog.Wormcog):
 
         # get user nickname
         if db_u is not None:
-            name = db_u.nickname
+            name = "__" + db_u.nickname + "__"
             home = repo_w.get(db_u.home_id)
         else:
             name = self.sanitise(message.author.name, limit=32)
@@ -324,9 +324,6 @@ class Wormhole(wormcog.Wormcog):
         else:
             # wrong configuration or full anonymity
             prefix = ""
-
-        if db_u is not None:
-            prefix = "|" + prefix
 
         return prefix
 
