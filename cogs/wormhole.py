@@ -337,6 +337,7 @@ class Wormhole(wormcog.Wormcog):
         users = re.findall(r"<@![0-9]+>", content)
         roles = re.findall(r"<@&[0-9]+>", content)
         channels = re.findall(r"<#[0-9]+>", content)
+        emojis = re.findall(r"<:[a-zA-Z0-9_]+:[0-9]+>", content)
 
         # prevent tagging
         for u in users:
@@ -359,6 +360,13 @@ class Wormhole(wormcog.Wormcog):
                 content = content.replace(channel, f"{channel} __**({guild_name})**__")
             except:
                 pass
+        # remove unavailable emojis
+        for emoji in emojis:
+            emoji_ = emoji.replace("<:", "").replace(">", "")
+            emoji_name = emoji_.split(":")[0]
+            emoji_id = int(emoji_.split(":")[1])
+            if self.bot.get_emoji(emoji_id) is None:
+                content = content.replace(emoji, emoji_name)
 
         # line preprocessor for codeblocks
         if "```" in content:
