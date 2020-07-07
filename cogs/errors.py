@@ -15,13 +15,15 @@ def seconds2str(time):
     H = 3600
     M = 60
 
-    d = (time - (time % D)) / D
-    h = (time - (time % H)) / H
-    m = (time - (time % M)) / M
     s = time % 60
+    time = int((time - s) / 60)
+    m = time % 60
+    time = int((time - m) / 60)
+    h = time % 24
+    d = int((time - h) / 24)
 
     if d > 0:
-        return f"{d} d, {h:02}:{m:02}:{s:02}"
+        return f"{d}d, {h:02}:{m:02}:{s:02}"
     if h > 0:
         return f"{h}:{m:02}:{s:02}"
     if m > 0:
