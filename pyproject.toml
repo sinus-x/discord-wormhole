@@ -1,0 +1,30 @@
+[project]
+name = "Wormhole"
+version = "0.2.0"
+description = "Wormhole between multiple Discord guilds"
+license = "GPL-3.0-or-later"
+authors = [
+	"sinus-x <14353790+sinus-x@users.noreply.github.com>"
+]
+readme = "README.md"
+python = "^3.6"
+homepage = "https://github.com/sinus-x/discord-wormhole"
+repository = "https://github.com/sinus-x/discord-wormhole"
+
+keywords = ["discord", "discord.py"]
+
+[dependencies]
+python = "^3.6"
+
+[dev-dependencies]
+black = {version="^19.30", python="^3.6"}
+
+[build-system]
+requires = [
+	"discord.py>=1.3",
+	"SQLAlchemy>1.3"
+]
+
+[tool.black]
+target_version = ['py36']
+line-length = 100

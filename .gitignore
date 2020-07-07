@@ -1,2 +1,6 @@
+# binaries
 __pycache__
+# config
 config.json
+# database
+*.db

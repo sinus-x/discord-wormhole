@@ -1,0 +1,4 @@
+discord
+gitpython
+redis
+sqlalchemy
