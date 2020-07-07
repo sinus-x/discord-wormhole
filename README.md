@@ -14,17 +14,15 @@ A discord bot to connect multiple guilds.
   <a href="https://github.com/sinus-x/discord-wormhole/graphs/commit-activity">
     <img src="https://img.shields.io/badge/mantained-yes-success?style=flat-square" alt="Mantained" />
   </a>
-</p>
-<p align="center">
   <!-- License -->
   <a href="https://github.com/sinus-x/discord-wormhole/blob/master/LICENSE">
-    <img src="https://img.shields.io/badge/License-GPLv3-success?style=flat-square" alt="GPLv3 license" />
+    <img src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square" alt="GPLv3 license" />
   </a>
   <!-- Python version -->
   <img src="https://img.shields.io/badge/python-3.7+-blue?style=flat-square" alt="Python 3.7+" />
   <!-- Black -->
   <a href="https://github.com/psf/black">
-    <img src="https://img.shields.io/badge/code%20style-black-000000?style=flat-square" alt="Formatted with Black" />
+    <img src="https://img.shields.io/badge/code%20style-black-blue?style=flat-square" alt="Formatted with Black" />
   </a>
 </p>
 
@@ -49,7 +47,7 @@ Required permissions:
 - Install redis: `apt install redis-server`
 - Install requirements: `pip3 install -r requirements.txt`
 - Create `config.json` file with `config.default.json` as a reference
-- Run the bot with `python3 bot.py`
+- Run the bot with `python3 init.py`
 
 ## License
 Released under the GNU GPL v3
