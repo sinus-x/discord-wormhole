@@ -4,10 +4,11 @@ from datetime import datetime
 
 from discord.ext import commands
 
-from core import wormcog, output
+from core import wormcog, output, checks
 
 config = json.load(open("config.json"))
 bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
+event = output.Event(bot)
 
 ##
 ## EVENTS
@@ -55,18 +56,34 @@ async def on_error(event, *args, **kwargs):
 ##
 
 
-@bot.command(hidden=True)
+@bot.command()
+@commands.check(checks.is_admin)
+async def load(ctx: commands.Context, cog: str):
+    """Load module"""
+    bot.load_extension(f"cogs.{cog}")
+    await ctx.send(f"**{cog.upper()}** loaded.")
+    await event.sudo(ctx, f"Loaded: {cog.upper()}")
+    print(f"{cog.upper()} loaded")
+
+
+@bot.command()
+@commands.check(checks.is_admin)
 async def reload(ctx: commands.Context, cog: str):
-    """Reload the wormhole"""
-    if ctx.author.id != config["admin id"]:
-        await ctx.send("You do not have permission to do this!", delete_after=5)
-        return
-    try:
-        bot.reload_extension(f"cogs.{cog}")
-        print(f"{cog.upper()} reloaded.")
-        await ctx.send(f"**{cog.upper()}** reloaded.")
-    except Exception as e:
-        await ctx.send(f"An error occured: ```\n{e}```", delete_after=20)
+    """Reload module"""
+    bot.reload_extension(f"cogs.{cog}")
+    await ctx.send(f"**{cog.upper()}** reloaded.")
+    await event.sudo(ctx, f"Reloaded: {cog.upper()}")
+    print(f"{cog.upper()} reloaded")
+
+
+@bot.command()
+@commands.check(checks.is_admin)
+async def unload(ctx: commands.Context, cog: str):
+    """Unload module"""
+    bot.unload_extension(f"cogs.{cog}")
+    await ctx.send(f"**{cog.upper()}** unloaded.")
+    await event.sudo(ctx, f"Unloaded: {cog.upper()}")
+    print(f"{cog.upper()} unloaded")
 
 
 ##
