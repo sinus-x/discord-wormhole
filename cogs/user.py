@@ -45,7 +45,7 @@ class User(wormcog.Wormcog):
             f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
             f"You can tag others with `((nickname))`, if they have set their home guild."
         )
-        self.event.user(ctx, f"User registered: **{str(ctx.author)}** as **{nickname}**.")
+        await self.event.user(ctx, f"User registered: **{str(ctx.author)}** as **{nickname}**.")
 
     @commands.group(name="set")
     async def set(self, ctx):
