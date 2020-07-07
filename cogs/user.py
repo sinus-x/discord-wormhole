@@ -21,7 +21,7 @@ class User(wormcog.Wormcog):
     async def register(self, ctx):
         """Add yourself to the database"""
         if repo_u.exists(ctx.author.id):
-            raise errors.WormholeException("You are already registered")
+            return await ctx.author.send("You are already registered.")
 
         nickname = self.sanitise(ctx.author.name, limit=12).replace(")", "").replace("(", "")
 
@@ -45,6 +45,7 @@ class User(wormcog.Wormcog):
             f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
             f"You can tag others with `((nickname))`, if they have set their home guild."
         )
+        self.event.user(ctx, f"User registered: **{str(ctx.author)}** as **{nickname}**.")
 
     @commands.group(name="set")
     async def set(self, ctx):
@@ -77,37 +78,53 @@ class User(wormcog.Wormcog):
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.delay())
 
-    @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
+    @commands.cooldown(rate=1, per=1, type=commands.BucketType.user)
     @set.command(name="home")
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
         if not repo_u.exists(ctx.author.id):
-            return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5,)
+            return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5)
+        if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
+            return await ctx.author.send(f"You are forbidden to alter your settings.")
         if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
             return await ctx.author.send(f"Home has to be a wormhole", delete_after=5)
 
         repo_u.set(ctx.author.id, key="home_id", value=ctx.channel.id)
         await ctx.author.send("Home set to " + ctx.channel.mention)
+        await self.event.user(ctx, f"Home set to **{ctx.channel.id}** ({ctx.guild.name}).")
 
-    @commands.cooldown(rate=2, per=3600, type=commands.BucketType.user)
+    @commands.cooldown(rate=2, per=1, type=commands.BucketType.user)
     @set.command(name="name", aliases=["nick", "nickname"])
     async def set_name(self, ctx, *, name: str):
         """Set new display name"""
-        name = self.sanitise(name)
+        if not repo_u.exists(ctx.author.id):
+            return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5)
+        if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
+            return await ctx.author.send(f"You are forbidden to alter your settings.")
+        name = self.sanitise(name, limit=32)
         u = repo_u.getByNickname(name)
-        if u:
-            return await ctx.author.send("This name is already used by someone")
-        disallowed = ("(", ")", "`", "@")
+        if u is not None:
+            return await ctx.author.send("This name is already used by someone.")
+        disallowed = (
+            "(",
+            ")",
+            "`",
+            "@",
+            "\u200B",
+            "\u200C",
+            "\u200D",
+            "\u2028",
+            "\u2060",
+            "\uFEFF",
+        )
         for char in disallowed:
             if char in name:
-                return await ctx.author.send(
-                    "The name cannot contain characters `{}`".format(
-                        self.sanitise("\n".join(disallowed))
-                    )
-                )
+                return await ctx.author.send("The name contains forbidden characters.")
 
+        before = repo_u.getAttribute(ctx.author.id, "nickname")
         repo_u.set(ctx.author.id, key="nickname", value=name)
         await ctx.author.send(f"Your nickname was changed to **{name}**")
+        await self.event.user(ctx, f"Nickname changed from **{before}** to **{name}**.")
 
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     @commands.command()
@@ -124,6 +141,7 @@ class User(wormcog.Wormcog):
     async def whois(self, ctx, member: str):
         """Get information about member"""
         await self.delete(ctx.message)
+        await self.event.user(ctx, f"Whois lookup for **{member}**.")
 
         u = repo_u.getByNickname(member)
         if u:
@@ -155,7 +173,7 @@ class User(wormcog.Wormcog):
 
         if db_u.home_id:
             channel = self.bot.get_channel(db_u.home_id)
-            value = "{}, {}".format(channel.mention, channel.guild.name)
+            value = "{}, {}".format(channel.name, channel.guild.name)
             embed.add_field(name="Home wormhole", value=value)
 
         await ctx.author.send(embed=embed)
