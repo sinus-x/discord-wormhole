@@ -314,15 +314,21 @@ class Wormhole(wormcog.Wormcog):
         # get prefix
         if db_b.anonymity == "none":
             # display everything
-            return f"{logo} **{name}**: "
-        if db_b.anonymity == "guild" and len(logo):
+            prefix = f"{logo} **{name}**: "
+        elif db_b.anonymity == "guild" and len(logo):
             # display guild logo
-            return logo + " "
-        if db_b.anonymity == "guild" and len(logo) == 0:
+            prefix = logo + " "
+        elif db_b.anonymity == "guild" and len(logo) == 0:
             # display guild name
-            return f"{logo}, **{name}**"
-        # wrong configuration or full anonymity
-        return ""
+            prefix = f"{logo}, **{name}**"
+        else:
+            # wrong configuration or full anonymity
+            prefix = ""
+
+        if db_u is not None:
+            prefix = "|" + prefix
+
+        return prefix
 
     def __process(self, message: discord.Message):
         """Escape mentions and apply anonymity"""
