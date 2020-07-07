@@ -74,7 +74,7 @@ class Admin(wormcog.Wormcog):
         if not repo_b.exists(name):
             raise errors.BadArgument("Invalid beam")
 
-        if value in ("active", "admin_id", "replace", "timeout"):
+        if key in ("active", "admin_id", "replace", "timeout"):
             try:
                 value = int(value)
             except ValueError:
@@ -155,7 +155,7 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
         """Edit wormhole"""
-        if value in ("admin_id", "active", "readonly", "messages"):
+        if key in ("admin_id", "active", "readonly", "messages"):
             try:
                 value = int(value)
             except ValueError:
@@ -230,7 +230,7 @@ class Admin(wormcog.Wormcog):
     async def user_add(self, ctx, member_id: int, nickname: str, home_id: int):
         """Add user"""
         repo_u.add(discord_id=member_id, nickname=nickname, home_id=home_id)
-        self.event.sudo(ctx, f"{str(repo_u.get(member_id))} added.")
+        self.event.sudo(ctx, f"{str(repo_u.get(member_id))}.")
 
     @user.command(name="remove", alises=["delete"])
     async def user_remove(self, ctx, member_id: int):
@@ -240,9 +240,8 @@ class Admin(wormcog.Wormcog):
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
-        db_u = repo_u.get(member_id)
         repo_u.delete(member_id)
-        await self.event.sudo(ctx, f"{str(db_u)} removed.")
+        await self.event.sudo(ctx, f"User **{member_id}** removed.")
 
     @user.command(name="edit", aliases=["set"])
     async def user_edit(self, ctx, member_id: int, key: str, value: str):
@@ -252,15 +251,14 @@ class Admin(wormcog.Wormcog):
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
-        if value in ("home_id", "mod", "readonly", "restricted"):
+        if key in ("home_id", "mod", "readonly", "restricted"):
             try:
                 value = int(value)
             except ValueError:
                 raise errors.BadArgument("Value has to be integer.")
 
-        db_u = repo_u.get(member_id)
         repo_u.set(discord_id=member_id, key=key, value=value)
-        await self.event.sudo(ctx, f"{str(db_u)} updated: **{key}** = **{value}**.")
+        await self.event.sudo(ctx, f"{member_id} updated: **{key}** = **{value}**.")
 
     @user.command(name="list")
     async def user_list(self, ctx):

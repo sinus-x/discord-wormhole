@@ -7,7 +7,7 @@ config = json.load(open("config.json"))
 
 
 def is_admin(ctx: commands.Context):
-    return ctx.author.id == config["admin id"] or commands.is_owner(ctx)
+    return ctx.author.id == config["admin id"]
 
 
 def is_mod(ctx: commands.Context):
