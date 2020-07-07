@@ -9,6 +9,26 @@ from core import wormcog
 config = json.load(open("config.json"))
 
 
+def seconds2str(time):
+    time = int(time)
+    D = 3600 * 24
+    H = 3600
+    M = 60
+
+    d = (time - (time % D)) / D
+    h = (time - (time % H)) / H
+    m = (time - (time % M)) / M
+    s = time % 60
+
+    if d > 0:
+        return f"{d} d, {h:02}:{m:02}:{s:02}"
+    if h > 0:
+        return f"{h}:{m:02}:{s:02}"
+    if m > 0:
+        return f"{m}:{s:02}"
+    return f"{s} s"
+
+
 class Errors(wormcog.Wormcog):
     def __init__(self, bot: commands.bot):
         self.bot = bot
@@ -47,7 +67,7 @@ class Errors(wormcog.Wormcog):
             return await self.send(ctx, error, "You are not allowed to do this")
 
         elif isinstance(error, commands.CommandOnCooldown):
-            return await self.send(ctx, error, f"Cooldown ({error.retry_after:.0f} s)")
+            return await self.send(ctx, error, f"Cooldown ({seconds2str(error.retry_after)})")
 
         elif isinstance(error, commands.UserInputError):
             return await self.send(ctx, error, "Wrong input")
