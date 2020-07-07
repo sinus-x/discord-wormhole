@@ -58,96 +58,69 @@ class Wormcog(commands.Cog):
             return 10
 
     async def send(
-        self,
-        message: discord.Message,
-        beam: str,
-        text: str,
-        files: list = None,
-        announcement: bool = False,
-        system: bool = False,
+        self, *, message: discord.Message, text: str, files: list = None,
     ):
         """Distribute the message"""
-
         # get variables
-        msgs = [message]
-        user = repo_u.get(message.author.id)
-        wormhole = repo_w.get(message.channel.id)
-        if beam is None and wormhole is not None:
-            # try to get information from message
-            beam = repo_b.get(wormhole.beam)
-        else:
-            # use supplied information
-            beam = repo_b.get(beam)
+        messages = [message]
+        db_w = repo_w.get(message.channel.id)
+        db_b = repo_b.get(db_w.beam)
 
         # access control
-        if beam is None:
+        if db_b.active == 0:
             return
-        if not system and (not beam.active or (wormhole is not None and not wormhole.active)):
+        if db_w.active == 0 or db_w.readonly == 1:
             return
-        if not system and (
-            (wormhole is not None and wormhole.readonly) or (user is not None and user.readonly)
-        ):
+        if repo_u.getAttribute(message.author.id, "readonly") == 1:
             return
 
-        # if the bot has 'Manage messages' permission, remove the original
-        if beam.replace and not files:
+        # remove the original, if possible
+        if db_b.replace == 1 and not files:
             try:
-                msgs[0] = message.author
+                messages[0] = message.author
                 await self.delete(message)
-                announcement = True
             except discord.Forbidden:
                 pass
 
         # limit message length
-        if len(text) > 1000:
-            text = text[:1000]
+        text = text[:1024]
 
-        # distribute the message
-        if beam is None:
-            ws = self.wormholes.values()
-        else:
-            if beam.name not in self.wormholes:
-                self.reconnect(beam.name)
-            ws = self.wormholes[beam.name]
+        # update wormhole list
+        if db_b.name not in self.wormholes.keys():
+            self.reconnect(db_b.name)
+        wormholes = self.wormholes[db_b.name]
 
         # get tags in the message
-        tags = re.findall(r"\(\(([^\(\)]*)\)\)", text)
-        if len(tags) > 5:
-            await message.channel.send(
-                f"> {message.author.mention}, you can only use five tags in one message",
-                delete_after=self.delay(),
-            )
-            tags = tags[:5]
-        users = [
-            u
-            for u in [repo_u.getByNickname(t) for t in tags]
-            if (u is not None and u.home is not None)
-        ]
+        tags = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
+        users = [t for t in tags if t is not None and t.home_id is not None]
 
-        for w in ws:
-            # filter out wormholes
-            if w.id == message.channel.id and not announcement:
-                continue
-            if not repo_w.get(w.id).active:
+        # replicate messages
+        for wormhole in wormholes:
+            # skip not active wormholes
+            if repo_w.getAttribute(wormhole.id, "active") == 0:
                 continue
 
             # apply tags
             w_text = text
-            for u in users:
-                if w.id == u.home:
-                    w_text = w_text.replace(f"(({u.nickname}))", f"<@!{u.id}>")
+            for user in users:
+                if wormhole.id == user.home_id:
+                    w_text = w_text.replace(f"(({user.nickname}))", f"<@!{user.discord_id}>")
                 else:
-                    w_text = w_text.replace(f"(({u.nickname}))", f"**__{u.nickname}__**")
+                    w_text = w_text.replace(f"(({user.nickname}))", f"**__{user.nickname}__**")
 
             # send message
-            m = await w.send(content=w_text)
-            msgs.append(m)
+            m = await wormhole.send(w_text)
+            messages.append(m)
 
         # save message objects in case of editing/deletion
-        if beam.timeout > 0:
-            self.sent.append(msgs)
-            await asyncio.sleep(beam.timeout)
-            self.sent.remove(msgs)
+        if db_b.timeout > 0:
+            self.sent.append(messages)
+            await asyncio.sleep(db_b.timeout)
+            self.sent.remove(messages)
+
+    async def announcement(self, *, beam: str = "*", message: str):
+        """Send information to all channels"""
+        pass
 
     async def delete(self, message: discord.Message):
         """Try to delete original message"""

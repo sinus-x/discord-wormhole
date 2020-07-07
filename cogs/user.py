@@ -38,9 +38,9 @@ class User(wormcog.Wormcog):
         else:
             home_id = 0
 
-        repo_u.add(ctx.author.id, nickname=nickname, home_id=home_id)
+        repo_u.add(discord_id=ctx.author.id, nickname=nickname, home_id=home_id)
         await ctx.author.send(
-            "You are now registered. "
+            f"You are now registered as `{nickname}`. "
             f"You can display your information with `{self.p}me`.\n"
             f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
             f"You can tag others with `((nickname))`, if they have set their home guild."
@@ -97,8 +97,14 @@ class User(wormcog.Wormcog):
         u = repo_u.getByNickname(name)
         if u:
             return await ctx.author.send("This name is already used by someone")
-        if "(" in name or ")" in name:
-            return await ctx.author.send("The name cannot contain characters `()@`")
+        disallowed = ("(", ")", "`", "@")
+        for char in disallowed:
+            if char in name:
+                return await ctx.author.send(
+                    "The name cannot contain characters `{}`".format(
+                        self.sanitise("\n".join(disallowed))
+                    )
+                )
 
         repo_u.set(ctx.author.id, nickname=name)
         await ctx.author.send(f"Your nickname was changed to **{name}**")
@@ -138,17 +144,17 @@ class User(wormcog.Wormcog):
         embed = self.getEmbed(ctx=ctx, title=db_u.nickname, description=description)
 
         information = []
-        if user.mod:
+        if db_u.mod:
             information.append("mod")
-        if user.readonly:
+        if db_u.readonly:
             information.append("read only")
-        if user.resticted:
+        if db_u.restricted:
             information.append("restricted")
         if len(information):
             embed.add_field(name="Information", value=", ".join(information))
 
-        if user.home_id:
-            channel = self.bot.get_channel(user.home_id)
+        if db_u.home_id:
+            channel = self.bot.get_channel(db_u.home_id)
             value = "{}, {}".format(channel.mention, channel.guild.name)
             embed.add_field(name="Home wormhole", value=value)
 

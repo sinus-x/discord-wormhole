@@ -32,7 +32,8 @@ class Wormhole:
         return (
             f"Wormhole {self.discord_id}: "
             f"beam {self.beam}, admin {self.admin_id}, "
-            f"active {self.active}, readonly {self.readonly}"
+            f"active {self.active}, readonly {self.readonly}, "
+            f"logo '{self.logo}'"
         )
 
 

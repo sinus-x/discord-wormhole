@@ -73,7 +73,7 @@ class Admin(wormcog.Wormcog):
         # TODO Log
         # TODO Announce
 
-    @beam.command(name="edit", aliases=["alter"])
+    @beam.command(name="edit", aliases=["set"])
     async def beam_edit(self, ctx, name: str, key: str, value: str):
         """Edit beam"""
         if not repo_b.exists(name):
@@ -152,7 +152,7 @@ class Admin(wormcog.Wormcog):
         # TODO Log
         # TODO Announce
 
-    @wormhole.command(name="edit", aliases=["alter"])
+    @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
         """Edit wormhole"""
         if not repo_w.exists(channel_id):
@@ -240,7 +240,7 @@ class Admin(wormcog.Wormcog):
         repo_u.delete(member_id)
         # TODO Log
 
-    @user.command(name="edit", aliases=["alter"])
+    @user.command(name="edit", aliases=["set"])
     async def user_edit(self, ctx, member_id: int, key: str, value: str):
         """Edit user"""
         if ctx.author.id != config["admin id"] and repo_u.getAttribute(member_id, "mod") == 1:

@@ -48,7 +48,7 @@ class BeamRepository:
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid beam attribute: {attribute}.")
         result = db.get(f"beam:{name}:{attribute}")
-        if attribute in ("active", "admin_id", "replace", "timeout"):
+        if attribute in ("active", "admin_id", "replace", "timeout") and result:
             result = int(result)
         return result
 
@@ -62,15 +62,13 @@ class BeamRepository:
         names = self.listNames()
         return [self.get(x) for x in names]
 
-    def set(self, name: str, **kwargs):
+    def set(self, name: str, key: str, value):
         self._existence_check(name)
 
-        for key, value in kwargs.items():
-            if not self.isValidAttribute(key, value):
-                raise DatabaseException(f"Invalid beam attribute: {key} = {value}.")
+        if not self.isValidAttribute(key, value):
+            raise DatabaseException(f"Invalid beam attribute: {key} = {value}.")
 
-        for key, value in kwargs.items():
-            db.set(f"beam:{name}:{key}", value)
+        db.set(f"beam:{name}:{key}", value)
 
     def delete(self, name: str):
         self._existence_check(name)
@@ -164,7 +162,7 @@ class WormholeRepository:
         result = db.get(f"wormhole:{discord_id}:{attribute}")
 
         # get data types
-        if attribute in ("active", "admin_id", "messages", "readonly"):
+        if attribute in ("active", "admin_id", "messages", "readonly") and result:
             result = int(result)
 
         return result
@@ -182,15 +180,13 @@ class WormholeRepository:
     def listObjects(self, beam: str = None):
         return [self.get(x) for x in self.listIDs(beam)]
 
-    def set(self, discord_id: int, **kwargs):
+    def set(self, discord_id: int, key: str, value):
         self._existence_check(discord_id)
 
-        for key, value in kwargs.items():
-            if not self.isValidAttribute(key, value):
-                raise DatabaseException(f"Invalid wormhole attribute: {key} = {value}.")
+        if not self.isValidAttribute(key, value):
+            raise DatabaseException(f"Invalid wormhole attribute: {key} = {value}.")
 
-        for key, value in kwargs.items():
-            db.set(f"wormhole:{discord_id}:{key}", value)
+        db.set(f"wormhole:{discord_id}:{key}", value)
 
     def delete(self, discord_id: int):
         self._existence_check(discord_id)
@@ -267,17 +263,16 @@ class UserRepository:
         return result
 
     def getByNickname(self, nickname: str) -> objects.User:
-        result = db.scan(match="user:*:nickname")
-        for key, value in result:
-            if value == nickname:
-                return self.get(self._getUserDiscordId(key))
+        for r in db.scan_iter(match="user:*:nickname"):
+            if db.get(r) == nickname:
+                return self.get(int(r.split(":")[1]))
         return None
 
     def getAttribute(self, discord_id: int, attribute: str):
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid user attribute: {attribute}.")
         result = db.get(f"user:{discord_id}:{attribute}")
-        if attribute in ("home_id", "mod", "readonly", "restricted"):
+        if attribute in ("home_id", "mod", "readonly", "restricted") and result:
             result = int(result)
         return result
 
@@ -290,15 +285,13 @@ class UserRepository:
     def listObjects(self):
         return [self.get(x) for x in self.listIDs()]
 
-    def set(self, discord_id: int, **kwargs):
+    def set(self, discord_id: int, key: str, value):
         self._existence_check(discord_id)
 
-        for key, value in kwargs.items():
-            if not self.isValidAttribute(key, value):
-                raise DatabaseException(f"Invalid user attribute: {key} = {value}.")
+        if not self.isValidAttribute(key, value):
+            raise DatabaseException(f"Invalid user attribute: {key} = {value}.")
 
-        for key, value in kwargs.items():
-            db.set(f"user:{discord_id}:{key}", value)
+        db.set(f"user:{discord_id}:{key}", value)
 
     def delete(self, discord_id: int):
         self._existence_check(discord_id)

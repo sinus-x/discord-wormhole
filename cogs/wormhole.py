@@ -315,18 +315,18 @@ class Wormhole(wormcog.Wormcog):
             else:
                 logo = config["logo fill"]
         else:
-            logo = None
+            logo = self.sanitise(message.guild.name)
 
         # get prefix
         if db_b.anonymity == "none":
             # display everything
             return f"{logo} **{name}**: "
-        if db_b.anonymity == "guild" and logo is not None:
+        if db_b.anonymity == "guild" and len(logo):
             # display guild logo
             return logo + " "
-        if db_b.anonymity == "guild" and logo is None:
+        if db_b.anonymity == "guild" and len(logo) == 0:
             # display guild name
-            return f"{self.sanitise(message.guild.name)}, **{name}**"
+            return f"{logo}, **{name}**"
         # wrong configuration or full anonymity
         return ""
 
