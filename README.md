@@ -30,8 +30,9 @@ Features:
 
 - Various levels of anonymity
 - Edit sent messages on all connected servers
-- Wormhole aliases (emoji and guild emote support)
-- Full control over your data by self-hosting
+- Guild aliases (emoji and guild emote support)
+- Full control over your data
+- Read more on [Github Pages](https://sinus-x.github.io/discord-wormhole)
 
 Required permissions:
 
@@ -39,7 +40,6 @@ Required permissions:
 - Send messages
 - Manage messages
 - Use external emojis
-- Attach files
 - Embed links
 
 ## Set up
