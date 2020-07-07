@@ -80,7 +80,7 @@ List beams and their wormholes.
 
 ## User
 
-Users can register their accounts if they want to be able to be tagged or to have their home wormhole liked to them.
+Users can register their accounts if they want to be able to be tagged or to have their home wormhole linked to them.
 
 Invoker has to be mod or bot administrator in order to edit these settings.
 
@@ -111,3 +111,5 @@ Alter user's settings. See the table above for available options.
 **user list**
 
 List users and their parameters. Note that this output may be huge, depending on number of registered users.
+
+[<< back to home](index.md)

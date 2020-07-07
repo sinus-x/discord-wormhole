@@ -1,6 +1,4 @@
-# Discord Wormhole
-
-## Overview
+# Overview
 
 Wormhole is independent Discord bot, designed to connect mutiple guilds with one unified chat.
 
@@ -15,6 +13,6 @@ Wormhole is independent Discord bot, designed to connect mutiple guilds with one
 
 ## Principle
 
-The wormholes are connected with beams. Bot can have multiple beams with independent settings. Wormhole can only be registered to one beam.
+The wormholes are connected with beams, bot can have multiple beams with independent settings. Wormhole can only be registered to one beam.
 
-Users can set their home wormhole. This will allow others to tag them with `((nickname))`. For technical reasons, user can only be registered to one wormhole, meaning that other's won't be able to tag them from wormholes in another beams.
+Users can set their home wormhole. This will allow others to tag them with `((nickname))`.

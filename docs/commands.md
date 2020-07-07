@@ -43,3 +43,5 @@ Set home wormhole. This has to be invoked inside of a valid wormhole channel.
 **set name [name]**
 
 Set new nickname. Some characters are disallowed (`()*/\@`, as well as some zero-width characters).
+
+[<< back to home](index.md)

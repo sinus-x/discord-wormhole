@@ -17,7 +17,7 @@ Fill the config file and run the bot with `python3 init.py`.
 
 ## Systemd
 
-You probably want to have your bot started as soon as the server is booted. Save the example below and edit it so it matches your setup.
+You probably want to have your bot started as soon as the server is booted. Edit the example below it so it matches your setup.
 
 ```
 [Unit]
@@ -42,6 +42,8 @@ Copy the file to `/etc/systemd/system/wormhole.service` and run
 sudo systemctl enable wormhole.service
 sudo systemctl start wormhole.service
 ```
+
+[<< back to home](index.md)
 
 
 [developers]: https://discord.com/developers

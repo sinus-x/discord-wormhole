@@ -31,5 +31,7 @@ beam = repo_b.get(wormhole.beam)
 user = repo_u.get(message.author.id)
 ```
 
+[<< back to home](index.md)
+
 [issues]: https://github.com/sinus-x/discord-wormhole/issues
 [redis]: https://redis.io
