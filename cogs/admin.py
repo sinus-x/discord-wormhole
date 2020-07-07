@@ -50,25 +50,17 @@ class Admin(wormcog.Wormcog):
         if re.fullmatch(pattern, name) is None:
             raise errors.BadArgument(f"Beam name must match `{pattern}`")
 
-        # add
-        try:
-            repo_b.add(name=name, admin_id=ctx.author.id)
-            await self.console.info(f'Beam "{name}" created and opened')
-            await self.embed.info(ctx, f"Beam **{name}** created and opened")
-        except errors.DatabaseException as e:
-            raise errors.BadArgument(f"Error creating the beam **{name}**", e)
+        repo_b.add(name=name, admin_id=ctx.author.id)
+        await self.console.info(f'Beam "{name}" created and opened')
+        await self.embed.info(ctx, f"Beam **{name}** created and opened")
 
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx, name: str):
         """Open closed beam"""
-        try:
-            repo_b.set(name=name, active=1)
-            await self.console.info(f'Beam "{name}" opened')
-            await self.send(
-                ctx.message, name, "> The current wormhole beam has been opened.", system=True,
-            )
-        except Exception as e:
-            raise errors.BadArgument(f"Error opening the beam **{name}**", e)
+        repo_b.set(name=name, active=1)
+
+        # TODO Log
+        # TODO Announce
 
     @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx, name: str):
@@ -76,14 +68,10 @@ class Admin(wormcog.Wormcog):
         if repo_b.get(name) is None:
             raise errors.BadArgument("Invalid beam")
 
-        try:
-            await self.send(
-                ctx.message, name, "> The current wormhole beam has been closed.", system=True,
-            )
-            repo_b.set(name=name, active=0)
-            await self.console.info(f'Beam "{name}" closed')
-        except Exception as e:
-            raise errors.BadArgument(f"Error closing the beam **{name}**", e)
+        repo_b.set(name=name, active=0)
+
+        # TODO Log
+        # TODO Announce
 
     @beam.command(name="edit", aliases=["alter"])
     async def beam_edit(self, ctx, name: str, key: str, value: str):
@@ -99,8 +87,8 @@ class Admin(wormcog.Wormcog):
 
         repo_b.set(name=name, key=key, value=value)
 
-        await self.send(ctx, f"Beam **{name}** updated: {key} = {value}", system=True)
-        await self.console.info(f"Beam {name} updated: {key} = {value}")
+        # TODO Log
+        # TODO Announce
 
     @beam.command(name="list")
     async def beam_list(self, ctx):

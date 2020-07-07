@@ -74,7 +74,7 @@ class Wormhole(wormcog.Wormcog):
         self.__updateStats(message)
 
         # send the message
-        await self.send(message, db_b.name, content, files=message.attachments)
+        await self.send(message=message, text=content, files=message.attachments)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):

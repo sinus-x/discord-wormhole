@@ -28,7 +28,7 @@ async def on_ready():
     m = "INFO: Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
     print(m)
 
-    ch = bot.get_channel(config["error channel"])
+    ch = bot.get_channel(config["log channel"])
     await ch.send(f"```{m}```")
     await wormcog.presence(bot)
 
@@ -41,7 +41,7 @@ async def on_error(event, *args, **kwargs):
     tb = traceback.format_exc()
     print(tb)
 
-    channel = bot.get_channel(config["error channel"])
+    channel = bot.get_channel(config["log channel"])
     if channel is None:
         print("ERROR: Error channel not found")
         return
