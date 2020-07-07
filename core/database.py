@@ -214,9 +214,10 @@ class WormholeRepository:
     def _getWormholeDiscordId(self, string: str):
         return int(string.split(":")[1])
 
-    def _availability_check(self, discord_id: int):
-        result = db.get(f"wormhole:{discord_id}:active")
-        if result is not None:
+    def _availability_check(self, beam: str, discord_id: int):
+        if not db.exists(f"beam:{beam}:active"):
+            raise DatabaseException(f"Beam {beam} does not exist.")
+        if db.exists(f"wormhole:{discord_id}:active"):
             raise DatabaseException(f"Channel `{discord_id}` is already a wormhole.")
 
     def _existence_check(self, discord_id: int):
