@@ -78,7 +78,7 @@ class User(wormcog.Wormcog):
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.delay())
 
-    @commands.cooldown(rate=1, per=1, type=commands.BucketType.user)
+    @commands.cooldown(rate=1, per=14400, type=commands.BucketType.user)
     @set.command(name="home")
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
@@ -93,7 +93,7 @@ class User(wormcog.Wormcog):
         await ctx.author.send("Home set to " + ctx.channel.mention)
         await self.event.user(ctx, f"Home set to **{ctx.channel.id}** ({ctx.guild.name}).")
 
-    @commands.cooldown(rate=2, per=1, type=commands.BucketType.user)
+    @commands.cooldown(rate=2, per=14400, type=commands.BucketType.user)
     @set.command(name="name", aliases=["nick", "nickname"])
     async def set_name(self, ctx, *, name: str):
         """Set new display name"""
