@@ -42,6 +42,15 @@ Required permissions:
 - Attach files
 - Embed links
 
+## Contributing
+
+**NOTE:**
+
+This master branch is frozen. Only bugfixes will be merged.
+
+Development is focused on `split` branch, which is for now considered unstable
+and may change in following weeks. Please, be patient.
+
 ## Set up
 - Clone the repository
 - Install redis: `apt install redis-server`

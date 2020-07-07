@@ -8,7 +8,7 @@ Wormhole is independent Discord bot, designed to connect mutiple guilds with one
 
 The obvious step is registering the bot on the [Discord webpage][developers]. Duck or Google around if you don't know what to do.
 
-Install required tools, clone the repository and install python packages.
+Install required tools, clone the repository and install python packages:
 
 ```bash
 apt install git redis-server python3
@@ -17,35 +17,35 @@ cd wormhole
 pip3 install -r requirements.txt
 ```
 
-Fill the config file and run the bot with `python3 init.py`. You can set up a systemd service to do this on server boot.
+Fill the config file and run the bot with `python3 init.py`. You can set up a systemd service ([like this, for example][systemd]) to do this on server boot.
 
 ## Commands
 
-Generally, user's shouldn't need to do anything to interact with the wormhole. To display available commands, run **~help**. The prefix may be different, depending on configuration; the bot's presence (in-game activity) is showing the prefix.
+Generally, users shouldn't need to do anything to interact with the wormhole. To display available commands, run **~help**. You can see bot's prefix in its presence (Game activity).
 
-**~e [text]** | **~edit [text]**
+**~e [text]** (**~edit [text]**)
 
-Edit your last message. For technical reasons, full message will be replaced with the new content, and this command has to be invoked within the defined limit, which is by-default 60 seconds.
+Edit your last message. For technical reasons, full original message will be replaced with the new content, and this command has to be invoked within the defined limit, which is by default 60 seconds.
 
-**~d** | **~delete**
+**~d** (**~delete**)
 
-Delete your last message. For technical reasons, this command has to be infoked within the defined limit, which is by-default 60 seconds.
+Delete your last message. For technical reasons, this command has to be invoked within the defined limit, which is by default 60 seconds.
 
 **~info**
 
-See information about the wormhole beam. See connected wormholes and their message counters.
+Display information about the current wormhole beam, connected wormholes and their message statistics.
 
 **~settings**
 
-See current settings.
+Display current settings.
 
 **~invite**
 
-Get invite link for the bot.
+Invite link for the bot.
 
 **~link**
 
-Get link to the Github repository.
+Link to the Github repository.
 
 ### Registering
 
@@ -57,9 +57,9 @@ _TODO_
 
 ## The code
 
-The wormholes are connected to beams. Beams are defined by their name and can have independent settings. Wormhole can only be registered to one beam.
+The wormholes are connected with beams. Bot can have multiple beams with independent settings. Wormhole can only be registered to one beam.
 
-Users can set their home wormhole. This will allow others to tag them with `((nickname))`. For technical reasons, user can only be registered to one beam, meaning that other's won't be able to tag them from wormholes in another beams.
+Users can set their home wormhole. This will allow others to tag them with `((nickname))`. For technical reasons, user can only be registered to one wormhole, meaning that other's won't be able to tag them from wormholes in another beams.
 
 ### Database
 
@@ -75,8 +75,6 @@ OK
 ```
 
 Wormhole uses `type:identifier:attribute` style: `beam:main:admin_id`.
-
-To provide some interface to the database, we're using repository objects.
 
 ```python
 from core.database import repo_b, repo_w, repo_u
@@ -96,3 +94,4 @@ Please, [file an issue][issues] before sending an PR.
 [developers]: https://discord.com/developers
 [issues]: https://github.com/sinus-x/discord-wormhole/issues
 [redis]: https://redis.io
+[systemd]: https://github.com/sinus-x/rubbergoddess/blob/master/resources/systemd.standalone.service
