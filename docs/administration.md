@@ -1,6 +1,8 @@
+[<< back to home](index.md)
+
 # Administration
 
-The **Admin cog** allows the bot administrator to manage beams, wormholes and users. 
+The **Admin cog** allows the bot administrator to manage beams, wormholes and users.
 
 ## Beam
 
@@ -14,7 +16,7 @@ Invoker has to be bot administrator in order to edit these settings.
 |-----------|------------------|-------------------------------------------|
 | active    | **1**, 0         | Whether the beam should transfer messages |
 | admin_id  | **0**, _user ID_ | Pingable user account in case of problems |
-| anonymity | **none**, guild, full | Anonymity level for names          |
+| anonymity | **none**, guild, full | Anonymity level for names            |
 | replace   | **1**, 0         | Whether to replace original messages      |
 | timeout   | 60               | Time interval in seconds, in which the bot holds original messages in memory. This is used for editing and removing sent messages. |
 
