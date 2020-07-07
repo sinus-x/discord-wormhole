@@ -51,27 +51,22 @@ class Admin(wormcog.Wormcog):
             raise errors.BadArgument(f"Beam name must match `{pattern}`")
 
         repo_b.add(name=name, admin_id=ctx.author.id)
-        await self.console.info(f'Beam "{name}" created and opened')
-        await self.embed.info(ctx, f"Beam **{name}** created and opened")
+        await self.event.sudo(ctx, f"Beam **{name}** created.")
+        await self.feedback(ctx, private=False, message=f"Beam **{name}** created and opened.")
 
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx, name: str):
         """Open closed beam"""
         repo_b.set(name=name, key="active", value=1)
-
-        # TODO Log
-        # TODO Announce
+        await self.event.sudo(ctx, f"Beam **{name}** opened.")
+        await self.announce(beam=name, message=f"Beam opened!")
 
     @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx, name: str):
         """Close beam"""
-        if repo_b.get(name) is None:
-            raise errors.BadArgument("Invalid beam")
-
         repo_b.set(name=name, key="active", value=0)
-
-        # TODO Log
-        # TODO Announce
+        await self.event.sudo(ctx, f"Beam **{name}** closed.")
+        await self.announce(beam=name, message=f"Beam closed.")
 
     @beam.command(name="edit", aliases=["set"])
     async def beam_edit(self, ctx, name: str, key: str, value: str):
@@ -87,8 +82,8 @@ class Admin(wormcog.Wormcog):
 
         repo_b.set(name=name, key=key, value=value)
 
-        # TODO Log
-        # TODO Announce
+        await self.event.sudo(ctx, f"Beam **{name}** updated: **{key}** = **{value}**.")
+        await self.announce(beam=name, message=f"Beam updated: **{key}** is now **{value}**.")
 
     @beam.command(name="list")
     async def beam_list(self, ctx):
@@ -133,31 +128,33 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="add", aliases=["create"])
     async def wormhole_add(self, ctx, beam: str, channel_id: int = None):
         """Open new wormhole"""
-        if not repo_b.exists(beam):
-            raise errors.BadArgument("No such beam")
         channel = self._getChannel(ctx=ctx, channel_id=channel_id)
         if channel is None:
             raise errors.BadArgument("No such channel")
 
         repo_w.add(beam=beam, discord_id=channel.id)
-
-        # TODO Log
-        # TODO Announce
+        await self.event.sudo(ctx, f"{self._w2str_log(channel)} added.")
+        await self.announce(
+            ctx, beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}.",
+        )
 
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx, channel_id: int = None):
         """Remove wormhole from database"""
-        repo_w.delete(discord_id=channel_id)
+        channel = self._getChannel(ctx=ctx, channel_id=channel_id)
+        if channel is None:
+            raise errors.BadArgument("No such channel")
 
-        # TODO Log
-        # TODO Announce
+        beam_name = repo_w.getAttribute(channel_id, "beam")
+        repo_w.delete(discord_id=channel_id)
+        await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
+        await self.announce(
+            ctx, beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.",
+        )
 
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
         """Edit wormhole"""
-        if not repo_w.exists(channel_id):
-            raise errors.BadArgument("Invalid wormhole")
-
         if value in ("admin_id", "active", "readonly", "messages"):
             try:
                 value = int(value)
@@ -166,10 +163,13 @@ class Admin(wormcog.Wormcog):
 
         channel = self._getChannel(ctx=ctx, channel_id=channel_id)
 
+        beam_name = repo_w.getAttribute(channel_id, "beam")
         repo_w.set(discord_id=channel.id, key=key, value=value)
-
-        # TODO Log
-        # TODO Announce
+        await self.event.sudo(ctx, f"{self._w2str_log(channel)}: {key} = {value}.")
+        await self.announce(
+            beam=beam_name,
+            message=f"Womhole {self._w2str_out(channel)} updated: **{key}** is **{value}**.",
+        )
 
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx):
@@ -230,7 +230,7 @@ class Admin(wormcog.Wormcog):
     async def user_add(self, ctx, member_id: int, nickname: str, home_id: int):
         """Add user"""
         repo_u.add(discord_id=member_id, nickname=nickname, home_id=home_id)
-        # TODO Log
+        self.event.sudo(ctx, f"{str(repo_u.get(member_id))} added.")
 
     @user.command(name="remove", alises=["delete"])
     async def user_remove(self, ctx, member_id: int):
@@ -240,8 +240,9 @@ class Admin(wormcog.Wormcog):
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
+        db_u = repo_u.get(member_id)
         repo_u.delete(member_id)
-        # TODO Log
+        await self.event.sudo(ctx, f"{str(db_u)} removed.")
 
     @user.command(name="edit", aliases=["set"])
     async def user_edit(self, ctx, member_id: int, key: str, value: str):
@@ -257,9 +258,9 @@ class Admin(wormcog.Wormcog):
             except ValueError:
                 raise errors.BadArgument("Value has to be integer.")
 
+        db_u = repo_u.get(member_id)
         repo_u.set(discord_id=member_id, key=key, value=value)
-
-        # TODO Log
+        await self.event.sudo(ctx, f"{str(db_u)} updated: **{key}** = **{value}**.")
 
     @user.command(name="list")
     async def user_list(self, ctx):
@@ -327,6 +328,12 @@ class Admin(wormcog.Wormcog):
 
     def _getMember(self, *, member_id: int) -> discord.User:
         return self.bot.get_user(member_id)
+
+    def _w2str_out(self, channel: discord.TextChannel) -> str:
+        return f"**{channel.mention}** in {channel.guild.name}**"
+
+    def _w2str_log(self, channel: discord.TextChannel) -> str:
+        return f"{channel.guild.name}/{channel.name} (ID {channel.id})"
 
 
 def setup(bot):
