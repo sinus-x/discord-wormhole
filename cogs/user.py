@@ -86,8 +86,8 @@ class User(wormcog.Wormcog):
         if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
             return await ctx.author.send(f"Home has to be a wormhole", delete_after=5)
 
-        repo_u.set(ctx.author.id, home_id=ctx.channel.id)
-        await ctx.author.send("Your home wormhole is " + self.getHomeString(ctx.channel))
+        repo_u.set(ctx.author.id, key="home_id", value=ctx.channel.id)
+        await ctx.author.send("Home set to " + ctx.channel.mention)
 
     @commands.cooldown(rate=2, per=3600, type=commands.BucketType.user)
     @set.command(name="name", aliases=["nick", "nickname"])
@@ -106,7 +106,7 @@ class User(wormcog.Wormcog):
                     )
                 )
 
-        repo_u.set(ctx.author.id, nickname=name)
+        repo_u.set(ctx.author.id, key="nickname", value=name)
         await ctx.author.send(f"Your nickname was changed to **{name}**")
 
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
@@ -138,7 +138,7 @@ class User(wormcog.Wormcog):
         if user is None:
             return await ctx.author.send("User not found.")
 
-        description = f"_Taggable via_ `(({db_u.nickname}))`"
+        description = f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
         if db_u.home_id == 0:
             description += "_, once they've set their home wormhole_"
         embed = self.getEmbed(ctx=ctx, title=db_u.nickname, description=description)

@@ -23,7 +23,7 @@ class BeamRepository:
 
         db.mset(
             {
-                f"beam:{name}:active": 0,
+                f"beam:{name}:active": 1,
                 f"beam:{name}:admin_id": admin_id,
                 f"beam:{name}:anonymity": "none",
                 f"beam:{name}:replace": 1,

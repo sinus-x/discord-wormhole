@@ -75,6 +75,7 @@ class Wormcog(commands.Cog):
             return
 
         # remove the original, if possible
+        # TODO Check for permissions in that channel
         if db_b.replace == 1 and not files:
             try:
                 messages[0] = message.author
@@ -100,6 +101,10 @@ class Wormcog(commands.Cog):
             if repo_w.getAttribute(wormhole.id, "active") == 0:
                 continue
 
+            # skip current if message has attachments
+            if wormhole.id == message.channel.id and len(files) > 0:
+                continue
+
             # apply tags
             w_text = text
             for user in users:
@@ -109,6 +114,7 @@ class Wormcog(commands.Cog):
                     w_text = w_text.replace(f"(({user.nickname}))", f"**__{user.nickname}__**")
 
             # send message
+            # TODO Log discord.Forbidden exceptions
             m = await wormhole.send(w_text)
             messages.append(m)
 
@@ -146,10 +152,10 @@ class Wormcog(commands.Cog):
         """Create embed"""
         # author
         if hasattr(ctx, "author"):
-            footer_text = str(ctx.author)
+            footer_text = "Reply for " + str(ctx.author)
             footer_image = ctx.author.avatar_url
         elif hasattr(message, "author"):
-            footer_text = str(message.author)
+            footer_text = "Reply for " + str(message.author)
             footer_image = message.author.avatar_url
         else:
             footer_text = discord.Embed.Empty

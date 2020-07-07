@@ -57,7 +57,7 @@ class Admin(wormcog.Wormcog):
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx, name: str):
         """Open closed beam"""
-        repo_b.set(name=name, active=1)
+        repo_b.set(name=name, key="active", value=1)
 
         # TODO Log
         # TODO Announce
@@ -68,7 +68,7 @@ class Admin(wormcog.Wormcog):
         if repo_b.get(name) is None:
             raise errors.BadArgument("Invalid beam")
 
-        repo_b.set(name=name, active=0)
+        repo_b.set(name=name, key="active", value=0)
 
         # TODO Log
         # TODO Announce
@@ -194,7 +194,10 @@ class Admin(wormcog.Wormcog):
                         readonly=db_w.readonly,
                     )
                 )
-            embed.add_field(name=beam, value="\n".join(value), inline=False)
+            value = "\n".join(value)
+            if len(value) == 0:
+                value = "No wormholes"
+            embed.add_field(name=beam, value=value, inline=False)
 
         await ctx.send(embed=embed, delete_after=self.delay())
 

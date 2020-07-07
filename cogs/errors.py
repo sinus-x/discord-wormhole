@@ -23,8 +23,7 @@ class Errors(wormcog.Wormcog):
         error = getattr(error, "original", error)
 
         # ignore some errors
-        ignored = commands.CommandNotFound
-        if isinstance(error, ignored):
+        if isinstance(error, commands.CommandNotFound):
             return
 
         # user interaction

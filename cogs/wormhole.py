@@ -20,12 +20,7 @@ class Wormhole(wormcog.Wormcog):
         super().__init__(bot)
 
         # Global message counter
-        self.transferred = 0
-
-        # Per-channel message couter
-        self.stats = {}
-        for w in repo_w.listObjects():
-            self.stats[str(w.discord_id)] = w.messages
+        self.transferred = {}
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -195,9 +190,11 @@ class Wormhole(wormcog.Wormcog):
     async def info(self, ctx: commands.Context):
         """Display information about wormholes"""
         # heading
+        beam_name = repo_w.getAttribute(ctx.channel.id, "beam")
+        since = self.transferred[beam_name] if beam_name in self.transferred else 0
         msg = [
             f">>> **[[total]]** messages sent in total "
-            f"(**{self.transferred}** since {started}); "
+            f"(**{since}** since {started}); "
             f"ping **{self.bot.latency:.2f}s**",
             "",
             "Currently opened wormholes:",
@@ -205,7 +202,7 @@ class Wormhole(wormcog.Wormcog):
         db_w = repo_w.get(ctx.channel.id)
         db_b = repo_b.get(db_w.beam)
 
-        wormholes = repo_w.getObjects(db_w.beam)
+        wormholes = repo_w.listObjects(db_w.beam)
 
         # loop over wormholes in current beam
         count = 0
@@ -216,11 +213,10 @@ class Wormhole(wormcog.Wormcog):
             if len(wormhole.logo):
                 line.append(wormhole.logo)
             # guild, channel, counter
-            channel = self.bot.get_channel(wormhole.channel)
+            channel = self.bot.get_channel(wormhole.discord_id)
             line.append(
-                f"**{discord.utils.escape_markdown(channel.guild.name)}** "
-                f"({channel.mention}): "
-                f"**{self.stats[str(wormhole.channel)]}** messages"
+                f"**{self.sanitise(channel.guild.name)}** ({channel.mention}): "
+                f"**{repo_w.getAttribute(channel.id, 'messages')}** messages"
             )
             # inactive, ro
             pars = []
@@ -233,8 +229,6 @@ class Wormhole(wormcog.Wormcog):
             # join and send
             msg.append(" ".join(line))
 
-        # in total count, include messages not yet saved into the database
-        count = count + self.transferred % 50
         await ctx.send("\n".join(msg).replace("[[total]]", str(count)), delete_after=self.delay())
 
     @commands.guild_only()
@@ -393,27 +387,13 @@ class Wormhole(wormcog.Wormcog):
 
     def __updateStats(self, message: discord.Message):
         """Increment wormhole's statistics"""
-        # get wormhole ID
-        author = repo_u.get(message.channel.id)
-        if author is not None:
-            wormhole_id = author.home_id
+        current = repo_w.getAttribute(message.channel.id, "messages")
+        repo_w.set(message.channel.id, "messages", current + 1)
+        beam_name = repo_w.getAttribute(message.channel.id, "beam")
+        if beam_name in self.transferred:
+            self.transferred[beam_name] += 1
         else:
-            wormhole_id = message.channel.id
-
-        try:
-            self.stats[str(wormhole_id)] += 1
-        except KeyError:
-            self.stats[str(wormhole_id)] = 1
-
-        # save
-        self.transferred += 1
-        if self.transferred % 50 == 0:
-            self.__saveStats()
-
-    def __saveStats(self):
-        """Save message statistics to the database"""
-        for wormhole, count in self.stats.items():
-            repo_w.set(int(wormhole), messages=count)
+            self.transferred[beam_name] = 1
 
 
 def setup(bot):
