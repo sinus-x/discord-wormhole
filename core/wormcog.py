@@ -34,8 +34,7 @@ class Wormcog(commands.Cog):
         self.sent = []
 
         # bot management logging
-        self.console = output.Console(bot)
-        self.embed = output.Embed(bot)
+        self.event = output.Event(self.bot)
 
     ##
     ## FUNCTIONS
@@ -124,9 +123,15 @@ class Wormcog(commands.Cog):
             await asyncio.sleep(db_b.timeout)
             self.sent.remove(messages)
 
-    async def announcement(self, *, beam: str = "*", message: str):
+    async def announce(self, *, beam: str, message: str):
         """Send information to all channels"""
-        pass
+        db_ws = repo_w.listObjects(beam=beam)
+        for db_w in db_ws:
+            await self.bot.get_channel(db_w.discord_id).send("**WORMHOLE:** " + message)
+
+    async def feedback(self, ctx, *, private: bool = True, message: str):
+        target = ctx.author if private else ctx
+        await target.send(message)
 
     async def delete(self, message: discord.Message):
         """Try to delete original message"""

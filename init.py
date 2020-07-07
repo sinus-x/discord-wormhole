@@ -64,7 +64,7 @@ async def reload(ctx: commands.Context, cog: str):
     try:
         bot.reload_extension(f"cogs.{cog}")
         print(f"{cog.upper()} reloaded.")
-        await ctx.send(f"**{cog.upper()}** reloaded.", delete_after=5)
+        await ctx.send(f"**{cog.upper()}** reloaded.")
     except Exception as e:
         await ctx.send(f"An error occured: ```\n{e}```", delete_after=20)
 
