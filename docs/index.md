@@ -53,7 +53,7 @@ _TODO_
 
 ### Moderator commands
 
-_TODO_
+Available at [administration](administration.md).
 
 ## The code
 
