@@ -144,6 +144,16 @@ class User(wormcog.Wormcog):
 
     async def displayUserInfo(self, ctx, db_u: objects.User):
         """Display user info"""
+
+        """
+        title:  name#0000
+        descr:  @name (ID 000000000000000)
+                _Taggable via `((nickname))`_ | _, once they've set their home wormhole_
+
+        field:  **Home wormhole**
+                wormhole, GUILD NAME
+        """
+
         user = self.bot.get_user(db_u.discord_id)
         if db_u is None:
             return await ctx.author.send("User not in database.")
@@ -153,7 +163,7 @@ class User(wormcog.Wormcog):
         description = f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
         if db_u.home_id == 0:
             description += "_, once they've set their home wormhole_"
-        embed = self.getEmbed(ctx=ctx, title=db_u.nickname, description=description)
+        embed = self.getEmbed(ctx=ctx, title=str(user), description=description)
 
         information = []
         if db_u.mod:

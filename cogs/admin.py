@@ -40,6 +40,11 @@ class Admin(wormcog.Wormcog):
 
         embed = self.getEmbed(ctx=ctx, title="Beams", description=prefix)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
+        embed.add_field(
+            name="Online help",
+            value="https://sinus-x.github.io/discord-wormhole/administration#beam",
+            inline=False,
+        )
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @beam.command(name="add", aliases=["create"])
@@ -123,6 +128,11 @@ class Admin(wormcog.Wormcog):
 
         embed = self.getEmbed(ctx=ctx, title="Wormholes", description=description)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
+        embed.add_field(
+            name="Online help",
+            value="https://sinus-x.github.io/discord-wormhole/administration#wormhole",
+            inline=False,
+        )
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @wormhole.command(name="add", aliases=["create"])
@@ -224,6 +234,11 @@ class Admin(wormcog.Wormcog):
 
         embed = self.getEmbed(ctx=ctx, title="Users", description=description)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
+        embed.add_field(
+            name="Online help",
+            value="https://sinus-x.github.io/discord-wormhole/administration#user",
+            inline=False,
+        )
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @user.command(name="add")

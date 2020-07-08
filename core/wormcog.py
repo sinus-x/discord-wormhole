@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import git
 import json
 import re
@@ -186,6 +187,10 @@ class Wormcog(commands.Cog):
         embed = discord.Embed(
             title=title, description=description, url=url, color=discord.Color.light_grey()
         )
+
+        # add footer timestamp
+        embed.timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
+
         if discord.Embed.Empty not in (footer_image, footer_text):
             embed.set_footer(icon_url=footer_image, text=footer_text)
 

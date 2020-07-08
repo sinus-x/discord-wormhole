@@ -110,7 +110,7 @@ class Wormhole(wormcog.Wormcog):
     @commands.command()
     async def help(self, ctx: commands.Context):
         """Display help"""
-        embed = discord.Embed(title="Wormhole", color=discord.Color.light_grey())
+        embed = self.getEmbed(ctx=ctx, title="User commands")
         p = config["prefix"]
         # fmt: off
         embed.add_field(value=f"**{p}e** | **{p}edit**",   name="Edit last message")
@@ -122,15 +122,19 @@ class Wormhole(wormcog.Wormcog):
 
         db_u = repo_u.get(ctx.author.id)
         if "User" in self.bot.cogs and db_u is None:
-            embed.add_field(value="**VISITOR COMMANDS**", name="\u200b", inline=False)
-            embed.add_field(value=f"**{p}register**", name="Register your username")
-            embed.add_field(value=f"**{p}whois**",    name="Get information about user")
+            embed.add_field(value=f"**{p}register**",      name="Register your username")
+            embed.add_field(value=f"**{p}whois**",         name="Get information about user")
 
         if "User" in self.bot.cogs and db_u is not None:
-            embed.add_field(value="**USER COMMANDS**",   name="\u200b", inline=False)
-            embed.add_field(value=f"**{p}me**",          name="Get your information")
-            embed.add_field(value=f"**{p}whois**",       name="Get information about user")
-            embed.add_field(value=f"**{p}set**",         name="Edit nickname or home")
+            embed.add_field(value=f"**{p}me**",            name="Display your information")
+            embed.add_field(value=f"**{p}whois**",         name="Get information about user")
+            embed.add_field(value=f"**{p}set**",           name="Edit nickname or home")
+
+        embed.add_field(
+            name="Online help",
+            value="https://sinus-x.github.io/discord-wormhole/commands",
+            inline=False
+        )
         # fmt: on
         await ctx.send(embed=embed, delete_after=self.delay())
         await self.delete(ctx.message)
