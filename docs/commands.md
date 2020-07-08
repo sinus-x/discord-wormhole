@@ -2,15 +2,17 @@
 
 # Commands
 
-Generally, users shouldn't need to do anything to interact with the wormhole. To display available commands, run **help**. You can see bot's prefix in its presence (Game activity).
+Generally, users shouldn't need to do anything to interact with the wormhole. To display available commands, run **help**.
+
+You have to prepend bot's prefix before the command name; you can see it in its presence (Game activiy).
 
 **e [text]** (**edit [text]**)
 
-Edit your last message. For technical reasons, full original message will be replaced with the new content, and this command has to be invoked within the defined limit, which is by default 60 seconds.
+Edit your last message: its text will be replaced with new content. For technical reasons, this command has to be invoked within specified time window after sending the message. Default limit is 60 seconds.
 
 **d** (**delete**)
 
-Delete your last message. For technical reasons, this command has to be invoked within the defined limit, which is by default 60 seconds.
+Delete your last message. For technical reasons, this command has to be invoked within specified time window after sending the message. Default limit is 60 seconds.
 
 **info**
 
@@ -43,5 +45,13 @@ Set home wormhole. This has to be invoked inside of a valid wormhole channel.
 **set name [name]**
 
 Set new nickname. Some characters are disallowed (`()*/\@`, as well as some zero-width characters).
+
+**me**
+
+Display your information.
+
+**whois [name]**
+
+Display information about some user. If the user is found, it will show their home wormhole and optional attributes like mod or readonly status.
 
 [<< back to home](index.md)
