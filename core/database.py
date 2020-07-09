@@ -194,6 +194,11 @@ class WormholeRepository:
         for attribute in self.attributes:
             db.delete(f"wormhole:{discord_id}:{attribute}")
 
+        # reset homes
+        for home in db.scan(match="user:*:home_id:*"):
+            if str(discord_id) == db.get(home):
+                db.delete(home)
+
     ##
     ## Logic
     ##
@@ -333,8 +338,10 @@ class UserRepository:
 
     def delete(self, discord_id: int):
         self._existence_check(discord_id)
-        for attribute in self.attributes:
-            db.delete(f"user:{discord_id}:{attribute}")
+
+        data = db.scan(match=f"user:{discord_id}:*")
+        for item in data:
+            db.delete(item)
 
     def nicknameIsUsed(self, nickname: str) -> bool:
         return nickname in [db.get(x) for x in db.scan(match="user:*:nickname")[1]]
