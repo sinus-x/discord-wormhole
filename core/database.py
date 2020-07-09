@@ -1,4 +1,5 @@
 import redis
+from typing import Union, Optional, List
 
 from core import objects
 from core.errors import DatabaseException
@@ -31,7 +32,7 @@ class BeamRepository:
             }
         )
 
-    def get(self, name: str) -> objects.Beam:
+    def get(self, name: str) -> Optional[objects.Beam]:
         if not self.exists(name):
             return None
 
@@ -44,7 +45,7 @@ class BeamRepository:
 
         return result
 
-    def getAttribute(self, name: str, attribute: str):
+    def getAttribute(self, name: str, attribute: str) -> Union[str, int]:
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid beam attribute: {attribute}.")
         result = db.get(f"beam:{name}:{attribute}")
@@ -52,13 +53,13 @@ class BeamRepository:
             result = int(result)
         return result
 
-    def listNames(self):
+    def listNames(self) -> List[str]:
         result = []
         for r in db.scan_iter(match="beam:*:active"):
             result.append(r)
         return [x.split(":")[1] for x in result]
 
-    def listObjects(self):
+    def listObjects(self) -> List[objects.Beam]:
         names = self.listNames()
         return [self.get(x) for x in names]
 
@@ -84,7 +85,7 @@ class BeamRepository:
     ## Logic
     ##
 
-    def isValidAttribute(self, key: str, value):
+    def isValidAttribute(self, key: str, value) -> bool:
         # fmt: off
         if key not in self.attributes \
         or key in ("active", "replace")   and value not in (0, 1) \
@@ -99,7 +100,7 @@ class BeamRepository:
     ## Helpers
     ##
 
-    def _getBeamName(self, string: str):
+    def _getBeamName(self, string: str) -> str:
         return string.split(":")[1]
 
     def _name_check(self, name: str):
@@ -125,7 +126,7 @@ class WormholeRepository:
     ## Interface
     ##
 
-    def exists(self, discord_id: int):
+    def exists(self, discord_id: int) -> bool:
         return db.exists(f"wormhole:{discord_id}:active")
 
     def add(self, *, beam: str, discord_id: int):
@@ -142,7 +143,7 @@ class WormholeRepository:
             }
         )
 
-    def get(self, discord_id: int) -> objects.Wormhole:
+    def get(self, discord_id: int) -> Optional[objects.Wormhole]:
         if not self.exists(discord_id):
             return None
 
@@ -156,7 +157,7 @@ class WormholeRepository:
 
         return result
 
-    def getAttribute(self, discord_id: int, attribute: str):
+    def getAttribute(self, discord_id: int, attribute: str) -> Union[str, int]:
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid wormhole attribute: {attribute}.")
         result = db.get(f"wormhole:{discord_id}:{attribute}")
@@ -167,7 +168,7 @@ class WormholeRepository:
 
         return result
 
-    def listIDs(self, beam: str = None):
+    def listIDs(self, beam: str = None) -> List[int]:
         result = []
         for r in db.scan_iter(match="wormhole:*:active"):
             result.append(r)
@@ -177,7 +178,7 @@ class WormholeRepository:
             return result
         return [w for w in result if self.getAttribute(w, "beam") == beam]
 
-    def listObjects(self, beam: str = None):
+    def listObjects(self, beam: str = None) -> List[objects.Wormhole]:
         return [self.get(x) for x in self.listIDs(beam)]
 
     def set(self, discord_id: int, key: str, value):
@@ -197,7 +198,7 @@ class WormholeRepository:
     ## Logic
     ##
 
-    def isValidAttribute(self, key: str, value):
+    def isValidAttribute(self, key: str, value) -> bool:
         # fmt: off
         if key not in self.attributes \
         or key in ("active", "readonly")   and value not in (0, 1) \
@@ -211,7 +212,7 @@ class WormholeRepository:
     ## Helpers
     ##
 
-    def _getWormholeDiscordId(self, string: str):
+    def _getWormholeDiscordId(self, string: str) -> int:
         return int(string.split(":")[1])
 
     def _availability_check(self, beam: str, discord_id: int):
@@ -237,12 +238,12 @@ class UserRepository:
     def exists(self, discord_id: int) -> bool:
         return db.exists(f"user:{discord_id}:readonly")
 
-    def add(self, *, discord_id: int, nickname: str, home_id: int = None):
+    def add(self, *, discord_id: int, nickname: str):
         self._availability_check(discord_id)
 
         db.mset(
             {
-                f"user:{discord_id}:home_id": home_id,
+                f"user:{discord_id}:home_id": 0,
                 f"user:{discord_id}:mod": 0,
                 f"user:{discord_id}:nickname": nickname,
                 f"user:{discord_id}:readonly": 0,
@@ -250,7 +251,7 @@ class UserRepository:
             }
         )
 
-    def get(self, discord_id: int) -> objects.User:
+    def get(self, discord_id: int) -> Optional[objects.User]:
         if not self.exists(discord_id):
             return None
 
@@ -263,7 +264,7 @@ class UserRepository:
 
         return result
 
-    def getByNickname(self, nickname: str) -> objects.User:
+    def getByNickname(self, nickname: str) -> Optional[objects.User]:
         for r in db.scan_iter(match="user:*:nickname"):
             if db.get(r) == nickname:
                 return self.get(int(r.split(":")[1]))
@@ -277,7 +278,7 @@ class UserRepository:
             result = int(result)
         return result
 
-    def listIDs(self):
+    def listIDs(self) -> List[int]:
         result = []
         for r in db.scan_iter(match="user:*:readonly"):
             result.append(r)
@@ -306,7 +307,7 @@ class UserRepository:
     ## Logic
     ##
 
-    def isValidAttribute(self, key: str, value):
+    def isValidAttribute(self, key: str, value) -> bool:
         # fmt: off
         if key not in self.attributes \
         or key in ("mod", "readonly", "restricted") and value not in (0, 1) \
@@ -329,9 +330,6 @@ class UserRepository:
         result = db.get(f"user:{discord_id}:readonly")
         if result is None:
             raise DatabaseException(f"User ID `{discord_id}` unknown.")
-
-    def _getUserDiscordId(self, string: str):
-        return int(string.split(":")[1])
 
 
 repo_b = BeamRepository()

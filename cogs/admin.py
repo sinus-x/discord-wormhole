@@ -10,6 +10,14 @@ from core.database import repo_b, repo_u, repo_w
 config = json.load(open("config.json"))
 
 
+def is_ID(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
 class Admin(wormcog.Wormcog):
     """Manage wormholes"""
 
