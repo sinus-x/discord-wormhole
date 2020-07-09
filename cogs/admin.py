@@ -345,7 +345,7 @@ class Admin(wormcog.Wormcog):
         # iterate over the result
         output = ""
         for line in result:
-            if len(output) > 2000:
+            if len(output) > 1600:
                 await sendOutput(output)
                 output = ""
             output += "\n" + line
