@@ -109,6 +109,8 @@ class User(wormcog.Wormcog):
         disallowed = (
             "(", ")", "*", "/", "@", "\\", "_", "`",
             "\u200B", "\u200C", "\u200D", "\u2028", "\u2060", "\uFEFF",
+            # guild emojis
+            "<:", "<a:",
         )
         # fmt: on
         for char in disallowed:
