@@ -30,9 +30,13 @@ Creates new beam and opens it. The name must be unique and has to match `[a-zA-Z
 
 Open previously closed beam. This will allow messages to be sent.
 
+_This is an alias for **beam set [name] active 1**._
+
 **beam close [name]**
 
 Close previously opened beam. This will block all messages from being sent.
+
+_This is an alias for **beam set [name] active 0**._
 
 **beam set [name] [key] [value]**
 

@@ -13,7 +13,7 @@ cd wormhole
 pip3 install -r requirements.txt
 ```
 
-Fill the config file and run the bot with `python3 init.py`.
+Fill the config file and run the bot with `python3 init.py`. To get the wormhole to work, you must create beam and open wormholes; see [administration](administration.md).
 
 ## Systemd
 
