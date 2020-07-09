@@ -32,20 +32,19 @@ class User(wormcog.Wormcog):
             nickname = f"{name_orig}{i}"
             i += 1
 
+        repo_u.add(discord_id=ctx.author.id, nickname=nickname)
         # register
         if isinstance(ctx.channel, discord.TextChannel) and repo_w.get(ctx.channel.id):
-            home_id = ctx.channel.id
-        else:
-            home_id = 0
+            beam_name = repo_w.get(ctx.channel.id).beam
+            repo_u.set(ctx.author.id, key=f"home_id:{beam_name}", value=ctx.channel.id)
 
-        repo_u.add(discord_id=ctx.author.id, nickname=nickname, home_id=home_id)
         await ctx.author.send(
             f"You are now registered as `{nickname}`. "
             f"You can display your information with `{self.p}me`.\n"
             f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
-            f"You can tag others with `((nickname))`, if they have set their home guild."
+            f"You can tag other registered users with `((nickname))`."
         )
-        await self.event.user(ctx, f"User registered: **{str(ctx.author)}** as **{nickname}**.")
+        await self.event.user(ctx, f"Registered as **{nickname}**.")
 
     @commands.group(name="set")
     async def set(self, ctx):
@@ -89,9 +88,12 @@ class User(wormcog.Wormcog):
         if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
             return await ctx.author.send(f"Home has to be a wormhole", delete_after=5)
 
-        repo_u.set(ctx.author.id, key="home_id", value=ctx.channel.id)
-        await ctx.author.send("Home set to " + ctx.channel.mention)
-        await self.event.user(ctx, f"Home set to **{ctx.channel.id}** ({ctx.guild.name}).")
+        beam_name = repo_w.get(ctx.channel.id).beam
+        repo_u.set(ctx.author.id, key=f"home_id:{beam_name}", value=ctx.channel.id)
+        await ctx.author.send(f"Home set to " + ctx.channel.mention)
+        await self.event.user(
+            ctx, f"Home in **{beam_name}** set to **{ctx.channel.id}** ({ctx.guild.name})."
+        )
 
     @commands.cooldown(rate=2, per=14400, type=commands.BucketType.user)
     @set.command(name="name", aliases=["nick", "nickname"])
@@ -152,8 +154,9 @@ class User(wormcog.Wormcog):
         descr:  @name (ID 000000000000000)
                 _Taggable via `((nickname))`_ | _, once they've set their home wormhole_
 
-        field:  **Home wormhole**
-                wormhole, GUILD NAME
+        field:  Home wormhole
+                **main**: wormhole, GUILD NAME
+                **devel**: wormhole, TEST GUILD NAME
         """
 
         user = self.bot.get_user(db_u.discord_id)
@@ -163,7 +166,7 @@ class User(wormcog.Wormcog):
             return await ctx.author.send("User not found.")
 
         description = f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
-        if db_u.home_id == 0:
+        if len(db_u.home_ids) == 0:
             description += "_, once they've set their home wormhole_"
         embed = self.getEmbed(ctx=ctx, title=str(user), description=description)
 
@@ -175,12 +178,14 @@ class User(wormcog.Wormcog):
         if db_u.restricted:
             information.append("restricted")
         if len(information):
-            embed.add_field(name="Information", value=", ".join(information))
+            embed.add_field(name="Information", value=", ".join(information), inline=False)
 
-        if db_u.home_id:
-            channel = self.bot.get_channel(db_u.home_id)
-            value = "{}, {}".format(channel.name, channel.guild.name)
-            embed.add_field(name="Home wormhole", value=value)
+        if len(db_u.home_ids):
+            value = []
+            for beam, discord_id in db_u.home_ids.items():
+                channel = self.bot.get_channel(discord_id)
+                value.append("**{}**: {}, {}".format(beam, channel.name, channel.guild.name))
+            embed.add_field(name="Home wormhole", value="\n".join(value), inline=False)
 
         await ctx.author.send(embed=embed)
 

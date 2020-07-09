@@ -300,8 +300,11 @@ class Wormhole(wormcog.Wormcog):
 
         # get user nickname
         if db_u is not None:
-            name = "__" + db_u.nickname + "__"
-            home = repo_w.get(db_u.home_id)
+            home = repo_w.get(db_u.home_ids[db_b.name])
+            if home is not None:
+                name = "__" + db_u.nickname + "__"
+            else:
+                name = db_u.nickname
         else:
             name = self.sanitise(message.author.name, limit=32)
             home = db_w

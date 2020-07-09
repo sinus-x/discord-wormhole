@@ -39,7 +39,6 @@ class Wormhole:
 
 class User:
     discord_id = None
-    home_id = 0
     mod = 0
     nickname = ""
     readonly = 0
@@ -50,7 +49,6 @@ class User:
 
     def __repr__(self):
         return (
-            f"User {self.discord_id}: "
-            f"nickname {self.nickname}, home {self.home_id}, "
+            f"User {self.discord_id}: nickname {self.nickname}, "
             f"mod {self.mod}, readonly {self.readonly}, restricted {self.restricted}"
         )

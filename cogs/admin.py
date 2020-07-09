@@ -152,9 +152,7 @@ class Admin(wormcog.Wormcog):
 
         repo_w.add(beam=beam, discord_id=channel.id)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)} added.")
-        await self.announce(
-            ctx, beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}.",
-        )
+        await self.announce(beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}.")
 
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx, channel_id: int = None):
@@ -166,9 +164,7 @@ class Admin(wormcog.Wormcog):
         beam_name = repo_w.getAttribute(channel_id, "beam")
         repo_w.delete(discord_id=channel_id)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
-        await self.announce(
-            ctx, beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.",
-        )
+        await self.announce(beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.")
 
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
@@ -232,12 +228,12 @@ class Admin(wormcog.Wormcog):
         values = [
             "add <member ID> <nickname> <home_id>",
             "remove <member ID>",
-            "edit <member ID> home_id <channel ID>",
+            "edit <member ID> home_id:<beam> <channel ID>",
             "edit <member ID> mod [0, 1]",
             "edit <member ID> nickname <string>",
             "edit <member ID> readonly [0, 1]",
             "edit <member ID> restricted [0, 1]",
-            "list",
+            "list [<beam>, <channel ID>]",
         ]
 
         embed = self.getEmbed(ctx=ctx, title="Users", description=description)
@@ -250,9 +246,9 @@ class Admin(wormcog.Wormcog):
         await ctx.send(embed=embed, delete_after=self.delay("admin"))
 
     @user.command(name="add")
-    async def user_add(self, ctx, member_id: int, nickname: str, home_id: int):
+    async def user_add(self, ctx, member_id: int, nickname: str):
         """Add user"""
-        repo_u.add(discord_id=member_id, nickname=nickname, home_id=home_id)
+        repo_u.add(discord_id=member_id, nickname=nickname)
         self.event.sudo(ctx, f"{str(repo_u.get(member_id))}.")
 
     @user.command(name="remove", alises=["delete"])
@@ -274,7 +270,12 @@ class Admin(wormcog.Wormcog):
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
-        if key in ("home_id", "mod", "readonly", "restricted"):
+        if key in ("mod", "readonly", "restricted"):
+            try:
+                value = int(value)
+            except ValueError:
+                raise errors.BadArgument("Value has to be integer.")
+        elif key.startswith("home_id:"):
             try:
                 value = int(value)
             except ValueError:
@@ -284,38 +285,51 @@ class Admin(wormcog.Wormcog):
         await self.event.sudo(ctx, f"{member_id} updated: **{key}** = **{value}**.")
 
     @user.command(name="list")
-    async def user_list(self, ctx):
-        """List all registered users"""
-        db_users = repo_u.listObjects()
+    async def user_list(self, ctx, restraint: str = None):
+        """List all registered users
+
+        restraint: beam name or wormhole ID
+        """
+        if restraint is None:
+            db_users = repo_u.listObjects()
+        elif repo_b.exists(restraint):
+            db_users = repo_u.listObjectsByBeam(restraint)
+        elif is_ID(restraint) and repo_w.exists(int(restraint)):
+            db_users = repo_u.listObjectsByWormhole(int(restraint))
+        else:
+            raise errors.BadArgument("Value is not beam name nor wormhole ID.")
 
         template = (
             "{id}: {name} ({nickname})\n"
-            "- {home} ({guild})\n"
-            "- MOD {mod}, RO {ro}, RESTRICTED {restricted}"
+            "{homes}"
+            "- MOD {mod}, READONLY {ro}, RESTRICTED {restricted}"
         )
+        template_home = "- {beam}: {home} ({name}, {guild})\n"
 
-        wormholes = {}
         result = []
         for db_user in db_users:
             # get user
             user = self.bot.get_user(db_user.discord_id)
             user_name = str(user) if hasattr(user, "name") else "---"
-            # get wormhole's guild
-            if str(db_user.home_id) not in wormholes.keys():
-                channel = self.bot.get_channel(db_user.home_id)
-                if isinstance(channel, discord.TextChannel):
-                    wormholes[str(db_user.home_id)] = self.sanitise(channel.guild.name)
-                else:
-                    wormholes[str(db_user.home_id)] = "---"
 
             # add string
+            homes = ""
+            for beam, discord_id in db_user.home_ids.items():
+                if restraint and restraint != beam and restraint != str(discord_id):
+                    continue
+                channel = self.bot.get_channel(discord_id)
+                homes += template_home.format(
+                    beam=beam,
+                    home=discord_id,
+                    name=channel.name if hasattr(channel, "name") else "---",
+                    guild=channel.guild.name if hasattr(channel.guild, "name") else "---",
+                )
             result.append(
                 template.format(
                     id=db_user.discord_id,
                     name=user_name,
                     nickname=db_user.nickname,
-                    home=db_user.home_id,
-                    guild=wormholes[str(db_user.home_id)],
+                    homes=homes,
                     mod=db_user.mod,
                     ro=db_user.readonly,
                     restricted=db_user.restricted,

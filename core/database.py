@@ -1,5 +1,5 @@
 import redis
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict
 
 from core import objects
 from core.errors import DatabaseException
@@ -130,7 +130,7 @@ class WormholeRepository:
         return db.exists(f"wormhole:{discord_id}:active")
 
     def add(self, *, beam: str, discord_id: int):
-        self._availability_check(discord_id)
+        self._availability_check(beam, discord_id)
 
         db.mset(
             {
@@ -243,7 +243,6 @@ class UserRepository:
 
         db.mset(
             {
-                f"user:{discord_id}:home_id": 0,
                 f"user:{discord_id}:mod": 0,
                 f"user:{discord_id}:nickname": nickname,
                 f"user:{discord_id}:readonly": 0,
@@ -256,7 +255,7 @@ class UserRepository:
             return None
 
         result = objects.User(discord_id)
-        result.home_id = self.getAttribute(discord_id, "home_id")
+        result.home_ids = self.getHome(discord_id)
         result.mod = self.getAttribute(discord_id, "mod")
         result.nickname = self.getAttribute(discord_id, "nickname")
         result.readonly = self.getAttribute(discord_id, "readonly")
@@ -271,11 +270,21 @@ class UserRepository:
         return None
 
     def getAttribute(self, discord_id: int, attribute: str):
-        if attribute not in self.attributes:
+        attr = attribute if ":" not in attribute else attribute.split(":")[0]
+        if attr not in self.attributes:
             raise DatabaseException(f"Invalid user attribute: {attribute}.")
+
         result = db.get(f"user:{discord_id}:{attribute}")
-        if attribute in ("home_id", "mod", "readonly", "restricted") and result:
+        if attr in ("home_id", "mod", "readonly", "restricted") and result:
             result = int(result)
+        return result
+
+    def getHome(self, discord_id: int, beam: str = None) -> Dict[str, int]:
+        match = f"user:{discord_id}:home_id:" + ("*" if beam is None else beam)
+
+        result = {}
+        for r in db.scan_iter(match=match):
+            result[r.split(":")[-1]] = int(db.get(r))
         return result
 
     def listIDs(self) -> List[int]:
@@ -284,14 +293,41 @@ class UserRepository:
             result.append(r)
         return [int(x.split(":")[1]) for x in result]
 
-    def listObjects(self):
+    def listIDsByBeam(self, beam: str) -> List[int]:
+        result = []
+        for r in db.scan_iter(match=f"user:*:home_id:{beam}"):
+            result.append(r)
+        return [int(x.split(":")[1]) for x in result]
+
+    def listIDsByWormhole(self, discord_id: int) -> List[int]:
+        result = []
+        users = []
+        for r in db.scan_iter(match=f"user:*:home_id:*"):
+            user = r.split(":")[1]
+            if user not in users:
+                users.append(user)
+                result.append(r)
+        return [int(x.split(":")[1]) for x in result if db.get(x) == str(discord_id)]
+
+    def listObjects(self) -> List[objects.User]:
         return [self.get(x) for x in self.listIDs()]
+
+    def listObjectsByBeam(self, beam: str) -> List[objects.User]:
+        return [self.get(x) for x in self.listIDsByBeam(beam)]
+
+    def listObjectsByWormhole(self, discord_id: int) -> List[objects.User]:
+        return [self.get(x) for x in self.listIDsByWormhole(discord_id)]
 
     def set(self, discord_id: int, key: str, value):
         self._existence_check(discord_id)
 
-        if not self.isValidAttribute(key, value):
+        k = key if ":" not in key else key.split(":")[0]
+        if not self.isValidAttribute(k, value):
             raise DatabaseException(f"Invalid user attribute: {key} = {value}.")
+        if k == "home_id":
+            beam = key.split(":")[1]
+            if not db.exists(f"beam:{beam}:active"):
+                raise DatabaseException(f"Beam not found: {beam}.")
 
         db.set(f"user:{discord_id}:{key}", value)
 
