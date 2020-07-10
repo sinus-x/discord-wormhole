@@ -34,6 +34,9 @@ class Wormcog(commands.Cog):
         # sent messages still held in memory
         self.sent = []
 
+        # missing manage_messages permission notification
+        self.missing_notify = []
+
         # bot management logging
         self.event = output.Event(self.bot)
 
@@ -84,8 +87,8 @@ class Wormcog(commands.Cog):
             return
 
         # remove the original, if possible
-        # TODO Check for delete permissions in that channel
-        if db_b.replace == 1 and not files:
+        manage_messages_perm = message.guild.me.permissions_in(message.channel).manage_messages
+        if manage_messages_perm and db_b.replace == 1 and not files:
             try:
                 messages[0] = message.author
                 await self.delete(message)
@@ -101,17 +104,39 @@ class Wormcog(commands.Cog):
         wormholes = self.wormholes[db_b.name]
 
         # get tags in the message
-        tags = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
-        users = [t for t in tags if t is not None and t.home_id is not None]
+        users = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
+        users = [t for t in users if t is not None and t.home_id is not None]
 
         # replicate messages
         for wormhole in wormholes:
+            # If the source message cannot be removed for technical reasons (bot doesn't have
+            # permissions to do so), send notification message for the first time.
+            if wormhole.id == message.channel.id and db_b.replace and not manage_messages_perm:
+                if str(wormhole.id) not in self.missing_notify:
+                    admin_id = repo_w.getAttribute(wormhole.id, "admin_id")
+                    notify_text = (
+                        "**I do not have permissions to manage messages. "
+                        "Grant it, please, for smoother experience.**"
+                    )
+                    if admin_id != 0:
+                        wormhole_admin = "<@!" + str(admin_id) + ">"
+                        notify_text += (
+                            "\n" + wormhole_admin + ", you are configured as an local admin. "
+                            "Can you do it?"
+                        )
+                    await message.channel.send(notify_text)
+                    self.missing_notify.append(str(wormhole.id))
+
             # skip not active wormholes
             if repo_w.getAttribute(wormhole.id, "active") == 0:
                 continue
 
-            # skip current if message has attachments
+            # skip source if message has attachments
             if wormhole.id == message.channel.id and len(files) > 0:
+                continue
+
+            # skip source if bot hasn't got manage_messages permission
+            if wormhole.id == message.channel.id and not manage_messages_perm:
                 continue
 
             # apply tags
