@@ -377,7 +377,7 @@ class Wormhole(wormcog.Wormcog):
             emoji_name = emoji_.split(":")[0]
             emoji_id = int(emoji_.split(":")[1])
             if self.bot.get_emoji(emoji_id) is None:
-                content = content.replace(emoji, emoji_name)
+                content = content.replace(emoji, ":" + emoji_name + ":")
 
         # line preprocessor for codeblocks
         if "```" in content:
