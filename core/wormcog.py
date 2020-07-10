@@ -61,7 +61,7 @@ class Wormcog(commands.Cog):
         if content is None and embed is None:
             return
 
-        if isinstance(ctx.channel, discord.TextChannel):
+        if hasattr(ctx.channel, "id") and repo_w.get(ctx.channel.id) is not None:
             await ctx.send(content=content, embed=embed, delete_after=self.delay())
         else:
             await ctx.send(content=content, embed=embed)

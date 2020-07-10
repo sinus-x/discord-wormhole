@@ -133,7 +133,7 @@ class Admin(wormcog.Wormcog):
             "edit <channel ID> logo <string>",
             "edit <channel ID> readonly [0, 1]",
             "edit <channel ID> messages <int>",
-            "list",
+            "edit <channel ID> invite <invite link>" "list",
         ]
 
         embed = self.getEmbed(ctx=ctx, title="Wormholes", description=description)
@@ -222,7 +222,7 @@ class Admin(wormcog.Wormcog):
                 value = "No wormholes"
             embed.add_field(name=beam, value=value, inline=False)
 
-        await ctx.send(embed=embed, delete_after=self.delay())
+        await ctx.send(embed=embed)
 
     @commands.check(checks.is_mod)
     @commands.check(checks.not_in_wormhole)
