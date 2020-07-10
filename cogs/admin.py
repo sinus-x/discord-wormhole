@@ -94,10 +94,16 @@ class Admin(wormcog.Wormcog):
             except ValueError:
                 raise errors.BadArgument("Value has to be integer.")
 
+        announce = True
+        if key in ("admin_id"):
+            announce = False
+
         repo_b.set(name=name, key=key, value=value)
 
-        await self.event.sudo(ctx, f"Beam **{name}** updated: **{key}** = **{value}**.")
-        await self.announce(beam=name, message=f"Beam updated: **{key}** is now **{value}**.")
+        await self.event.sudo(ctx, f"Beam **{name}** updated: {key} = {value}.")
+        if not announce:
+            return
+        await self.announce(beam=name, message=f"Beam updated: {key} is now {value}.")
 
     @beam.command(name="list")
     async def beam_list(self, ctx):
@@ -171,14 +177,14 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
         """Edit wormhole"""
-        announce = True
         if key in ("admin_id", "active", "readonly", "messages"):
             try:
                 value = int(value)
             except ValueError:
                 raise errors.BadArgument("Value has to be integer.")
 
-        if key in ("invite", "messages"):
+        announce = True
+        if key in ("invite", "messages", "admin_id"):
             announce = False
 
         channel = self._getChannel(ctx=ctx, channel_id=channel_id)
