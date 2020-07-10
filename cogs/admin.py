@@ -73,14 +73,14 @@ class Admin(wormcog.Wormcog):
         """Open closed beam"""
         repo_b.set(name=name, key="active", value=1)
         await self.event.sudo(ctx, f"Beam **{name}** opened.")
-        await self.announce(beam=name, message=f"Beam opened!")
+        await self.announce(beam=name, message="Beam opened!")
 
     @beam.command(name="close", aliases=["disable"])
     async def beam_close(self, ctx, name: str):
         """Close beam"""
         repo_b.set(name=name, key="active", value=0)
         await self.event.sudo(ctx, f"Beam **{name}** closed.")
-        await self.announce(beam=name, message=f"Beam closed.")
+        await self.announce(beam=name, message="Beam closed.")
 
     @beam.command(name="edit", aliases=["set"])
     async def beam_edit(self, ctx, name: str, key: str, value: str):

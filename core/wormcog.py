@@ -84,7 +84,7 @@ class Wormcog(commands.Cog):
             return
 
         # remove the original, if possible
-        # TODO Check for permissions in that channel
+        # TODO Check for delete permissions in that channel
         if db_b.replace == 1 and not files:
             try:
                 messages[0] = message.author
@@ -123,9 +123,11 @@ class Wormcog(commands.Cog):
                     w_text = w_text.replace(f"(({user.nickname}))", f"**__{user.nickname}__**")
 
             # send message
-            # TODO Log discord.Forbidden exceptions
-            m = await wormhole.send(w_text)
-            messages.append(m)
+            try:
+                m = await wormhole.send(w_text)
+                messages.append(m)
+            except discord.Forbidden:
+                await self.event.user(message, f"Could not send message to {wormhole.id}!")
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:

@@ -309,7 +309,7 @@ class UserRepository:
     def listIDsByWormhole(self, discord_id: int) -> List[int]:
         result = []
         users = []
-        for r in db.scan_iter(match=f"user:*:home_id:*"):
+        for r in db.scan_iter(match="user:*:home_id:*"):
             user = r.split(":")[1]
             if user not in users:
                 users.append(user)

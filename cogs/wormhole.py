@@ -1,5 +1,6 @@
-import re
+import asyncio
 import json
+import re
 from datetime import datetime
 
 import discord
@@ -39,6 +40,10 @@ class Wormhole(wormcog.Wormcog):
         # get additional information
         db_b = repo_b.get(db_w.beam)
         db_u = repo_u.get(message.author.id)
+
+        # check for attributes
+        if db_b.active == 0 or db_w.active == 0 or db_u.readonly == 1:
+            return await self.delete(message)
 
         # do not act if message is bot command
         if message.content.startswith(config["prefix"]):
@@ -83,13 +88,17 @@ class Wormhole(wormcog.Wormcog):
                 forwarded = m
                 break
         if not forwarded:
-            # TODO React with cross, wait, and delete
+            await after.add_reaction("❎")
+            await asyncio.sleep(1)
+            await after.remove_reaction("❎", self.bot.user)
             return
 
         content = self.__process(after)
         for m in forwarded[1:]:
             await m.edit(content=content)
-        # TODO React with check, wait, and delete
+        await after.add_reaction("✅")
+        await asyncio.sleep(1)
+        await after.remove_reaction("✅", self.bot.user)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
@@ -100,12 +109,9 @@ class Wormhole(wormcog.Wormcog):
                 forwarded = m
                 break
         if not forwarded:
-            # TODO React with cross, wait, and delete
             return
-
         for m in forwarded[1:]:
             await m.delete()
-        # TODO React with check, wait, and delete
 
     @commands.command()
     async def help(self, ctx: commands.Context):
@@ -211,7 +217,6 @@ class Wormhole(wormcog.Wormcog):
             "Currently opened wormholes:",
         ]
         db_w = repo_w.get(ctx.channel.id)
-        db_b = repo_b.get(db_w.beam)
 
         wormholes = repo_w.listObjects(db_w.beam)
 

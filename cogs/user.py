@@ -3,7 +3,7 @@ import json
 import discord
 from discord.ext import commands
 
-from core import checks, errors, objects, wormcog
+from core import checks, objects, wormcog
 from core.database import repo_u, repo_w
 
 config = json.load(open("config.json"))
@@ -85,13 +85,13 @@ class User(wormcog.Wormcog):
         if not repo_u.exists(ctx.author.id):
             return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5)
         if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
-            return await ctx.author.send(f"You are forbidden to alter your settings.")
+            return await ctx.author.send("You are forbidden to alter your settings.")
         if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
-            return await ctx.author.send(f"Home has to be a wormhole", delete_after=5)
+            return await ctx.author.send("Home has to be a wormhole", delete_after=5)
 
         beam_name = repo_w.get(ctx.channel.id).beam
         repo_u.set(ctx.author.id, key=f"home_id:{beam_name}", value=ctx.channel.id)
-        await ctx.author.send(f"Home set to " + ctx.channel.mention)
+        await ctx.author.send("Home set to " + ctx.channel.mention)
         await self.event.user(
             ctx, f"Home in **{beam_name}** set to **{ctx.channel.id}** ({ctx.guild.name})."
         )
@@ -103,7 +103,7 @@ class User(wormcog.Wormcog):
         if not repo_u.exists(ctx.author.id):
             return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5)
         if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
-            return await ctx.author.send(f"You are forbidden to alter your settings.")
+            return await ctx.author.send("You are forbidden to alter your settings.")
         name = self.sanitise(name, limit=32)
         u = repo_u.getByNickname(name)
         if u is not None:

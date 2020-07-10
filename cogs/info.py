@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 from core import wormcog
@@ -153,7 +152,7 @@ class Info(wormcog.Wormcog):
     @spy.command(name="emotes")
     async def spy_emotes(self, ctx, guild_id: int = None):
         """Get all available emotes"""
-        return await ctx.send("TODO")
+        return await ctx.send("Emotes not implemented.")
 
         result = []
         for guild in self.bot.guilds:

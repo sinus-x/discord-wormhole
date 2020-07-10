@@ -1,7 +1,5 @@
 import json
-import logging
-import traceback
-from datetime import datetime
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -22,7 +20,7 @@ class Event:
             self.channel = self.bot.get_channel(config["log channel"])
         return self.channel
 
-    async def user(self, ctx: commands.Context, message: str):
+    async def user(self, ctx: Union[commands.Context, discord.Message], message: str):
         """Unprivileged events"""
         # fmt: off
         await self.getChannel().send(self.user_template.format(
@@ -34,7 +32,7 @@ class Event:
         ))
         # fmt: on
 
-    async def sudo(self, ctx: commands.Context, message: str):
+    async def sudo(self, ctx: Union[commands.Context, discord.Message], message: str):
         """Privileged events"""
         # fmt: off
         await self.getChannel().send(self.sudo_template.format(

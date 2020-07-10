@@ -11,9 +11,6 @@ config = json.load(open("config.json"))
 
 def seconds2str(time):
     time = int(time)
-    D = 3600 * 24
-    H = 3600
-    M = 60
 
     s = time % 60
     time = int((time - s) / 60)

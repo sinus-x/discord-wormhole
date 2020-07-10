@@ -34,7 +34,7 @@ per-file-ignores =
 	cogs/errors.py:T001
 	core/output.py:T001
 count = True
-max-complexity = 13
+max-complexity = 16
 max-line-length = 110
 max-doc-length = 100
 format=%(code)s %(path)s (%(row)d:%(col)d): %(text)s
