@@ -90,7 +90,7 @@ async def unload(ctx: commands.Context, cog: str):
 ## INIT
 ##
 bot.load_extension("cogs.errors")
-for c in ["wormhole", "admin", "user", "notifications"]:
+for c in ["wormhole", "admin", "user", "notifications", "info"]:
     bot.load_extension(f"cogs.{c}")
     print(f"{c.upper()} loaded")
 
