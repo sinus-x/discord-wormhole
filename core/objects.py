@@ -24,6 +24,7 @@ class Wormhole:
     logo = ""
     messages = 0
     readonly = 0
+    invite = ""
 
     def __init__(self, discord_id: int = None):
         self.discord_id = discord_id
@@ -33,7 +34,7 @@ class Wormhole:
             f"Wormhole {self.discord_id}: "
             f"beam {self.beam}, admin {self.admin_id}, "
             f"active {self.active}, readonly {self.readonly}, "
-            f"logo '{self.logo}'"
+            f"logo '{self.logo}', invite: {self.invite}"
         )
 
 

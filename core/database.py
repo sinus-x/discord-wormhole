@@ -91,7 +91,7 @@ class BeamRepository:
         or key in ("active", "replace")   and value not in (0, 1) \
         or key in ("anonymity")           and value not in ("none", "guild", "full") \
         or key in ("admin_id", "timeout") and type(value) != int \
-        or key in ("name")                and type(value) != str:
+        or key in ("name", "invite")      and type(value) != str:
             return False
         return True
         # fmt:on
@@ -120,7 +120,7 @@ class BeamRepository:
 
 class WormholeRepository:
     def __init__(self):
-        self.attributes = ("beam", "admin_id", "active", "logo", "readonly", "messages")
+        self.attributes = ("beam", "admin_id", "active", "logo", "readonly", "messages", "invite")
 
     ##
     ## Interface
@@ -140,6 +140,7 @@ class WormholeRepository:
                 f"wormhole:{discord_id}:logo": "",
                 f"wormhole:{discord_id}:readonly": 0,
                 f"wormhole:{discord_id}:messages": 0,
+                f"wormhole:{discord_id}:invite": "",
             }
         )
 
@@ -154,6 +155,7 @@ class WormholeRepository:
         result.logo = self.getAttribute(discord_id, "logo")
         result.messages = self.getAttribute(discord_id, "messages")
         result.readonly = self.getAttribute(discord_id, "readonly")
+        result.invite = self.getAttribute(discord_id, "invite")
 
         return result
 

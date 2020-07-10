@@ -130,6 +130,13 @@ class Wormhole(wormcog.Wormcog):
             embed.add_field(name=f"**{p}whois**",         value="Get information about user")
             embed.add_field(name=f"**{p}set**",           value="Edit nickname or home")
 
+        if "User" in self.bot.cogs:
+            embed.add_field(
+                name=f"{p}invites",
+                value="Invite links to wormhole channels",
+                inline=False
+            )
+
         embed.add_field(
             name="Online help",
             value="https://sinus-x.github.io/discord-wormhole/commands",

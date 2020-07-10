@@ -3,7 +3,7 @@ import json
 import discord
 from discord.ext import commands
 
-from core import errors, objects, wormcog
+from core import checks, errors, objects, wormcog
 from core.database import repo_u, repo_w
 
 config = json.load(open("config.json"))
@@ -32,19 +32,19 @@ class User(wormcog.Wormcog):
             nickname = f"{name_orig}{i}"
             i += 1
 
-        repo_u.add(discord_id=ctx.author.id, nickname=nickname)
         # register
+        repo_u.add(discord_id=ctx.author.id, nickname=nickname)
         if isinstance(ctx.channel, discord.TextChannel) and repo_w.get(ctx.channel.id):
             beam_name = repo_w.get(ctx.channel.id).beam
             repo_u.set(ctx.author.id, key=f"home_id:{beam_name}", value=ctx.channel.id)
 
+        await self.event.user(ctx, f"Registered as **{nickname}**.")
         await ctx.author.send(
             f"You are now registered as `{nickname}`. "
             f"You can display your information with `{self.p}me`.\n"
             f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
             f"You can tag other registered users with `((nickname))`."
         )
-        await self.event.user(ctx, f"Registered as **{nickname}**.")
 
     @commands.group(name="set")
     async def set(self, ctx):
@@ -78,6 +78,7 @@ class User(wormcog.Wormcog):
         await ctx.send(embed=embed, delete_after=self.delay())
 
     @commands.cooldown(rate=1, per=14400, type=commands.BucketType.user)
+    @commands.check(checks.in_wormhole)
     @set.command(name="home")
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
@@ -188,6 +189,30 @@ class User(wormcog.Wormcog):
             embed.add_field(name="Home wormhole", value="\n".join(value), inline=False)
 
         await ctx.author.send(embed=embed)
+
+    @commands.command()
+    @commands.check(checks.in_wormhole_or_dm)
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.channel)
+    async def invites(self, ctx):
+        """Get invite links"""
+        await self.delete(ctx)
+
+        result = []
+        template = "{logo} **{guild}**, {name}: {link}"
+        for wormhole in repo_w.listObjects(repo_w.getAttribute(ctx.channel.id, "beam")):
+            if wormhole.invite is None:
+                continue
+            channel = self.bot.get_channel(wormhole.discord_id)
+            result.append(
+                template.format(
+                    logo=wormhole.logo if len(wormhole.logo) else "",
+                    name=channel.name,
+                    guild=channel.guild.name,
+                    link=wormhole.invite,
+                )
+            )
+        result = "\n".join(result) if len(result) else "No public invites."
+        await self.smartSend(ctx, content=result)
 
 
 def setup(bot):
