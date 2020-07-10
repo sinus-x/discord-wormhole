@@ -1,6 +1,8 @@
 import json
 
+import discord
 from discord.ext import commands
+
 from core.database import repo_u, repo_w
 
 config = json.load(open("config.json"))
@@ -16,3 +18,11 @@ def is_mod(ctx: commands.Context):
 
 def in_wormhole(ctx: commands.Context):
     return hasattr(ctx.channel, "id") and repo_w.exists(ctx.channel.id)
+
+
+def in_wormhole_or_dm(ctx: commands.Context):
+    return in_wormhole or isinstance(ctx.channel, discord.DMChannel)
+
+
+def not_in_wormhole(ctx: commands.Context):
+    return not in_wormhole(ctx)

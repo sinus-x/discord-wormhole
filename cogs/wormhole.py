@@ -113,22 +113,22 @@ class Wormhole(wormcog.Wormcog):
         embed = self.getEmbed(ctx=ctx, title="User commands")
         p = config["prefix"]
         # fmt: off
-        embed.add_field(value=f"**{p}e** | **{p}edit**",   name="Edit last message")
-        embed.add_field(value=f"**{p}d** | **{p}delete**", name="Delete last message")
-        embed.add_field(value=f"**{p}info**",              name="Connection information")
-        embed.add_field(value=f"**{p}settings**",          name="Display current settings")
-        embed.add_field(value=f"**{p}link**",              name="Link to GitHub repository")
-        embed.add_field(value=f"**{p}invite**",            name="Bot invite link")
+        embed.add_field(name=f"**{p}e** | **{p}edit**",   value="Edit last message")
+        embed.add_field(name=f"**{p}d** | **{p}delete**", value="Delete last message")
+        embed.add_field(name=f"**{p}info**",              value="Connection information")
+        embed.add_field(name=f"**{p}settings**",          value="Display current settings")
+        embed.add_field(name=f"**{p}link**",              value="Link to GitHub repository")
+        embed.add_field(name=f"**{p}invite**",            value="Bot invite link")
 
         db_u = repo_u.get(ctx.author.id)
         if "User" in self.bot.cogs and db_u is None:
-            embed.add_field(value=f"**{p}register**",      name="Register your username")
-            embed.add_field(value=f"**{p}whois**",         name="Get information about user")
+            embed.add_field(name=f"**{p}register**",      value="Register your username")
+            embed.add_field(name=f"**{p}whois**",         value="Get information about user")
 
         if "User" in self.bot.cogs and db_u is not None:
-            embed.add_field(value=f"**{p}me**",            name="Display your information")
-            embed.add_field(value=f"**{p}whois**",         name="Get information about user")
-            embed.add_field(value=f"**{p}set**",           name="Edit nickname or home")
+            embed.add_field(name=f"**{p}me**",            value="Display your information")
+            embed.add_field(name=f"**{p}whois**",         value="Get information about user")
+            embed.add_field(name=f"**{p}set**",           value="Edit nickname or home")
 
         embed.add_field(
             name="Online help",

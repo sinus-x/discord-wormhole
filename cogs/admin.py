@@ -25,6 +25,7 @@ class Admin(wormcog.Wormcog):
         super().__init__(bot)
 
     @commands.check(checks.is_admin)
+    @commands.check(checks.not_in_wormhole)
     @commands.group(name="beam")
     async def beam(self, ctx):
         """Manage beams"""
@@ -53,7 +54,7 @@ class Admin(wormcog.Wormcog):
             value="https://sinus-x.github.io/discord-wormhole/administration#beam",
             inline=False,
         )
-        await ctx.send(embed=embed, delete_after=self.delay("admin"))
+        await ctx.send(embed=embed)
 
     @beam.command(name="add", aliases=["create"])
     async def beam_add(self, ctx, name: str):
@@ -113,6 +114,7 @@ class Admin(wormcog.Wormcog):
         await ctx.send(embed=embed)
 
     @commands.check(checks.is_admin)
+    @commands.check(checks.not_in_wormhole)
     @commands.group(name="wormhole")
     async def wormhole(self, ctx):
         """Manage wormholes"""
@@ -141,7 +143,7 @@ class Admin(wormcog.Wormcog):
             value="https://sinus-x.github.io/discord-wormhole/administration#wormhole",
             inline=False,
         )
-        await ctx.send(embed=embed, delete_after=self.delay("admin"))
+        await ctx.send(embed=embed)
 
     @wormhole.command(name="add", aliases=["create"])
     async def wormhole_add(self, ctx, beam: str, channel_id: int = None):
@@ -169,20 +171,27 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
         """Edit wormhole"""
+        announce = True
         if key in ("admin_id", "active", "readonly", "messages"):
             try:
                 value = int(value)
             except ValueError:
                 raise errors.BadArgument("Value has to be integer.")
 
+        if key in ("invite", "messages"):
+            announce = False
+
         channel = self._getChannel(ctx=ctx, channel_id=channel_id)
 
         beam_name = repo_w.getAttribute(channel_id, "beam")
         repo_w.set(discord_id=channel.id, key=key, value=value)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)}: {key} = {value}.")
+
+        if not announce:
+            return
         await self.announce(
             beam=beam_name,
-            message=f"Womhole {self._w2str_out(channel)} updated: **{key}** is **{value}**.",
+            message=f"Womhole {self._w2str_out(channel)} updated: {key} is {value}.",
         )
 
     @wormhole.command(name="list")
@@ -216,6 +225,7 @@ class Admin(wormcog.Wormcog):
         await ctx.send(embed=embed, delete_after=self.delay())
 
     @commands.check(checks.is_mod)
+    @commands.check(checks.not_in_wormhole)
     @commands.group(name="user")
     async def user(self, ctx):
         """Manage users"""
@@ -226,7 +236,7 @@ class Admin(wormcog.Wormcog):
 
         description = config["prefix"] + "user…"
         values = [
-            "add <member ID> <nickname> <home_id>",
+            "add <member ID> <nickname>",
             "remove <member ID>",
             "edit <member ID> home_id:<beam> <channel ID>",
             "edit <member ID> mod [0, 1]",
@@ -243,7 +253,7 @@ class Admin(wormcog.Wormcog):
             value="https://sinus-x.github.io/discord-wormhole/administration#user",
             inline=False,
         )
-        await ctx.send(embed=embed, delete_after=self.delay("admin"))
+        await ctx.send(embed=embed)
 
     @user.command(name="add")
     async def user_add(self, ctx, member_id: int, nickname: str):

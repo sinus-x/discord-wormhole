@@ -57,6 +57,15 @@ class Wormcog(commands.Cog):
         if key == "admin":
             return 10
 
+    async def smartSend(self, ctx, *, content: str = None, embed: discord.Embed = None):
+        if content is None and embed is None:
+            return
+
+        if isinstance(ctx.channel, discord.TextChannel):
+            await ctx.send(content=content, embed=embed, delete_after=self.delay())
+        else:
+            await ctx.send(content=content, embed=embed)
+
     async def send(
         self, *, message: discord.Message, text: str, files: list = None,
     ):
