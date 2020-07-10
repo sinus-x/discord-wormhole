@@ -41,11 +41,6 @@ jobs:
       run: |
         flake8 . --count --select=BLK,E9,F70,F82 --statistics
 
-    - name: Check the code for formatting
+    - name: Check the code for non-critical errors
       run: |
-        black . --check --line-length=100
-
-        flake8 . --count --exit-zero \
-        --ignore=E12,E20,E221,E222,E241,E251,E266,E271,E272,E30,E722,W50 \
-        --per-file-ignores="init.py:T001 cogs/errors.py:T001 core/output.py:T001" \
-        --max-complexity=20 --max-line-length=110 --statistics
+        flake8 . --exit-zero

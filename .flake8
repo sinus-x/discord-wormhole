@@ -38,4 +38,4 @@ max-complexity = 16
 max-line-length = 110
 max-doc-length = 100
 format=%(code)s %(path)s (%(row)d:%(col)d): %(text)s
-statistics = False
+statistics = True
