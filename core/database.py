@@ -45,7 +45,7 @@ class BeamRepository:
 
         return result
 
-    def getAttribute(self, name: str, attribute: str) -> Union[str, int]:
+    def getAttribute(self, name: str, attribute: str) -> Optional[Union[str, int]]:
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid beam attribute: {attribute}.")
         result = db.get(f"beam:{name}:{attribute}")
@@ -159,7 +159,7 @@ class WormholeRepository:
 
         return result
 
-    def getAttribute(self, discord_id: int, attribute: str) -> Union[str, int]:
+    def getAttribute(self, discord_id: int, attribute: str) -> Optional[Union[str, int]]:
         if attribute not in self.attributes:
             raise DatabaseException(f"Invalid wormhole attribute: {attribute}.")
         result = db.get(f"wormhole:{discord_id}:{attribute}")
@@ -276,7 +276,7 @@ class UserRepository:
                 return self.get(int(r.split(":")[1]))
         return None
 
-    def getAttribute(self, discord_id: int, attribute: str):
+    def getAttribute(self, discord_id: int, attribute: str) -> Optional[Union[str, int]]:
         attr = attribute if ":" not in attribute else attribute.split(":")[0]
         if attr not in self.attributes:
             raise DatabaseException(f"Invalid user attribute: {attribute}.")

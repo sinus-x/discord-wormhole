@@ -39,11 +39,14 @@ class Wormhole(wormcog.Wormcog):
             return
         # get additional information
         db_b = repo_b.get(db_w.beam)
-        db_u = repo_u.get(message.author.id)
 
         # check for attributes
-        if db_b.active == 0 or db_w.active == 0 or db_u.readonly == 1:
+        # fmt: off
+        if db_b.active == 0 \
+        or db_w.active == 0 \
+        or repo_u.getAttribute(message.author.id, "readonly") == 1:
             return await self.delete(message)
+        # fmt: on
 
         # do not act if message is bot command
         if message.content.startswith(config["prefix"]):

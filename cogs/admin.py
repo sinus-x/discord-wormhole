@@ -298,7 +298,7 @@ class Admin(wormcog.Wormcog):
                 raise errors.BadArgument("Value has to be integer.")
 
         repo_u.set(discord_id=member_id, key=key, value=value)
-        await self.event.sudo(ctx, f"{member_id} updated: **{key}** = **{value}**.")
+        await self.event.sudo(ctx, f"{member_id} updated: {key} = {value}.")
 
     @user.command(name="list")
     async def user_list(self, ctx, restraint: str = None):
