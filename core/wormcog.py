@@ -105,7 +105,7 @@ class Wormcog(commands.Cog):
 
         # get tags in the message
         users = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
-        users = [t for t in users if t is not None and t.home_id is not None]
+        users = [u for u in users if u is not None and u.home_ids[db_b.name] is not None]
 
         # replicate messages
         for wormhole in wormholes:
@@ -142,7 +142,7 @@ class Wormcog(commands.Cog):
             # apply tags
             w_text = text
             for user in users:
-                if wormhole.id == user.home_id:
+                if wormhole.id == user.home_ids[db_b.name]:
                     w_text = w_text.replace(f"(({user.nickname}))", f"<@!{user.discord_id}>")
                 else:
                     w_text = w_text.replace(f"(({user.nickname}))", f"**__{user.nickname}__**")

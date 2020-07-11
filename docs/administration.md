@@ -90,13 +90,13 @@ Invoker has to be mod or bot administrator in order to edit these settings.
 
 ### User settings
 
-| Key                 | Value           | Description                                  |
-|---------------------|-----------------|----------------------------------------------|
-| home_id:[beam name] | _channel ID_, 0 | Wormhole text channel. There is an entry for every beam the user is registered in. |
-| mod                 | **0**, 1        | Whether they are mod                         |
-| nickname            | _string_        | Display name. Default is their Discord name. |
-| readonly            | **0**, 1        | Ignore their messages                        |
-| restricted          | **0**, 1        | Wheter they should be disallowed to alter their nickname and home wormhole |
+| Key                  | Value           | Description                                  |
+|----------------------|-----------------|----------------------------------------------|
+| home_ids:[beam name] | _channel ID_, 0 | Wormhole text channel. There is an entry for every beam the user is registered in. |
+| mod                  | **0**, 1        | Whether they are mod                         |
+| nickname             | _string_        | Display name. Default is their Discord name. |
+| readonly             | **0**, 1        | Ignore their messages                        |
+| restricted           | **0**, 1        | Wheter they should be disallowed to alter their nickname and home wormhole |
 
 ### User commands
 
