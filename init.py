@@ -48,7 +48,7 @@ async def on_error(event, *args, **kwargs):
         return
     output = list(tb[0 + i : 1980 + i] for i in range(0, len(tb), 1980))
     for o in output:
-        await channel.send(f"```{o}```")
+        await channel.send(f"```python\n{o}```")
 
 
 ##

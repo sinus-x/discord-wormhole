@@ -137,7 +137,7 @@ class User(wormcog.Wormcog):
 
     @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.command()
-    async def whois(self, ctx, member: str):
+    async def whois(self, ctx, *, member: str):
         """Get information about member"""
         await self.delete(ctx.message)
         await self.event.user(ctx, f"Whois lookup for **{member}**.")

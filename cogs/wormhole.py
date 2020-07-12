@@ -84,6 +84,9 @@ class Wormhole(wormcog.Wormcog):
         if before.content == after.content:
             return
 
+        if after.author.bot:
+            return
+
         # get forwarded messages
         forwarded = None
         for m in self.sent:
