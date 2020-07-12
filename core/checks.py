@@ -17,12 +17,12 @@ def is_mod(ctx: commands.Context):
 
 
 def in_wormhole(ctx: commands.Context):
-    return hasattr(ctx.channel, "id") and repo_w.exists(ctx.channel.id)
+    return is_admin(ctx) or (hasattr(ctx.channel, "id") and repo_w.exists(ctx.channel.id))
 
 
 def in_wormhole_or_dm(ctx: commands.Context):
-    return in_wormhole or isinstance(ctx.channel, discord.DMChannel)
+    return is_admin(ctx) or in_wormhole(ctx) or isinstance(ctx.channel, discord.DMChannel)
 
 
 def not_in_wormhole(ctx: commands.Context):
-    return not in_wormhole(ctx)
+    return is_admin(ctx) or not in_wormhole(ctx)
