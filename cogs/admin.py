@@ -315,42 +315,43 @@ class Admin(wormcog.Wormcog):
         else:
             raise errors.BadArgument("Value is not beam name nor wormhole ID.")
 
-        template = (
-            "{id}: {name} ({nickname})\n"
-            "{homes}"
-            "- MOD {mod}, READONLY {ro}, RESTRICTED {restricted}"
-        )
-        template_home = "- {beam}: {home} ({name}, {guild})\n"
+        template = "\n{id}: {name} ({nickname})"
+        template_home = "- {beam}: {home} ({name}, {guild})"
 
         result = []
         for db_user in db_users:
             # get user
             user = self.bot.get_user(db_user.discord_id)
             user_name = str(user) if hasattr(user, "name") else "---"
-
-            # add string
+            # homes
             homes = ""
+            result.append(
+                template.format(
+                    id=db_user.discord_id, name=user_name, nickname=db_user.nickname, homes=homes
+                )
+            )
             for beam, discord_id in db_user.home_ids.items():
                 if restraint and restraint != beam and restraint != str(discord_id):
                     continue
                 channel = self.bot.get_channel(discord_id)
-                homes += template_home.format(
-                    beam=beam,
-                    home=discord_id,
-                    name=channel.name if hasattr(channel, "name") else "---",
-                    guild=channel.guild.name if hasattr(channel.guild, "name") else "---",
+                result.append(
+                    template_home.format(
+                        beam=beam,
+                        home=discord_id,
+                        name=channel.name if hasattr(channel, "name") else "---",
+                        guild=channel.guild.name if hasattr(channel.guild, "name") else "---",
+                    )
                 )
-            result.append(
-                template.format(
-                    id=db_user.discord_id,
-                    name=user_name,
-                    nickname=db_user.nickname,
-                    homes=homes,
-                    mod=db_user.mod,
-                    ro=db_user.readonly,
-                    restricted=db_user.restricted,
-                )
-            )
+            # attributes
+            attrs = []
+            if db_user.mod:
+                attrs.append("MOD")
+            if db_user.readonly:
+                attrs.append("READ ONLY")
+            if db_user.restricted:
+                attrs.append("RESTRICTED")
+            if len(attrs):
+                result.append("- " + ", ".join(attrs))
 
         async def sendOutput(output: str):
             if hasattr(ctx.channel, "id") and repo_w.exists(ctx.channel.id):
