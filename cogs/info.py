@@ -94,9 +94,10 @@ class Info(wormcog.Wormcog):
 
         template_h1 = "> __**[{ctr}/{total}]**__ GUILD **{gname}** ({gid})"
         template_h2 = "> **{cname}** ({cid})"
-        template_p = "> `{chid}` **{chname}**"
+        template_p = "> `{chid}` `{perms:>10}` **{chname}**"
 
         for i, guild in enumerate(guilds):
+            member = guild.get_member(self.bot.user.id)
             result = [
                 template_h1.format(ctr=i + 1, total=len(guilds), gname=guild.name, gid=guild.id)
             ]
@@ -106,7 +107,13 @@ class Info(wormcog.Wormcog):
                 else:
                     result.append("> **No category**")
                 for channel in channels:
-                    result.append(template_p.format(chid=channel.id, chname=channel.name))
+                    result.append(
+                        template_p.format(
+                            chid=channel.id,
+                            perms=channel.permissions_for(member).value,
+                            chname=channel.name,
+                        )
+                    )
             text = ""
             for line in result:
                 if len(text) + len(line) > 2000:
