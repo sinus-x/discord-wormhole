@@ -375,7 +375,7 @@ class Wormhole(wormcog.Wormcog):
         """Escape mentions and apply anonymity"""
         content = message.content
 
-        users = re.findall(r"<@![0-9]+>", content)
+        users = re.findall(r"<@!?[0-9]+>", content)
         roles = re.findall(r"<@&[0-9]+>", content)
         channels = re.findall(r"<#[0-9]+>", content)
         emojis = re.findall(r"<:[a-zA-Z0-9_]+:[0-9]+>", content)
