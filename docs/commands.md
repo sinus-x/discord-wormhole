@@ -4,7 +4,7 @@
 
 Generally, users shouldn't need to do anything to interact with the wormhole. To display available commands, run **help**.
 
-You have to prepend bot's prefix before the command name; you can see it in its presence (Game activiy).
+You have to prepend bot's prefix before the command name; you can see it in its presence (Game activity).
 
 **e [text]** (**edit [text]**)
 

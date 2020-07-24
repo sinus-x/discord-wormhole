@@ -3,11 +3,12 @@ import datetime
 import git
 import json
 import re
+from typing import List
 
 import discord
 from discord.ext import commands
 
-from core import output
+from core import output, objects
 from core.database import repo_b, repo_u, repo_w
 
 # TODO When the message is removed, remove it from sent[], too
@@ -103,9 +104,7 @@ class Wormcog(commands.Cog):
             self.reconnect(db_b.name)
         wormholes = self.wormholes[db_b.name]
 
-        # get tags in the message
-        users = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
-        users = [u for u in users if u is not None and u.home_ids[db_b.name] is not None]
+        users = self._get_users_from_tags(beam_name=db_b.name, text=text)
 
         # replicate messages
         for wormhole in wormholes:
@@ -139,17 +138,13 @@ class Wormcog(commands.Cog):
             if wormhole.id == message.channel.id and not manage_messages_perm:
                 continue
 
-            # apply tags
-            w_text = text
-            for user in users:
-                if wormhole.id == user.home_ids[db_b.name]:
-                    w_text = w_text.replace(f"(({user.nickname}))", f"<@!{user.discord_id}>")
-                else:
-                    w_text = w_text.replace(f"(({user.nickname}))", f"**__{user.nickname}__**")
-
             # send message
             try:
-                m = await wormhole.send(w_text)
+                m = await wormhole.send(
+                    self._process_tags(
+                        beam_name=db_b.name, wormhole_id=wormhole.id, users=users, text=text
+                    )
+                )
                 messages.append(m)
             except discord.Forbidden:
                 await self.event.user(message, f"Could not send message to {wormhole.id}!")
@@ -159,6 +154,21 @@ class Wormcog(commands.Cog):
             self.sent.append(messages)
             await asyncio.sleep(db_b.timeout)
             self.sent.remove(messages)
+
+    def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
+        r = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
+        r = [u for u in r if u is not None and u.home_ids[beam_name] is not None]
+        return r
+
+    def _process_tags(
+        self, beam_name: str, wormhole_id: int, users: List[objects.User], text: str
+    ) -> str:
+        for user in users:
+            if wormhole_id == user.home_ids[beam_name]:
+                text = text.replace(f"(({user.nickname}))", f"<@!{user.discord_id}>")
+            else:
+                text = text.replace(f"(({user.nickname}))", f"**__{user.nickname}__**")
+        return text
 
     async def announce(self, *, beam: str, message: str):
         """Send information to all channels"""

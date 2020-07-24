@@ -100,8 +100,14 @@ class Wormhole(wormcog.Wormcog):
             return
 
         content = self.__process(after)
-        for m in forwarded[1:]:
-            await m.edit(content=content)
+        beam_name = repo_w.getAttribute(after.channel.id, "beam")
+        users = self._get_users_from_tags(beam_name=beam_name, text=content)
+        for message in forwarded[1:]:
+            await message.edit(
+                content=self._process_tags(
+                    beam_name=beam_name, wormhole_id=after.channel.id, users=users, text=content
+                )
+            )
         await after.add_reaction("✅")
         await asyncio.sleep(1)
         await after.remove_reaction("✅", self.bot.user)
@@ -197,12 +203,22 @@ class Wormhole(wormcog.Wormcog):
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
                 content = self.__process(m)
-                for m in msgs:
+
+                beam_name = repo_w.getAttribute(m.channel.id, "beam")
+                users = self._get_users_from_tags(beam_name=beam_name, text=content)
+                for message in msgs[1:]:
                     try:
-                        await m.edit(content=content)
+                        await message.edit(
+                            content=self._process_tags(
+                                beam_name=beam_name,
+                                wormhole_id=message.channel.id,
+                                users=users,
+                                text=content,
+                            )
+                        )
                     except Exception as e:
-                        await self.console.critical(
-                            f"Could not edit message in {m.channel.id}", error=e
+                        await self.event.user(message,
+                            f"Could not edit message: " + str(e)
                         )
                 break
             # fmt: on
