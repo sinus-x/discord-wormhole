@@ -87,6 +87,9 @@ class Wormhole(wormcog.Wormcog):
         if after.author.bot:
             return
 
+        if not repo_w.exists(after.channel.id):
+            return
+
         # get forwarded messages
         forwarded = None
         for m in self.sent:
