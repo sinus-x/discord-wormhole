@@ -147,7 +147,11 @@ class Wormcog(commands.Cog):
                 )
                 messages.append(m)
             except discord.Forbidden:
-                await self.event.user(message, f"Could not send message to {wormhole.id}!")
+                await self.event.user(message, f"Forbidden to send message to {wormhole.id}!")
+            except Exception as e:
+                await self.event.user(
+                    message, f"Could not send message to {wormhole.id}:\n" + str(e)
+                )
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:

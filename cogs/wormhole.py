@@ -220,8 +220,10 @@ class Wormhole(wormcog.Wormcog):
                             )
                         )
                     except Exception as e:
-                        await self.event.user(message,
-                            f"Could not edit message: " + str(e)
+                        await message.channel.send(
+                            f"> **{self.sanitise(ctx.author.name)}**: " +
+                            f"Could not replicate in **{self.sanitise(message.guild.name)}**.",
+                            delete_after=0.5,
                         )
                 break
             # fmt: on
