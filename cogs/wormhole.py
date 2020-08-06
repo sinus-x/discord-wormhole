@@ -337,7 +337,13 @@ class Wormhole(wormcog.Wormcog):
 
         # get user nickname
         if db_u is not None:
-            home = repo_w.get(db_u.home_ids[db_b.name])
+            if db_b.name in db_u.home_ids:
+                # user has home wormhole
+                home = repo_w.get(db_u.home_ids[db_b.name])
+            else:
+                # user is registered without home
+                home = None
+
             if home is not None:
                 name = "__" + db_u.nickname + "__"
             else:
