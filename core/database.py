@@ -197,7 +197,7 @@ class WormholeRepository:
             db.delete(f"wormhole:{discord_id}:{attribute}")
 
         # reset homes
-        for home in db.scan(match="user:*:home_id:*"):
+        for home in db.scan_iter(match="user:*:home_id:*"):
             if str(discord_id) == db.get(home):
                 db.delete(home)
 

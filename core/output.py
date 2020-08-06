@@ -40,6 +40,6 @@ class Event:
             location=f"{ctx.channel.mention} ({ctx.guild.name})"
             if hasattr(ctx.channel, "mention")
             else type(ctx.channel).__name__,
-            message=message.replace("@", "@\u200b"),
+            message=message,
         ))
         # fmt: on

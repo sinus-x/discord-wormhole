@@ -187,7 +187,7 @@ class Wormcog(commands.Cog):
         except:
             return
 
-    def sanitise(self, string: str, *, limit: int = 500):
+    def sanitise(self, string: str, *, limit: int = 500) -> str:
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
 

@@ -159,12 +159,20 @@ class Admin(wormcog.Wormcog):
             raise errors.BadArgument("No such channel")
 
         repo_w.add(beam=beam, discord_id=channel.id)
-        await self.event.sudo(ctx, f"{self._w2str_log(channel)} added.")
+        await self.event.sudo(
+            ctx,
+            f"{self._w2str_log(channel)} added. {ctx.author.mention}, can you set the local admin?",
+        )
         await self.announce(beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}.")
 
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx, channel_id: int = None):
         """Remove wormhole from database"""
+        if channel_id is None:
+            if hasattr(ctx.channel, "id"):
+                channel_id = ctx.channel.id
+            else:
+                raise errors.BadArgument("Missing channel ID")
         channel = self._getChannel(ctx=ctx, channel_id=channel_id)
         if channel is None:
             raise errors.BadArgument("No such channel")
@@ -173,6 +181,7 @@ class Admin(wormcog.Wormcog):
         repo_w.delete(discord_id=channel_id)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
         await self.announce(beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.")
+        await channel.send(f"Wormhole closed: {self._w2str_out(channel)}.")
 
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
@@ -382,7 +391,7 @@ class Admin(wormcog.Wormcog):
         return self.bot.get_user(member_id)
 
     def _w2str_out(self, channel: discord.TextChannel) -> str:
-        return f"**{channel.mention}** in {channel.guild.name}**"
+        return f"**{channel.mention}** in **{channel.guild.name}**"
 
     def _w2str_log(self, channel: discord.TextChannel) -> str:
         return f"{channel.guild.name}/{channel.name} (ID {channel.id})"
