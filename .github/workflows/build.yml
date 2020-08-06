@@ -2,6 +2,7 @@ name: Wormhole
 
 on:
   push:
+    branches: [ master ]
     paths:
     - "**/*.py"
     - "**/*.json"

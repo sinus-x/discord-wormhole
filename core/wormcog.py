@@ -147,7 +147,11 @@ class Wormcog(commands.Cog):
                 )
                 messages.append(m)
             except discord.Forbidden:
-                await self.event.user(message, f"Could not send message to {wormhole.id}!")
+                await self.event.user(message, f"Forbidden to send message to {wormhole.id}!")
+            except Exception as e:
+                await self.event.user(
+                    message, f"Could not send message to {wormhole.id}:\n" + str(e)
+                )
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:
@@ -187,7 +191,7 @@ class Wormcog(commands.Cog):
         except:
             return
 
-    def sanitise(self, string: str, *, limit: int = 500):
+    def sanitise(self, string: str, *, limit: int = 500) -> str:
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
 

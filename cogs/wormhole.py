@@ -220,8 +220,10 @@ class Wormhole(wormcog.Wormcog):
                             )
                         )
                     except Exception as e:
-                        await self.event.user(message,
-                            f"Could not edit message: " + str(e)
+                        await message.channel.send(
+                            f"> **{self.sanitise(ctx.author.name)}**: " +
+                            f"Could not replicate in **{self.sanitise(message.guild.name)}**.",
+                            delete_after=0.5,
                         )
                 break
             # fmt: on
@@ -337,7 +339,13 @@ class Wormhole(wormcog.Wormcog):
 
         # get user nickname
         if db_u is not None:
-            home = repo_w.get(db_u.home_ids[db_b.name])
+            if db_b.name in db_u.home_ids:
+                # user has home wormhole
+                home = repo_w.get(db_u.home_ids[db_b.name])
+            else:
+                # user is registered without home
+                home = None
+
             if home is not None:
                 name = "__" + db_u.nickname + "__"
             else:
