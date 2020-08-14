@@ -8,30 +8,25 @@ assignees: ''
 ---
 
 **Wormhole version**
-<!-- Insert commit, eg. `3a27479` -->
+<!-- insert commit reported by wormhole -->
+`1234567`
 
 **Description**
 Short text describing the problem.
 
 **Situation**
-- Do you need to be registered in database? Y/N
-- Do you need to be wormhole MOD? Y/N
-- Do you have to send the message to opened wormhole/DM? Y/N
-- Is the problem reproducable on both desktop/web and application? Y/N
+<!-- Fill letter x where applicable -->
+- [ ] Is the problem reproducable on both desktop/web and application?
+- [ ] Do you need to be registered in database?
+- [ ] Can you reproduce it every time?
 
 **Reproduction steps**
 Send a message containg...
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Traceback**
+```
+If applicable, paste your traceback here.
+```
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Additional information (if applicable)**
-Desktop program version: 
-Android app version: 
-iOS app version: 
-
-**Additional context**
+**Additional information**
 Add any other context about the problem here.

@@ -164,7 +164,12 @@ class Wormhole(wormcog.Wormcog):
             inline=False
         )
         # fmt: on
-        await ctx.send(embed=embed, delete_after=self.delay())
+        if hasattr(ctx.channel, "id"):
+            # we are in public channel
+            await ctx.send(embed=embed, delete_after=self.delay())
+        else:
+            # private channel, we can keep the message
+            await ctx.send(embed=embed)
         await self.delete(ctx.message)
 
     @commands.guild_only()
@@ -246,6 +251,7 @@ class Wormhole(wormcog.Wormcog):
         db_w = repo_w.get(ctx.channel.id)
 
         wormholes = repo_w.listObjects(db_w.beam)
+        wormholes.sort(key=lambda x: x.messages, reverse=True)
 
         # loop over wormholes in current beam
         count = 0
@@ -258,8 +264,8 @@ class Wormhole(wormcog.Wormcog):
             # guild, channel, counter
             channel = self.bot.get_channel(wormhole.discord_id)
             line.append(
-                f"**{self.sanitise(channel.guild.name)}** ({channel.mention}): "
-                f"**{repo_w.getAttribute(channel.id, 'messages')}** messages"
+                f"**{self.sanitise(channel.guild.name)}** ({self.sanitise(channel.name)}): "
+                f"**{wormhole.messages}** messages"
             )
             # inactive, ro
             pars = []
@@ -313,7 +319,11 @@ class Wormhole(wormcog.Wormcog):
     @commands.command()
     async def link(self, ctx: commands.Context):
         """Send a message with link to the bot"""
-        await ctx.send("> **GitHub link:** https://github.com/sinus-x/discord-wormhole")
+        text = "> **GitHub link:** https://github.com/sinus-x/discord-wormhole"
+        if hasattr(ctx.channel, "id"):
+            await ctx.send(text, delete_after=self.delay())
+        else:
+            await ctx.send(text)
         await self.delete(ctx.message)
 
     @commands.command()
@@ -323,12 +333,15 @@ class Wormhole(wormcog.Wormcog):
         # - send messages      - attach files
         # - manage messages    - use external emojis
         # - embed links        - add reactions
-        m = (
+        text = (
             "> **Invite link:** https://discordapp.com/oauth2/authorize?client_id="
             + str(self.bot.user.id)
             + "&permissions=321600&scope=bot"
         )
-        await ctx.send(m)
+        if hasattr(ctx.channel, "id"):
+            await ctx.send(text, delete_after=self.delay())
+        else:
+            await ctx.send(text)
         await self.delete(ctx.message)
 
     def __getPrefix(self, message: discord.Message, firstline: bool = True):
@@ -355,7 +368,7 @@ class Wormhole(wormcog.Wormcog):
             home = db_w
 
         # get logo
-        if len(home.logo):
+        if hasattr(home, "logo") and len(home.logo):
             if firstline:
                 logo = home.logo
             else:
@@ -401,12 +414,13 @@ class Wormhole(wormcog.Wormcog):
             except:
                 role = "unknown-role"
             content = content.replace(r, role)
-        # add guild to channel tag
+        # convert channel tags to universal names
         for channel in channels:
             try:
                 ch = self.bot.get_channel(int(channel.replace("<#", "").replace(">", "")))
-                guild_name = discord.utils.escape_markdown(ch.guild.name)
-                content = content.replace(channel, f"{channel} __**({guild_name})**__")
+                channel_name = self.sanitise(ch.name)
+                guild_name = self.sanitise(ch.guild.name)
+                content = content.replace(channel, f"__**{guild_name}/{channel_name}**__")
             except:
                 pass
         # remove unavailable emojis
