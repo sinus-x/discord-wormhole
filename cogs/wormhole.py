@@ -263,7 +263,7 @@ class Wormhole(wormcog.Wormcog):
             # guild, channel, counter
             channel = self.bot.get_channel(wormhole.discord_id)
             line.append(
-                f"**{self.sanitise(channel.guild.name)}** ({channel.mention}): "
+                f"**{self.sanitise(channel.guild.name)}** ({self.sanitise(channel.name)}): "
                 f"**{repo_w.getAttribute(channel.id, 'messages')}** messages"
             )
             # inactive, ro
@@ -413,12 +413,13 @@ class Wormhole(wormcog.Wormcog):
             except:
                 role = "unknown-role"
             content = content.replace(r, role)
-        # add guild to channel tag
+        # convert channel tags to universal names
         for channel in channels:
             try:
                 ch = self.bot.get_channel(int(channel.replace("<#", "").replace(">", "")))
-                guild_name = discord.utils.escape_markdown(ch.guild.name)
-                content = content.replace(channel, f"{channel} __**({guild_name})**__")
+                channel_name = self.sanitise(ch.name)
+                guild_name = self.sanitise(ch.guild.name)
+                content = content.replace(channel, f"__**{guild_name}/{channel_name}**__")
             except:
                 pass
         # remove unavailable emojis

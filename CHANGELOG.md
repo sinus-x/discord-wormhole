@@ -2,6 +2,7 @@
 
 ## [unreleased]
 
+- Closed [GH-24](https://github.com/sinus-x/discord-wormhole/issues/24): Channel mentions resolve to #deleted-channel
 - Closed [GH-26](https://github.com/sinus-x/discord-wormhole/issues/26): Do not delete messages (embeds) from direct messages
 
 
