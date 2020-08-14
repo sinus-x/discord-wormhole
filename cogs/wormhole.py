@@ -251,6 +251,7 @@ class Wormhole(wormcog.Wormcog):
         db_w = repo_w.get(ctx.channel.id)
 
         wormholes = repo_w.listObjects(db_w.beam)
+        wormholes.sort(key=lambda x: x.messages, reverse=True)
 
         # loop over wormholes in current beam
         count = 0
@@ -264,7 +265,7 @@ class Wormhole(wormcog.Wormcog):
             channel = self.bot.get_channel(wormhole.discord_id)
             line.append(
                 f"**{self.sanitise(channel.guild.name)}** ({self.sanitise(channel.name)}): "
-                f"**{repo_w.getAttribute(channel.id, 'messages')}** messages"
+                f"**{wormhole.messages}** messages"
             )
             # inactive, ro
             pars = []
@@ -367,7 +368,7 @@ class Wormhole(wormcog.Wormcog):
             home = db_w
 
         # get logo
-        if len(home.logo):
+        if hasattr(home, "logo") and len(home.logo):
             if firstline:
                 logo = home.logo
             else:
