@@ -2,6 +2,7 @@
 
 ## [unreleased]
 
+- Force registration in Wormhole
 - Closed [GH-23](https://github.com/sinus-x/discord-wormhole/issues/23): ~info – sort by message count
 - Closed [GH-24](https://github.com/sinus-x/discord-wormhole/issues/24): Channel mentions resolve to #deleted-channel
 - Closed [GH-26](https://github.com/sinus-x/discord-wormhole/issues/26): Do not delete messages (embeds) from direct messages

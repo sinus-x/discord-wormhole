@@ -17,6 +17,7 @@ class User(wormcog.Wormcog):
         self.p = config["prefix"]
 
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
+    @commands.check(checks.in_wormhole)
     @commands.command()
     async def register(self, ctx):
         """Add yourself to the database"""
