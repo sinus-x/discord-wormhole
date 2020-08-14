@@ -164,7 +164,12 @@ class Wormhole(wormcog.Wormcog):
             inline=False
         )
         # fmt: on
-        await ctx.send(embed=embed, delete_after=self.delay())
+        if hasattr(ctx.channel, "id"):
+            # we are in public channel
+            await ctx.send(embed=embed, delete_after=self.delay())
+        else:
+            # private channel, we can keep the message
+            await ctx.send(embed=embed)
         await self.delete(ctx.message)
 
     @commands.guild_only()
@@ -313,7 +318,11 @@ class Wormhole(wormcog.Wormcog):
     @commands.command()
     async def link(self, ctx: commands.Context):
         """Send a message with link to the bot"""
-        await ctx.send("> **GitHub link:** https://github.com/sinus-x/discord-wormhole")
+        text = "> **GitHub link:** https://github.com/sinus-x/discord-wormhole"
+        if hasattr(ctx.channel, "id"):
+            await ctx.send(text, delete_after=self.delay())
+        else:
+            await ctx.send(text)
         await self.delete(ctx.message)
 
     @commands.command()
@@ -323,12 +332,15 @@ class Wormhole(wormcog.Wormcog):
         # - send messages      - attach files
         # - manage messages    - use external emojis
         # - embed links        - add reactions
-        m = (
+        text = (
             "> **Invite link:** https://discordapp.com/oauth2/authorize?client_id="
             + str(self.bot.user.id)
             + "&permissions=321600&scope=bot"
         )
-        await ctx.send(m)
+        if hasattr(ctx.channel, "id"):
+            await ctx.send(text, delete_after=self.delay())
+        else:
+            await ctx.send(text)
         await self.delete(ctx.message)
 
     def __getPrefix(self, message: discord.Message, firstline: bool = True):

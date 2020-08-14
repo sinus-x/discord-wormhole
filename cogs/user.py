@@ -83,11 +83,11 @@ class User(wormcog.Wormcog):
     async def set_home(self, ctx):
         """Set current channel as your home wormhole"""
         if not repo_u.exists(ctx.author.id):
-            return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5)
+            return await ctx.author.send(f"Register with `{self.p}register`")
         if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
             return await ctx.author.send("You are forbidden to alter your settings.")
         if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
-            return await ctx.author.send("Home has to be a wormhole", delete_after=5)
+            return await ctx.author.send("Home has to be a wormhole")
 
         beam_name = repo_w.get(ctx.channel.id).beam
         repo_u.set(ctx.author.id, key=f"home_id:{beam_name}", value=ctx.channel.id)
@@ -101,7 +101,7 @@ class User(wormcog.Wormcog):
     async def set_name(self, ctx, *, name: str):
         """Set new display name"""
         if not repo_u.exists(ctx.author.id):
-            return await ctx.author.send(f"Register with `{self.p}register`", delete_after=5)
+            return await ctx.author.send(f"Register with `{self.p}register`")
         if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
             return await ctx.author.send("You are forbidden to alter your settings.")
         name = self.sanitise(name, limit=32)
