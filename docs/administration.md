@@ -100,9 +100,9 @@ Invoker has to be mod or bot administrator in order to edit these settings.
 
 ### User commands
 
-**user add [member ID] [nickname] [home wormhole ID]**
+**user add [member ID] [nickname]**
 
-Add new user to database. Member must not exist in database, nickname must not be already used, home wormhole must exist.
+Add new user to database. Member must not exist in database, nickname must not be already used.
 
 **user remove [member ID]**
 
