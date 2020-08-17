@@ -5,6 +5,7 @@ import sys
 from discord.ext import commands
 
 from core import wormcog
+from core.database import repo_w
 
 config = json.load(open("config.json"))
 
@@ -51,7 +52,7 @@ class Errors(wormcog.Wormcog):
             return await self.send(ctx, error, "You are not an owner")
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            return await self.send(ctx, error, "Missing required argument")
+            return await self.send(ctx, error, f"Missing required argument: **{error.param.name}**")
 
         elif isinstance(error, commands.BadArgument):
             return await self.send(ctx, error, "Bad argument")
@@ -98,8 +99,13 @@ class Errors(wormcog.Wormcog):
     async def send(self, ctx: commands.Context, error, text: str):
         if config["log level"] == "CRITICAL":
             return
+
         prefix = "> **Error:** "
-        await ctx.send(prefix + text, delete_after=20.0)
+        if hasattr(ctx.channel, "id") and repo_w.get(ctx.channel.id) is not None:
+            # do not leave errors in wormhole
+            await ctx.send(prefix + text, delete_after=20.0)
+        else:
+            await ctx.send(prefix + text)
 
 
 def setup(bot):

@@ -176,9 +176,13 @@ class Wormcog(commands.Cog):
 
     async def announce(self, *, beam: str, message: str):
         """Send information to all channels"""
-        db_ws = repo_w.listObjects(beam=beam)
-        for db_w in db_ws:
-            await self.bot.get_channel(db_w.discord_id).send("**WORMHOLE:** " + message)
+        if len(message) <= 256:
+            embed = self.getEmbed(title=message)
+        else:
+            embed = self.getEmbed(description=message)
+
+        for db_w in repo_w.listObjects(beam=beam):
+            await self.bot.get_channel(db_w.discord_id).send(embed=embed)
 
     async def feedback(self, ctx, *, private: bool = True, message: str):
         target = ctx.author if private else ctx
