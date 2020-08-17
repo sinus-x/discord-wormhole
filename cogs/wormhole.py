@@ -1,3 +1,5 @@
+from typing import Optional, List
+
 import asyncio
 import json
 import re
@@ -233,52 +235,22 @@ class Wormhole(wormcog.Wormcog):
                 break
             # fmt: on
 
-    @commands.guild_only()
-    @commands.check(checks.in_wormhole)
+    @commands.cooldown(rate=1, per=20, type=commands.BucketType.channel)
     @commands.command(aliases=["stat", "stats"])
     async def info(self, ctx: commands.Context):
         """Display information about wormholes"""
-        # heading
-        beam_name = repo_w.getAttribute(ctx.channel.id, "beam")
-        since = self.transferred[beam_name] if beam_name in self.transferred else 0
-        msg = [
-            f">>> **[[total]]** messages sent in total "
-            f"(**{since}** since {started}); "
-            f"ping **{self.bot.latency:.2f}s**",
-            "",
-            "Currently opened wormholes:",
-        ]
-        db_w = repo_w.get(ctx.channel.id)
+        public = hasattr(ctx.channel, "id") and repo_w.get(ctx.channel.id) is not None
 
-        wormholes = repo_w.listObjects(db_w.beam)
-        wormholes.sort(key=lambda x: x.messages, reverse=True)
-
-        # loop over wormholes in current beam
-        count = 0
-        for wormhole in wormholes:
-            count += wormhole.messages
-            line = []
-            # logo
-            if len(wormhole.logo):
-                line.append(wormhole.logo)
-            # guild, channel, counter
-            channel = self.bot.get_channel(wormhole.discord_id)
-            line.append(
-                f"**{self.sanitise(channel.guild.name)}** ({self.sanitise(channel.name)}): "
-                f"**{wormhole.messages}** messages"
+        if public:
+            await ctx.send(
+                self.__getInfo(repo_w.getAttribute(ctx.channel.id, "beam")),
+                delete_after=self.delay(),
             )
-            # inactive, ro
-            pars = []
-            if wormhole.active is False:
-                pars.append("inactive")
-            if wormhole.readonly is True:
-                pars.append("read only")
-            if len(pars) > 0:
-                line.append(f"({', '.join(pars)})")
-            # join and send
-            msg.append(" ".join(line))
+            return
 
-        await ctx.send("\n".join(msg).replace("[[total]]", str(count)), delete_after=self.delay())
+        user_beams = repo_u.getHome(ctx.author.id).keys()
+        for beam_name in user_beams:
+            await ctx.send(self.__getInfo(beam_name, title=True))
 
     @commands.guild_only()
     @commands.check(checks.in_wormhole)
@@ -471,6 +443,53 @@ class Wormhole(wormcog.Wormcog):
             self.transferred[beam_name] += 1
         else:
             self.transferred[beam_name] = 1
+
+    def __getInfo(self, beam_name: str, title: bool = False) -> str:
+        """Get beam statistics.
+
+        If title is True, the message has beam information.
+        """
+        # heading
+        msg = ["**Beam __" + beam_name + "__**"] if title else []
+
+        since = self.transferred[beam_name] if beam_name in self.transferred else 0
+        msg += [
+            f">>> **[[total]]** messages sent in total "
+            f"(**{since}** since {started}); "
+            f"ping **{self.bot.latency:.2f}s**",
+            "",
+            "Currently opened wormholes:",
+        ]
+
+        wormholes = repo_w.listObjects(beam_name)
+        wormholes.sort(key=lambda x: x.messages, reverse=True)
+
+        # loop over wormholes in current beam
+        count = 0
+        for wormhole in wormholes:
+            count += wormhole.messages
+            line = []
+            # logo
+            if len(wormhole.logo):
+                line.append(wormhole.logo)
+            # guild, channel, counter
+            channel = self.bot.get_channel(wormhole.discord_id)
+            line.append(
+                f"**{self.sanitise(channel.guild.name)}** ({self.sanitise(channel.name)}): "
+                f"**{wormhole.messages}** messages"
+            )
+            # inactive, ro
+            pars = []
+            if wormhole.active is False:
+                pars.append("inactive")
+            if wormhole.readonly is True:
+                pars.append("read only")
+            if len(pars) > 0:
+                line.append(f"({', '.join(pars)})")
+            # join and send
+            msg.append(" ".join(line))
+
+        return "\n".join(msg).replace("[[total]]", str(count))
 
 
 def setup(bot):
