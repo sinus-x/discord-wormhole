@@ -147,10 +147,21 @@ class Wormcog(commands.Cog):
                 )
                 messages.append(m)
             except discord.Forbidden:
-                await self.event.user(message, f"Forbidden to send message to {wormhole.id}!")
+                await self.event.user(
+                    message,
+                    (
+                        f"Forbidden to send message to {self.sanitise(message.guild.name)}"
+                        f"/{self.sanitise(message.channel.name)}."
+                    ),
+                )
             except Exception as e:
                 await self.event.user(
-                    message, f"Could not send message to {wormhole.id}:\n" + str(e)
+                    message,
+                    (
+                        f"Could not send message to {self.sanitise(message.guild.name)}"
+                        f"/{self.sanitise(message.channel.name)}:\n"
+                        f">>>{type(e).__name__}\n{str(e)}"
+                    ),
                 )
 
         # save message objects in case of editing/deletion
