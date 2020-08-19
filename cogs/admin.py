@@ -258,7 +258,7 @@ class Admin(wormcog.Wormcog):
             "edit <member ID> nickname <string>",
             "edit <member ID> readonly [0, 1]",
             "edit <member ID> restricted [0, 1]",
-            "list [<beam>, <channel ID>]",
+            "list [<beam>, <channel ID>, <user attribute>]",
         ]
 
         embed = self.getEmbed(ctx=ctx, title="Users", description=description)
@@ -313,31 +313,32 @@ class Admin(wormcog.Wormcog):
     async def user_list(self, ctx, restraint: str = None):
         """List all registered users
 
-        restraint: beam name or wormhole ID
+        restraint: beam name, wormhole ID or user attribute
         """
         if restraint is None:
             db_users = repo_u.listObjects()
         elif repo_b.exists(restraint):
             db_users = repo_u.listObjectsByBeam(restraint)
+        elif restraint in ("restricted", "readonly", "mod"):
+            db_users = repo_u.listObjectsByAttribute(restraint)
         elif is_ID(restraint) and repo_w.exists(int(restraint)):
             db_users = repo_u.listObjectsByWormhole(int(restraint))
         else:
             raise errors.BadArgument("Value is not beam name nor wormhole ID.")
 
-        template = "\n{id}: {name} ({nickname})"
+        template = "\n{nickname} ({name}, {id}):"
         template_home = "- {beam}: {home} ({name}, {guild})"
+
+        # sort
+        db_users.sort(key=lambda x: x.nickname)
 
         result = []
         for db_user in db_users:
             # get user
             user = self.bot.get_user(db_user.discord_id)
             user_name = str(user) if hasattr(user, "name") else "---"
-            # homes
-            homes = ""
             result.append(
-                template.format(
-                    id=db_user.discord_id, name=user_name, nickname=db_user.nickname, homes=homes
-                )
+                template.format(id=db_user.discord_id, name=user_name, nickname=db_user.nickname)
             )
             for beam, discord_id in db_user.home_ids.items():
                 if restraint and restraint != beam and restraint != str(discord_id):
