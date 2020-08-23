@@ -316,6 +316,13 @@ class UserRepository:
                 result.append(r)
         return [int(x.split(":")[1]) for x in result if db.get(x) == str(discord_id)]
 
+    def listIDsByAttribute(self, attribute: str) -> List[int]:
+        result = []
+        for r in db.scan_iter(match=f"user:*:{attribute}"):
+            if db.get(r) == "1":
+                result.append(r)
+        return [int(x.split(":")[1]) for x in result]
+
     def listObjects(self) -> List[objects.User]:
         return [self.get(x) for x in self.listIDs()]
 
@@ -324,6 +331,9 @@ class UserRepository:
 
     def listObjectsByWormhole(self, discord_id: int) -> List[objects.User]:
         return [self.get(x) for x in self.listIDsByWormhole(discord_id)]
+
+    def listObjectsByAttribute(self, attribute: str) -> List[objects.User]:
+        return [self.get(x) for x in self.listIDsByAttribute(attribute)]
 
     def set(self, discord_id: int, key: str, value):
         self._existence_check(discord_id)
