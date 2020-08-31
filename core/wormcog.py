@@ -71,7 +71,11 @@ class Wormcog(commands.Cog):
             await ctx.send(content=content, embed=embed)
 
     async def send(
-        self, *, message: discord.Message, text: str, files: list = None,
+        self,
+        *,
+        message: discord.Message,
+        text: str,
+        files: list = None,
     ):
         """Distribute the message"""
         # get variables
@@ -110,10 +114,12 @@ class Wormcog(commands.Cog):
         tasks = []
         for wormhole in wormholes:
             task = asyncio.ensure_future(
-                self.replicate(wormhole, message, messages, users, text, files, db_b, manage_messages_perm))
+                self.replicate(
+                    wormhole, message, messages, users, text, files, db_b, manage_messages_perm
+                )
+            )
             tasks.append(task)
         await asyncio.gather(*tasks, return_exceptions=True)
-
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:
@@ -121,7 +127,9 @@ class Wormcog(commands.Cog):
             await asyncio.sleep(db_b.timeout)
             self.sent.remove(messages)
 
-    async def replicate(self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm):
+    async def replicate(
+        self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm
+    ):
         # If the source message cannot be removed for technical reasons (bot doesn't have
         # permissions to do so), send notification message for the first time.
         if wormhole.id == message.channel.id and db_b.replace and not manage_messages_perm:
@@ -134,8 +142,8 @@ class Wormcog(commands.Cog):
                 if admin_id != 0:
                     wormhole_admin = "<@!" + str(admin_id) + ">"
                     notify_text += (
-                            "\n" + wormhole_admin + ", you are configured as an local admin. "
-                                                    "Can you do it?"
+                        "\n" + wormhole_admin + ", you are configured as an local admin. "
+                        "Can you do it?"
                     )
                 await message.channel.send(notify_text)
                 self.missing_notify.append(str(wormhole.id))
