@@ -35,9 +35,6 @@ class Wormcog(commands.Cog):
         # sent messages still held in memory
         self.sent = []
 
-        # missing manage_messages permission notification
-        self.missing_notify = []
-
         # bot management logging
         self.event = output.Event(self.bot)
 
@@ -71,11 +68,7 @@ class Wormcog(commands.Cog):
             await ctx.send(content=content, embed=embed)
 
     async def send(
-        self,
-        *,
-        message: discord.Message,
-        text: str,
-        files: list = None,
+        self, *, message: discord.Message, text: str, files: list = None,
     ):
         """Distribute the message"""
         # get variables
@@ -130,24 +123,6 @@ class Wormcog(commands.Cog):
     async def replicate(
         self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm
     ):
-        # If the source message cannot be removed for technical reasons (bot doesn't have
-        # permissions to do so), send notification message for the first time.
-        if wormhole.id == message.channel.id and db_b.replace and not manage_messages_perm:
-            if str(wormhole.id) not in self.missing_notify:
-                admin_id = repo_w.getAttribute(wormhole.id, "admin_id")
-                notify_text = (
-                    "**I do not have permissions to manage messages. "
-                    "Grant it, please, for smoother experience.**"
-                )
-                if admin_id != 0:
-                    wormhole_admin = "<@!" + str(admin_id) + ">"
-                    notify_text += (
-                        "\n" + wormhole_admin + ", you are configured as an local admin. "
-                        "Can you do it?"
-                    )
-                await message.channel.send(notify_text)
-                self.missing_notify.append(str(wormhole.id))
-
         # skip not active wormholes
         if repo_w.getAttribute(wormhole.id, "active") == 0:
             return
