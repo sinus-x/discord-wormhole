@@ -162,9 +162,9 @@ class Wormcog(commands.Cog):
             )
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
-        r = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
-        r = [u for u in r if u is not None and u.home_ids[beam_name] is not None]
-        return r
+        tags = [repo_u.getByNickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
+        users = [user for user in tags if user is not None and beam_name in user.home_ids.keys()]
+        return users
 
     def _process_tags(
         self, beam_name: str, wormhole_id: int, users: List[objects.User], text: str
