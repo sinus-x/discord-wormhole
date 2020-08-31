@@ -107,68 +107,76 @@ class Wormcog(commands.Cog):
         users = self._get_users_from_tags(beam_name=db_b.name, text=text)
 
         # replicate messages
+        tasks = []
         for wormhole in wormholes:
-            # If the source message cannot be removed for technical reasons (bot doesn't have
-            # permissions to do so), send notification message for the first time.
-            if wormhole.id == message.channel.id and db_b.replace and not manage_messages_perm:
-                if str(wormhole.id) not in self.missing_notify:
-                    admin_id = repo_w.getAttribute(wormhole.id, "admin_id")
-                    notify_text = (
-                        "**I do not have permissions to manage messages. "
-                        "Grant it, please, for smoother experience.**"
-                    )
-                    if admin_id != 0:
-                        wormhole_admin = "<@!" + str(admin_id) + ">"
-                        notify_text += (
-                            "\n" + wormhole_admin + ", you are configured as an local admin. "
-                            "Can you do it?"
-                        )
-                    await message.channel.send(notify_text)
-                    self.missing_notify.append(str(wormhole.id))
+            task = asyncio.ensure_future(
+                self.replicate(wormhole, message, messages, users, text, files, db_b, manage_messages_perm))
+            tasks.append(task)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
-            # skip not active wormholes
-            if repo_w.getAttribute(wormhole.id, "active") == 0:
-                continue
-
-            # skip source if message has attachments
-            if wormhole.id == message.channel.id and len(files) > 0:
-                continue
-
-            # skip source if bot hasn't got manage_messages permission
-            if wormhole.id == message.channel.id and not manage_messages_perm:
-                continue
-
-            # send message
-            try:
-                m = await wormhole.send(
-                    self._process_tags(
-                        beam_name=db_b.name, wormhole_id=wormhole.id, users=users, text=text
-                    )
-                )
-                messages.append(m)
-            except discord.Forbidden:
-                await self.event.user(
-                    message,
-                    (
-                        f"Forbidden to send message to {self.sanitise(message.guild.name)}"
-                        f"/{self.sanitise(message.channel.name)}."
-                    ),
-                )
-            except Exception as e:
-                await self.event.user(
-                    message,
-                    (
-                        f"Could not send message to {self.sanitise(message.guild.name)}"
-                        f"/{self.sanitise(message.channel.name)}:\n"
-                        f">>>{type(e).__name__}\n{str(e)}"
-                    ),
-                )
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:
             self.sent.append(messages)
             await asyncio.sleep(db_b.timeout)
             self.sent.remove(messages)
+
+    async def replicate(self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm):
+        # If the source message cannot be removed for technical reasons (bot doesn't have
+        # permissions to do so), send notification message for the first time.
+        if wormhole.id == message.channel.id and db_b.replace and not manage_messages_perm:
+            if str(wormhole.id) not in self.missing_notify:
+                admin_id = repo_w.getAttribute(wormhole.id, "admin_id")
+                notify_text = (
+                    "**I do not have permissions to manage messages. "
+                    "Grant it, please, for smoother experience.**"
+                )
+                if admin_id != 0:
+                    wormhole_admin = "<@!" + str(admin_id) + ">"
+                    notify_text += (
+                            "\n" + wormhole_admin + ", you are configured as an local admin. "
+                                                    "Can you do it?"
+                    )
+                await message.channel.send(notify_text)
+                self.missing_notify.append(str(wormhole.id))
+
+        # skip not active wormholes
+        if repo_w.getAttribute(wormhole.id, "active") == 0:
+            return
+
+        # skip source if message has attachments
+        if wormhole.id == message.channel.id and len(files) > 0:
+            return
+
+        # skip source if bot hasn't got manage_messages permission
+        if wormhole.id == message.channel.id and not manage_messages_perm:
+            return
+
+        # send message
+        try:
+            m = await wormhole.send(
+                self._process_tags(
+                    beam_name=db_b.name, wormhole_id=wormhole.id, users=users, text=text
+                )
+            )
+            messages.append(m)
+        except discord.Forbidden:
+            await self.event.user(
+                message,
+                (
+                    f"Forbidden to send message to {self.sanitise(message.guild.name)}"
+                    f"/{self.sanitise(message.channel.name)}."
+                ),
+            )
+        except Exception as e:
+            await self.event.user(
+                message,
+                (
+                    f"Could not send message to {self.sanitise(message.guild.name)}"
+                    f"/{self.sanitise(message.channel.name)}:\n"
+                    f">>>{type(e).__name__}\n{str(e)}"
+                ),
+            )
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
         r = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
