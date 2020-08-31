@@ -107,7 +107,6 @@ class Wormcog(commands.Cog):
         users = self._get_users_from_tags(beam_name=db_b.name, text=text)
 
         # replicate messages
-
         tasks = []
         for wormhole in wormholes:
             task = asyncio.ensure_future(self.replicate(wormhole, message, messages, users, text, files, db_b, manage_messages_perm))
@@ -121,7 +120,6 @@ class Wormcog(commands.Cog):
             self.sent.remove(messages)
 
     async def replicate(self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm):
-        print("sending to: " + str(wormhole.id))
         # If the source message cannot be removed for technical reasons (bot doesn't have
         # permissions to do so), send notification message for the first time.
         if wormhole.id == message.channel.id and db_b.replace and not manage_messages_perm:
@@ -177,8 +175,6 @@ class Wormcog(commands.Cog):
                     f">>>{type(e).__name__}\n{str(e)}"
                 ),
             )
-
-        print("sent " + str(wormhole.id))
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
         r = [repo_u.getByNickname(t) for t in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
