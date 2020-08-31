@@ -1,3 +1,4 @@
+import asyncio
 import json
 import traceback
 from datetime import datetime
@@ -94,4 +95,5 @@ for c in ["wormhole", "admin", "user", "notifications", "info"]:
     bot.load_extension(f"cogs.{c}")
     print(f"{c.upper()} loaded")
 
-bot.run(config.get("bot key"))
+asyncio.run(bot.run(config.get("bot key")))
+#bot.run(config.get("bot key"))
