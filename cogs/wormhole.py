@@ -1,5 +1,3 @@
-from typing import Optional, List
-
 import asyncio
 import json
 import re
@@ -230,7 +228,7 @@ class Wormhole(wormcog.Wormcog):
                         self.event.user(
                             ctx, (
                                 f"Could not edit message in {self.sanitise(message.guild.name)}"
-                                f"/{self.sanitise(message.channel.name)}."
+                                f"/{self.sanitise(message.channel.name)}:\n>>> {e}"
                             )
                         )
                         await message.channel.send(
