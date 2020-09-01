@@ -1,5 +1,3 @@
-from typing import Optional, List
-
 import asyncio
 import json
 import re
@@ -59,7 +57,7 @@ class Wormhole(wormcog.Wormcog):
             self.reconnect(db_b.name)
 
         # process incoming message
-        content = self.__process(message)
+        content = await self.__process(message)
 
         # convert attachments to links
         firstline = True
@@ -104,7 +102,7 @@ class Wormhole(wormcog.Wormcog):
             await after.remove_reaction("❎", self.bot.user)
             return
 
-        content = self.__process(after)
+        content = await self.__process(after)
         beam_name = repo_w.getAttribute(after.channel.id, "beam")
         users = self._get_users_from_tags(beam_name=beam_name, text=content)
         for message in forwarded[1:]:
@@ -212,7 +210,7 @@ class Wormhole(wormcog.Wormcog):
                 await self.delete(ctx.message)
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
-                content = self.__process(m)
+                content = await self.__process(m)
 
                 beam_name = repo_w.getAttribute(m.channel.id, "beam")
                 users = self._get_users_from_tags(beam_name=beam_name, text=content)
@@ -230,7 +228,7 @@ class Wormhole(wormcog.Wormcog):
                         self.event.user(
                             ctx, (
                                 f"Could not edit message in {self.sanitise(message.guild.name)}"
-                                f"/{self.sanitise(message.channel.name)}."
+                                f"/{self.sanitise(message.channel.name)}:\n>>> {e}"
                             )
                         )
                         await message.channel.send(
@@ -370,7 +368,7 @@ class Wormhole(wormcog.Wormcog):
 
         return prefix
 
-    def __process(self, message: discord.Message):
+    async def __process(self, message: discord.Message):
         """Escape mentions and apply anonymity"""
         content = message.content
 
@@ -382,15 +380,24 @@ class Wormhole(wormcog.Wormcog):
         # prevent tagging
         for u in users:
             try:
-                user = str(self.bot.get_user(int(u.replace("<@!", "").replace(">", ""))))
-            except:
+                # Get discord user tags. If they're registered, translate to
+                # their ((nickname)); it will be converted on send.
+                user_id = int(u.replace("<@!", "").replace("<@", "").replace(">", ""))
+                nickname = repo_u.getAttribute(user_id, "nickname")
+                if nickname is not None:
+                    user = "((" + nickname + "))"
+                else:
+                    user = str(self.bot.get_user(user_id))
+            except Exception as e:
                 user = "unknown-user"
+                await self.event.user(message, "Problem in user retrieval:\n>>>{e}")
             content = content.replace(u, user)
         for r in roles:
             try:
                 role = message.guild.get_role(int(r.replace("<@&", "").replace(">", ""))).name
-            except:
+            except Exception as e:
                 role = "unknown-role"
+                await self.event.user(message, "Problem in role retrieval:\n>>>{e}")
             content = content.replace(r, role)
         # convert channel tags to universal names
         for channel in channels:
@@ -399,8 +406,8 @@ class Wormhole(wormcog.Wormcog):
                 channel_name = self.sanitise(ch.name)
                 guild_name = self.sanitise(ch.guild.name)
                 content = content.replace(channel, f"__**{guild_name}/{channel_name}**__")
-            except:
-                pass
+            except Exception as e:
+                await self.event.user(message, "Problem in channel retrieval:\n>>>{e}")
         # remove unavailable emojis
         for emoji in emojis:
             emoji_ = emoji.replace("<:", "").replace(">", "")

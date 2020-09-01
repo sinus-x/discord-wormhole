@@ -49,5 +49,10 @@ Required permissions:
 - Create `config.json` file with `config.default.json` as a reference
 - Run the bot with `python3 init.py`
 
+## Contributors
+
+- [CrafterSvK](https://github.com/CrafterSvK): parallel message sending (v0.2)
+- [jirkavrba](https://github.com/jirkavrba): character `&` is not escaped
+
 ## License
 Released under the GNU GPL v3

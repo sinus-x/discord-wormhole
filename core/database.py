@@ -351,8 +351,7 @@ class UserRepository:
     def delete(self, discord_id: int):
         self._existence_check(discord_id)
 
-        data = db.scan(match=f"user:{discord_id}:*")
-        for item in data:
+        for item in db.scan_iter(match=f"user:{discord_id}:*"):
             db.delete(item)
 
     def nicknameIsUsed(self, nickname: str) -> bool:

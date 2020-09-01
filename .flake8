@@ -1,7 +1,4 @@
 [flake8]
-enable-extensions =
-	# black
-	BLK
 ignore =
 	# continuation line indentation
 	E12,
