@@ -29,7 +29,7 @@ class User(wormcog.Wormcog):
         # get first available nickname
         i = 0
         name_orig = nickname
-        while repo_u.nicknameIsUsed(nickname):
+        while repo_u.nickname_is_used(nickname):
             nickname = f"{name_orig}{i}"
             i += 1
 
@@ -61,7 +61,7 @@ class User(wormcog.Wormcog):
             else ""
         )
         # fmt: off
-        embed = self.getEmbed(
+        embed = self.get_embed(
             title="Wormhole: **set**",
             description=description,
         )
@@ -85,7 +85,7 @@ class User(wormcog.Wormcog):
         """Set current channel as your home wormhole"""
         if not repo_u.exists(ctx.author.id):
             return await ctx.author.send(f"Register with `{self.p}register`")
-        if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
+        if repo_u.get_attribute(ctx.author.id, "restricted") == 1:
             return await ctx.author.send("You are forbidden to alter your settings.")
         if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
             return await ctx.author.send("Home has to be a wormhole")
@@ -103,10 +103,10 @@ class User(wormcog.Wormcog):
         """Set new display name"""
         if not repo_u.exists(ctx.author.id):
             return await ctx.author.send(f"Register with `{self.p}register`")
-        if repo_u.getAttribute(ctx.author.id, "restricted") == 1:
+        if repo_u.get_attribute(ctx.author.id, "restricted") == 1:
             return await ctx.author.send("You are forbidden to alter your settings.")
         name = self.sanitise(name, limit=32)
-        u = repo_u.getByNickname(name)
+        u = repo_u.get_by_nickname(name)
         if u is not None:
             return await ctx.author.send("This name is already used by someone.")
         # fmt: off
@@ -121,7 +121,7 @@ class User(wormcog.Wormcog):
             if char in name:
                 return await ctx.author.send("The name contains forbidden characters.")
 
-        before = repo_u.getAttribute(ctx.author.id, "nickname")
+        before = repo_u.get_attribute(ctx.author.id, "nickname")
         repo_u.set(ctx.author.id, key="nickname", value=name)
         await ctx.author.send(f"Your nickname was changed to **{name}**")
         await self.event.user(ctx, f"Nickname changed from **{before}** to **{name}**.")
@@ -143,7 +143,7 @@ class User(wormcog.Wormcog):
         await self.delete(ctx.message)
         await self.event.user(ctx, f"Whois lookup for **{member}**.")
 
-        u = repo_u.getByNickname(member)
+        u = repo_u.get_by_nickname(member)
         if u:
             return await self.displayUserInfo(ctx, u)
         await ctx.author.send("User not found")
@@ -170,7 +170,7 @@ class User(wormcog.Wormcog):
         description = f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
         if len(db_u.home_ids) == 0:
             description += "_, once they've set their home wormhole_"
-        embed = self.getEmbed(ctx=ctx, title=str(user), description=description)
+        embed = self.get_embed(ctx=ctx, title=str(user), description=description)
 
         information = []
         if db_u.mod:
@@ -200,7 +200,7 @@ class User(wormcog.Wormcog):
 
         result = []
         template = "{logo} **{guild}**, {name}: {link}"
-        for wormhole in repo_w.listObjects(repo_w.getAttribute(ctx.channel.id, "beam")):
+        for wormhole in repo_w.list_objects(repo_w.get_attribute(ctx.channel.id, "beam")):
             if wormhole.invite is None:
                 continue
             channel = self.bot.get_channel(wormhole.discord_id)
@@ -213,7 +213,7 @@ class User(wormcog.Wormcog):
                 )
             )
         result = "\n".join(result) if len(result) else "No public invites."
-        await self.smartSend(ctx, content=result)
+        await self.smart_send(ctx, content=result)
 
 
 def setup(bot):
