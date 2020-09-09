@@ -101,7 +101,7 @@ class Wormcog(commands.Cog):
             self.reconnect(db_b.name)
         wormholes = self.wormholes[db_b.name]
 
-        users = self._get_users_from_tags(beam_name=db_b.name, text=text)
+        users = self.__get_users_from_tags(beam_name=db_b.name, text=text)
 
         # replicate messages
         tasks = []
@@ -138,7 +138,7 @@ class Wormcog(commands.Cog):
         # send message
         try:
             m = await wormhole.send(
-                self._process_tags(
+                self.__process_tags(
                     beam_name=db_b.name, wormhole_id=wormhole.id, users=users, text=text
                 )
             )
@@ -161,12 +161,12 @@ class Wormcog(commands.Cog):
                 ),
             )
 
-    def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
+    def __get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
         tags = [repo_u.get_by_nickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
         users = [user for user in tags if user is not None and beam_name in user.home_ids.keys()]
         return users
 
-    def _process_tags(
+    def __process_tags(
         self, beam_name: str, wormhole_id: int, users: List[objects.User], text: str
     ) -> str:
         for user in users:

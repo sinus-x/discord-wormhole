@@ -19,8 +19,8 @@ class BeamRepository:
         return db.exists(f"beam:{name}:active")
 
     def add(self, *, name: str, admin_id: int):
-        self._name_check(name)
-        self._availability_check(name)
+        self.__name_check(name)
+        self.__availability_check(name)
 
         db.mset(
             {
@@ -64,7 +64,7 @@ class BeamRepository:
         return [self.get(x) for x in names]
 
     def set(self, name: str, key: str, value):
-        self._existence_check(name)
+        self.__existence_check(name)
 
         if not self.is_valid_attribute(key, value):
             raise DatabaseException(f"Invalid beam attribute: {key} = {value}.")
@@ -72,7 +72,7 @@ class BeamRepository:
         db.set(f"beam:{name}:{key}", value)
 
     def delete(self, name: str):
-        self._existence_check(name)
+        self.__existence_check(name)
 
         wormholes = [db.get(x) for x in db.scan(match="wormhole:*:beam")[1]]
         if name in wormholes:
@@ -100,19 +100,19 @@ class BeamRepository:
     ## Helpers
     ##
 
-    def _get_beam_name(self, string: str) -> str:
+    def __get_beam_name(self, string: str) -> str:
         return string.split(":")[1]
 
-    def _name_check(self, name: str):
+    def __name_check(self, name: str):
         if ":" in name:
             raise DatabaseException(f"Beam name `{name}` contains semicolon.")
 
-    def _availability_check(self, name: str):
+    def __availability_check(self, name: str):
         result = db.get(f"beam:{name}:active")
         if result is not None:
             raise DatabaseException(f"Beam name `{name}` already exists.")
 
-    def _existence_check(self, name: str):
+    def __existence_check(self, name: str):
         result = db.get(f"beam:{name}:active")
         if result is None:
             raise DatabaseException(f"Beam name `{name}` not found.")

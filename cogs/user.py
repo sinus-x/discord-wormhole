@@ -134,7 +134,7 @@ class User(wormcog.Wormcog):
         db_u = repo_u.get(ctx.author.id)
         if db_u is None:
             return await ctx.author.send("You are not registered.")
-        await self.displayUserInfo(ctx, db_u)
+        await self.display_user_info(ctx, db_u)
 
     @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.command()
@@ -145,10 +145,10 @@ class User(wormcog.Wormcog):
 
         u = repo_u.get_by_nickname(member)
         if u:
-            return await self.displayUserInfo(ctx, u)
+            return await self.display_user_info(ctx, u)
         await ctx.author.send("User not found")
 
-    async def displayUserInfo(self, ctx, db_u: objects.User):
+    async def display_user_info(self, ctx, db_u: objects.User):
         """Display user info"""
 
         """

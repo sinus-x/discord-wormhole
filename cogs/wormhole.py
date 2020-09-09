@@ -74,7 +74,7 @@ class Wormhole(wormcog.Wormcog):
             return
 
         # count the message
-        self._update_stats(message)
+        self.__update_stats(message)
 
         # send the message
         await self.send(message=message, text=content, files=message.attachments)
@@ -104,10 +104,10 @@ class Wormhole(wormcog.Wormcog):
 
         content = await self.__process(after)
         beam_name = repo_w.get_attribute(after.channel.id, "beam")
-        users = self._get_users_from_tags(beam_name=beam_name, text=content)
+        users = self.__get_users_from_tags(beam_name=beam_name, text=content)
         for message in forwarded[1:]:
             await message.edit(
-                content=self._process_tags(
+                content=self.__process_tags(
                     beam_name=beam_name, wormhole_id=after.channel.id, users=users, text=content
                 )
             )
@@ -213,11 +213,11 @@ class Wormhole(wormcog.Wormcog):
                 content = await self.__process(m)
 
                 beam_name = repo_w.get_attribute(m.channel.id, "beam")
-                users = self._get_users_from_tags(beam_name=beam_name, text=content)
+                users = self.__get_users_from_tags(beam_name=beam_name, text=content)
                 for message in msgs[1:]:
                     try:
                         await message.edit(
-                            content=self._process_tags(
+                            content=self.__process_tags(
                                 beam_name=beam_name,
                                 wormhole_id=message.channel.id,
                                 users=users,
@@ -247,14 +247,14 @@ class Wormhole(wormcog.Wormcog):
 
         if public:
             await ctx.send(
-                self._get_info(repo_w.get_attribute(ctx.channel.id, "beam")),
+                self.__get_info(repo_w.get_attribute(ctx.channel.id, "beam")),
                 delete_after=self.delay(),
             )
             return
 
         user_beams = repo_u.get_home(ctx.author.id).keys()
         for beam_name in user_beams:
-            await ctx.send(self._get_info(beam_name, title=True))
+            await ctx.send(self.__get_info(beam_name, title=True))
 
     @commands.guild_only()
     @commands.check(checks.in_wormhole)
@@ -320,7 +320,7 @@ class Wormhole(wormcog.Wormcog):
             await ctx.send(text)
         await self.delete(ctx.message)
 
-    def _get_prefix(self, message: discord.Message, first_line: bool = True):
+    def __get_prefix(self, message: discord.Message, first_line: bool = True):
         """Get prefix for message"""
         db_w = repo_w.get(message.channel.id)
         db_b = repo_b.get(db_w.beam)
@@ -426,16 +426,16 @@ class Wormhole(wormcog.Wormcog):
         # apply prefixes
         content_ = content.split("\n")
         content = ""
-        p = self._get_prefix(message)
+        p = self.__get_prefix(message)
         code = False
         for i in range(len(content_)):
             if i == 1:
                 # use fill icon instead of guild one
-                p = self._get_prefix(message, first_line=False)
+                p = self.__get_prefix(message, first_line=False)
             line = content_[i]
             # add prefix if message starts with code block
             if i == 0 and line.startswith("```"):
-                content += self._get_prefix(message) + "\n"
+                content += self.__get_prefix(message) + "\n"
             if line.startswith("```"):
                 code = True
             if code:
@@ -447,7 +447,7 @@ class Wormhole(wormcog.Wormcog):
 
         return content.replace("@", "@_")
 
-    def _update_stats(self, message: discord.Message):
+    def __update_stats(self, message: discord.Message):
         """Increment wormhole's statistics"""
         current = repo_w.get_attribute(message.channel.id, "messages")
         repo_w.set(message.channel.id, "messages", current + 1)
@@ -457,7 +457,7 @@ class Wormhole(wormcog.Wormcog):
         else:
             self.transferred[beam_name] = 1
 
-    def _get_info(self, beam_name: str, title: bool = False) -> str:
+    def __get_info(self, beam_name: str, title: bool = False) -> str:
         """Get beam statistics.
 
         If title is True, the message has beam information.
