@@ -15,7 +15,7 @@ class Notifications(wormcog.Wormcog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         # fmt: off
-        embed = self.getEmbed(
+        embed = self.get_embed(
             title="New guild: " + guild.name,
             description=f"ID {guild.id}\nCreated: {guild.created_at}",
         )

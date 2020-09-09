@@ -10,7 +10,7 @@ from core.database import repo_b, repo_u, repo_w
 config = json.load(open("config.json"))
 
 
-def is_ID(s):
+def is_id(s):
     try:
         int(s)
         return True
@@ -47,7 +47,7 @@ class Admin(wormcog.Wormcog):
             "list",
         ]
 
-        embed = self.getEmbed(ctx=ctx, title="Beams", description=prefix)
+        embed = self.get_embed(ctx=ctx, title="Beams", description=prefix)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
         embed.add_field(
             name="Online help",
@@ -110,10 +110,10 @@ class Admin(wormcog.Wormcog):
         """List all wormholes"""
         embed = discord.Embed(title="Beam list")
 
-        beam_names = repo_b.listNames()
+        beam_names = repo_b.list_names()
         for beam_name in beam_names:
             beam = repo_b.get(beam_name)
-            ws = len(repo_w.listIDs(beam=beam.name))
+            ws = len(repo_w.list_ids(beam=beam.name))
             name = f"**{beam.name}** ({'in' if not beam.active else ''}active) | {ws} wormholes"
             value = f"Anonymity _{beam.anonymity}_, " + f"timeout _{beam.timeout} s_ "
             embed.add_field(name=name, value=value, inline=False)
@@ -142,7 +142,7 @@ class Admin(wormcog.Wormcog):
             "edit <channel ID> invite <invite link>" "list",
         ]
 
-        embed = self.getEmbed(ctx=ctx, title="Wormholes", description=description)
+        embed = self.get_embed(ctx=ctx, title="Wormholes", description=description)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
         embed.add_field(
             name="Online help",
@@ -154,7 +154,7 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="add", aliases=["create"])
     async def wormhole_add(self, ctx, beam: str, channel_id: int = None):
         """Open new wormhole"""
-        channel = self._getChannel(ctx=ctx, channel_id=channel_id)
+        channel = self._get_channel(ctx=ctx, channel_id=channel_id)
         if channel is None:
             raise errors.BadArgument("No such channel")
 
@@ -173,11 +173,11 @@ class Admin(wormcog.Wormcog):
                 channel_id = ctx.channel.id
             else:
                 raise errors.BadArgument("Missing channel ID")
-        channel = self._getChannel(ctx=ctx, channel_id=channel_id)
+        channel = self._get_channel(ctx=ctx, channel_id=channel_id)
         if channel is None:
             raise errors.BadArgument("No such channel")
 
-        beam_name = repo_w.getAttribute(channel_id, "beam")
+        beam_name = repo_w.get_attribute(channel_id, "beam")
         repo_w.delete(discord_id=channel_id)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
         await self.announce(beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.")
@@ -196,9 +196,9 @@ class Admin(wormcog.Wormcog):
         if key in ("invite", "messages", "admin_id"):
             announce = False
 
-        channel = self._getChannel(ctx=ctx, channel_id=channel_id)
+        channel = self._get_channel(ctx=ctx, channel_id=channel_id)
 
-        beam_name = repo_w.getAttribute(channel_id, "beam")
+        beam_name = repo_w.get_attribute(channel_id, "beam")
         repo_w.set(discord_id=channel.id, key=key, value=value)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)}: {key} = {value}.")
 
@@ -212,12 +212,12 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx):
         """List all wormholes"""
-        embed = self.getEmbed(ctx=ctx, title="Wormholes")
+        embed = self.get_embed(ctx=ctx, title="Wormholes")
         template = "**{mention}** ({guild}): active {active}, readonly {readonly}"
 
-        beams = repo_b.listNames()
+        beams = repo_b.list_names()
         for beam in beams:
-            wormholes = repo_w.listObjects(beam=beam)
+            wormholes = repo_w.list_objects(beam=beam)
             value = []
             for db_w in wormholes:
                 wormhole = self.bot.get_channel(db_w.discord_id)
@@ -261,7 +261,7 @@ class Admin(wormcog.Wormcog):
             "list [<beam>, <channel ID>, <user attribute>]",
         ]
 
-        embed = self.getEmbed(ctx=ctx, title="Users", description=description)
+        embed = self.get_embed(ctx=ctx, title="Users", description=description)
         embed.add_field(name="Commands", value="```" + "\n".join(values) + "```")
         embed.add_field(
             name="Online help",
@@ -279,7 +279,7 @@ class Admin(wormcog.Wormcog):
     @user.command(name="remove", alises=["delete"])
     async def user_remove(self, ctx, member_id: int):
         """Remove user"""
-        if ctx.author.id != config["admin id"] and repo_u.getAttribute(member_id, "mod") == 1:
+        if ctx.author.id != config["admin id"] and repo_u.get_attribute(member_id, "mod") == 1:
             return await ctx.send("> You do not have permission to alter mod accounts")
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
@@ -290,7 +290,7 @@ class Admin(wormcog.Wormcog):
     @user.command(name="edit", aliases=["set"])
     async def user_edit(self, ctx, member_id: int, key: str, value: str):
         """Edit user"""
-        if ctx.author.id != config["admin id"] and repo_u.getAttribute(member_id, "mod") == 1:
+        if ctx.author.id != config["admin id"] and repo_u.get_attribute(member_id, "mod") == 1:
             return await ctx.send("> You do not have permission to alter mod accounts")
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
@@ -316,13 +316,13 @@ class Admin(wormcog.Wormcog):
         restraint: beam name, wormhole ID or user attribute
         """
         if restraint is None:
-            db_users = repo_u.listObjects()
+            db_users = repo_u.list_objects()
         elif repo_b.exists(restraint):
-            db_users = repo_u.listObjectsByBeam(restraint)
+            db_users = repo_u.list_objects_by_beam(restraint)
         elif restraint in ("restricted", "readonly", "mod"):
-            db_users = repo_u.listObjectsByAttribute(restraint)
-        elif is_ID(restraint) and repo_w.exists(int(restraint)):
-            db_users = repo_u.listObjectsByWormhole(int(restraint))
+            db_users = repo_u.list_objects_by_attribute(restraint)
+        elif is_id(restraint) and repo_w.exists(int(restraint)):
+            db_users = repo_u.list_objects_by_wormhole(int(restraint))
         else:
             raise errors.BadArgument("Value is not beam name nor wormhole ID.")
 
@@ -363,7 +363,7 @@ class Admin(wormcog.Wormcog):
             if len(attrs):
                 result.append("- " + ", ".join(attrs))
 
-        async def sendOutput(output: str):
+        async def send_output(output: str):
             if hasattr(ctx.channel, "id") and repo_w.exists(ctx.channel.id):
                 await ctx.author.send("```" + output + "```")
             else:
@@ -373,14 +373,14 @@ class Admin(wormcog.Wormcog):
         output = ""
         for line in result:
             if len(output) > 1600:
-                await sendOutput(output)
+                await send_output(output)
                 output = ""
             output += "\n" + line
         if len(result) == 0:
             output = "No users."
-        await sendOutput(output)
+        await send_output(output)
 
-    def _getChannel(self, *, ctx: commands.Context, channel_id: int = None) -> discord.TextChannel:
+    def _get_channel(self, *, ctx: commands.Context, channel_id: int = None) -> discord.TextChannel:
         if channel_id:
             return self.bot.get_channel(channel_id)
         if isinstance(ctx.channel, discord.TextChannel):
@@ -388,7 +388,7 @@ class Admin(wormcog.Wormcog):
 
         raise errors.BadArgument("Missing channel ID.")
 
-    def _getMember(self, *, member_id: int) -> discord.User:
+    def _get_member(self, *, member_id: int) -> discord.User:
         return self.bot.get_user(member_id)
 
     def _w2str_out(self, channel: discord.TextChannel) -> str:

@@ -48,7 +48,7 @@ class Wormcog(commands.Cog):
         else:
             self.wormholes[beam] = []
 
-        wormholes = repo_w.listObjects(beam)
+        wormholes = repo_w.list_objects(beam)
         for wormhole in wormholes:
             self.wormholes[beam].append(self.bot.get_channel(wormhole.discord_id))
 
@@ -58,7 +58,7 @@ class Wormcog(commands.Cog):
         if key == "admin":
             return 10
 
-    async def smartSend(self, ctx, *, content: str = None, embed: discord.Embed = None):
+    async def smart_send(self, ctx, *, content: str = None, embed: discord.Embed = None):
         if content is None and embed is None:
             return
 
@@ -81,7 +81,7 @@ class Wormcog(commands.Cog):
             return
         if db_w.active == 0 or db_w.readonly == 1:
             return
-        if repo_u.getAttribute(message.author.id, "readonly") == 1:
+        if repo_u.get_attribute(message.author.id, "readonly") == 1:
             return
 
         # remove the original, if possible
@@ -124,7 +124,7 @@ class Wormcog(commands.Cog):
         self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm
     ):
         # skip not active wormholes
-        if repo_w.getAttribute(wormhole.id, "active") == 0:
+        if repo_w.get_attribute(wormhole.id, "active") == 0:
             return
 
         # skip source if message has attachments
@@ -162,7 +162,7 @@ class Wormcog(commands.Cog):
             )
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
-        tags = [repo_u.getByNickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
+        tags = [repo_u.get_by_nickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
         users = [user for user in tags if user is not None and beam_name in user.home_ids.keys()]
         return users
 
@@ -179,11 +179,11 @@ class Wormcog(commands.Cog):
     async def announce(self, *, beam: str, message: str):
         """Send information to all channels"""
         if len(message) <= 256:
-            embed = self.getEmbed(title=message)
+            embed = self.get_embed(title=message)
         else:
-            embed = self.getEmbed(description=message)
+            embed = self.get_embed(description=message)
 
-        for db_w in repo_w.listObjects(beam=beam):
+        for db_w in repo_w.list_objects(beam=beam):
             await self.bot.get_channel(db_w.discord_id).send(embed=embed)
 
     async def feedback(self, ctx, *, private: bool = True, message: str):
@@ -201,7 +201,7 @@ class Wormcog(commands.Cog):
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
 
-    def getEmbed(
+    def get_embed(
         self,
         *,
         ctx: commands.Context = None,
