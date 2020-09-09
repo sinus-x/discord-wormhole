@@ -29,7 +29,7 @@ class User(wormcog.Wormcog):
         # get first available nickname
         i = 0
         name_orig = nickname
-        while repo_u.nickname_is_used(nickname):
+        while repo_u.is_nickname_used(nickname):
             nickname = f"{name_orig}{i}"
             i += 1
 

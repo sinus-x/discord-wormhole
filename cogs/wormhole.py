@@ -57,16 +57,16 @@ class Wormhole(wormcog.Wormcog):
             self.reconnect(db_b.name)
 
         # process incoming message
-        content = await self.__process(message)
+        content = await self._process(message)
 
         # convert attachments to links
-        firstline = True
+        first_line = True
         if message.attachments:
             for f in message.attachments:
                 # don't add newline if message has only attachments
-                if firstline:
+                if first_line:
                     content += " " + f.url
-                    firstline = False
+                    first_line = False
                 else:
                     content += "\n" + f.url
 
@@ -102,12 +102,12 @@ class Wormhole(wormcog.Wormcog):
             await after.remove_reaction("❎", self.bot.user)
             return
 
-        content = await self.__process(after)
+        content = await self._process(after)
         beam_name = repo_w.get_attribute(after.channel.id, "beam")
-        users = self.__get_users_from_tags(beam_name=beam_name, text=content)
+        users = self._get_users_from_tags(beam_name=beam_name, text=content)
         for message in forwarded[1:]:
             await message.edit(
-                content=self.__process_tags(
+                content=self._process_tags(
                     beam_name=beam_name, wormhole_id=after.channel.id, users=users, text=content
                 )
             )
@@ -210,14 +210,14 @@ class Wormhole(wormcog.Wormcog):
                 await self.delete(ctx.message)
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
-                content = await self.__process(m)
+                content = await self._process(m)
 
                 beam_name = repo_w.get_attribute(m.channel.id, "beam")
-                users = self.__get_users_from_tags(beam_name=beam_name, text=content)
+                users = self._get_users_from_tags(beam_name=beam_name, text=content)
                 for message in msgs[1:]:
                     try:
                         await message.edit(
-                            content=self.__process_tags(
+                            content=self._process_tags(
                                 beam_name=beam_name,
                                 wormhole_id=message.channel.id,
                                 users=users,
@@ -368,7 +368,7 @@ class Wormhole(wormcog.Wormcog):
 
         return prefix
 
-    async def __process(self, message: discord.Message):
+    async def _process(self, message: discord.Message):
         """Escape mentions and apply anonymity"""
         content = message.content
 

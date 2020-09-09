@@ -19,8 +19,8 @@ class BeamRepository:
         return db.exists(f"beam:{name}:active")
 
     def add(self, *, name: str, admin_id: int):
-        self.__name_check(name)
-        self.__availability_check(name)
+        self._name_check(name)
+        self._availability_check(name)
 
         db.mset(
             {
@@ -64,7 +64,7 @@ class BeamRepository:
         return [self.get(x) for x in names]
 
     def set(self, name: str, key: str, value):
-        self.__existence_check(name)
+        self._existence_check(name)
 
         if not self.is_valid_attribute(key, value):
             raise DatabaseException(f"Invalid beam attribute: {key} = {value}.")
@@ -72,7 +72,7 @@ class BeamRepository:
         db.set(f"beam:{name}:{key}", value)
 
     def delete(self, name: str):
-        self.__existence_check(name)
+        self._existence_check(name)
 
         wormholes = [db.get(x) for x in db.scan(match="wormhole:*:beam")[1]]
         if name in wormholes:
@@ -100,19 +100,19 @@ class BeamRepository:
     ## Helpers
     ##
 
-    def __get_beam_name(self, string: str) -> str:
+    def _get_beam_name(self, string: str) -> str:
         return string.split(":")[1]
 
-    def __name_check(self, name: str):
+    def _name_check(self, name: str):
         if ":" in name:
             raise DatabaseException(f"Beam name `{name}` contains semicolon.")
 
-    def __availability_check(self, name: str):
+    def _availability_check(self, name: str):
         result = db.get(f"beam:{name}:active")
         if result is not None:
             raise DatabaseException(f"Beam name `{name}` already exists.")
 
-    def __existence_check(self, name: str):
+    def _existence_check(self, name: str):
         result = db.get(f"beam:{name}:active")
         if result is None:
             raise DatabaseException(f"Beam name `{name}` not found.")
@@ -130,7 +130,7 @@ class WormholeRepository:
         return db.exists(f"wormhole:{discord_id}:active")
 
     def add(self, *, beam: str, discord_id: int):
-        self._availability_check(beam, discord_id)
+        self._check_availability(beam, discord_id)
 
         db.mset(
             {
@@ -184,7 +184,7 @@ class WormholeRepository:
         return [self.get(x) for x in self.list_ids(beam)]
 
     def set(self, discord_id: int, key: str, value):
-        self._existence_check(discord_id)
+        self._check_existance(discord_id)
 
         if not self.is_valid_attribute(key, value):
             raise DatabaseException(f"Invalid wormhole attribute: {key} = {value}.")
@@ -192,7 +192,7 @@ class WormholeRepository:
         db.set(f"wormhole:{discord_id}:{key}", value)
 
     def delete(self, discord_id: int):
-        self._existence_check(discord_id)
+        self._check_existance(discord_id)
         for attribute in self.attributes:
             db.delete(f"wormhole:{discord_id}:{attribute}")
 
@@ -222,13 +222,13 @@ class WormholeRepository:
     def _get_wormhole_discord_id(self, string: str) -> int:
         return int(string.split(":")[1])
 
-    def _availability_check(self, beam: str, discord_id: int):
+    def _check_availability(self, beam: str, discord_id: int):
         if not db.exists(f"beam:{beam}:active"):
             raise DatabaseException(f"Beam {beam} does not exist.")
         if db.exists(f"wormhole:{discord_id}:active"):
             raise DatabaseException(f"Channel `{discord_id}` is already a wormhole.")
 
-    def _existence_check(self, discord_id: int):
+    def _check_existance(self, discord_id: int):
         result = db.get(f"wormhole:{discord_id}:active")
         if result is None:
             raise DatabaseException(f"Channel `{discord_id}` is not a wormhole.")
@@ -323,16 +323,16 @@ class UserRepository:
                 result.append(r)
         return [int(x.split(":")[1]) for x in result]
 
-    def listObjects(self) -> List[objects.User]:
+    def list_objects(self) -> List[objects.User]:
         return [self.get(x) for x in self.list_ids()]
 
-    def listObjectsByBeam(self, beam: str) -> List[objects.User]:
+    def list_objects_by_beam(self, beam: str) -> List[objects.User]:
         return [self.get(x) for x in self.list_ids_by_beam(beam)]
 
-    def listObjectsByWormhole(self, discord_id: int) -> List[objects.User]:
+    def list_objects_by_wormhole(self, discord_id: int) -> List[objects.User]:
         return [self.get(x) for x in self.list_ids_by_wormhole(discord_id)]
 
-    def listObjectsByAttribute(self, attribute: str) -> List[objects.User]:
+    def list_objects_by_attribute(self, attribute: str) -> List[objects.User]:
         return [self.get(x) for x in self.list_ids_by_attribute(attribute)]
 
     def set(self, discord_id: int, key: str, value):
@@ -354,7 +354,7 @@ class UserRepository:
         for item in db.scan_iter(match=f"user:{discord_id}:*"):
             db.delete(item)
 
-    def nickname_is_used(self, nickname: str) -> bool:
+    def is_nickname_used(self, nickname: str) -> bool:
         return nickname in [db.get(x) for x in db.scan(match="user:*:nickname")[1]]
 
     ##
