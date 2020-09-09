@@ -44,7 +44,7 @@ class Wormhole(wormcog.Wormcog):
         # fmt: off
         if db_b.active == 0 \
         or db_w.active == 0 \
-        or repo_u.getAttribute(message.author.id, "readonly") == 1:
+        or repo_u.get_attribute(message.author.id, "readonly") == 1:
             return await self.delete(message)
         # fmt: on
 
@@ -57,16 +57,16 @@ class Wormhole(wormcog.Wormcog):
             self.reconnect(db_b.name)
 
         # process incoming message
-        content = await self.__process(message)
+        content = await self._process(message)
 
         # convert attachments to links
-        firstline = True
+        first_line = True
         if message.attachments:
             for f in message.attachments:
                 # don't add newline if message has only attachments
-                if firstline:
+                if first_line:
                     content += " " + f.url
-                    firstline = False
+                    first_line = False
                 else:
                     content += "\n" + f.url
 
@@ -74,7 +74,7 @@ class Wormhole(wormcog.Wormcog):
             return
 
         # count the message
-        self.__updateStats(message)
+        self._update_stats(message)
 
         # send the message
         await self.send(message=message, text=content, files=message.attachments)
@@ -102,13 +102,16 @@ class Wormhole(wormcog.Wormcog):
             await after.remove_reaction("❎", self.bot.user)
             return
 
-        content = await self.__process(after)
-        beam_name = repo_w.getAttribute(after.channel.id, "beam")
+        content = await self._process(after)
+        beam_name = repo_w.get_attribute(after.channel.id, "beam")
         users = self._get_users_from_tags(beam_name=beam_name, text=content)
         for message in forwarded[1:]:
             await message.edit(
                 content=self._process_tags(
-                    beam_name=beam_name, wormhole_id=after.channel.id, users=users, text=content
+                    beam_name=beam_name,
+                    wormhole_id=after.channel.id,
+                    users=users,
+                    text=content,
                 )
             )
         await after.add_reaction("✅")
@@ -131,7 +134,7 @@ class Wormhole(wormcog.Wormcog):
     @commands.command()
     async def help(self, ctx: commands.Context):
         """Display help"""
-        embed = self.getEmbed(ctx=ctx, title="User commands")
+        embed = self.get_embed(ctx=ctx, title="User commands")
         p = config["prefix"]
         # fmt: off
         embed.add_field(name=f"**{p}e** | **{p}edit**",   value="Edit last message")
@@ -186,7 +189,10 @@ class Wormhole(wormcog.Wormcog):
             or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
                 await self.delete(ctx.message)
                 for m in msgs:
-                    await self.delete(m)
+                    try:
+                        await self.delete(m)
+                    except discord.NotFound:
+                        pass
                 break
             # fmt: on
 
@@ -210,9 +216,9 @@ class Wormhole(wormcog.Wormcog):
                 await self.delete(ctx.message)
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
-                content = await self.__process(m)
+                content = await self._process(m)
 
-                beam_name = repo_w.getAttribute(m.channel.id, "beam")
+                beam_name = repo_w.get_attribute(m.channel.id, "beam")
                 users = self._get_users_from_tags(beam_name=beam_name, text=content)
                 for message in msgs[1:]:
                     try:
@@ -247,14 +253,14 @@ class Wormhole(wormcog.Wormcog):
 
         if public:
             await ctx.send(
-                self.__getInfo(repo_w.getAttribute(ctx.channel.id, "beam")),
+                self._get_info(repo_w.get_attribute(ctx.channel.id, "beam")),
                 delete_after=self.delay(),
             )
             return
 
-        user_beams = repo_u.getHome(ctx.author.id).keys()
+        user_beams = repo_u.get_home(ctx.author.id).keys()
         for beam_name in user_beams:
-            await ctx.send(self.__getInfo(beam_name, title=True))
+            await ctx.send(self._get_info(beam_name, title=True))
 
     @commands.guild_only()
     @commands.check(checks.in_wormhole)
@@ -320,7 +326,7 @@ class Wormhole(wormcog.Wormcog):
             await ctx.send(text)
         await self.delete(ctx.message)
 
-    def __getPrefix(self, message: discord.Message, firstline: bool = True):
+    def _get_prefix(self, message: discord.Message, first_line: bool = True):
         """Get prefix for message"""
         db_w = repo_w.get(message.channel.id)
         db_b = repo_b.get(db_w.beam)
@@ -345,7 +351,7 @@ class Wormhole(wormcog.Wormcog):
 
         # get logo
         if hasattr(home, "logo") and len(home.logo):
-            if firstline:
+            if first_line:
                 logo = home.logo
             else:
                 logo = config["logo fill"]
@@ -368,7 +374,7 @@ class Wormhole(wormcog.Wormcog):
 
         return prefix
 
-    async def __process(self, message: discord.Message):
+    async def _process(self, message: discord.Message):
         """Escape mentions and apply anonymity"""
         content = message.content
 
@@ -383,7 +389,7 @@ class Wormhole(wormcog.Wormcog):
                 # Get discord user tags. If they're registered, translate to
                 # their ((nickname)); it will be converted on send.
                 user_id = int(u.replace("<@!", "").replace("<@", "").replace(">", ""))
-                nickname = repo_u.getAttribute(user_id, "nickname")
+                nickname = repo_u.get_attribute(user_id, "nickname")
                 if nickname is not None:
                     user = "((" + nickname + "))"
                 else:
@@ -394,7 +400,9 @@ class Wormhole(wormcog.Wormcog):
             content = content.replace(u, user)
         for r in roles:
             try:
-                role = message.guild.get_role(int(r.replace("<@&", "").replace(">", ""))).name
+                role = message.guild.get_role(
+                    int(r.replace("<@&", "").replace(">", ""))
+                ).name
             except Exception as e:
                 role = "unknown-role"
                 await self.event.user(message, "Problem in role retrieval:\n>>>{e}")
@@ -402,10 +410,14 @@ class Wormhole(wormcog.Wormcog):
         # convert channel tags to universal names
         for channel in channels:
             try:
-                ch = self.bot.get_channel(int(channel.replace("<#", "").replace(">", "")))
+                ch = self.bot.get_channel(
+                    int(channel.replace("<#", "").replace(">", ""))
+                )
                 channel_name = self.sanitise(ch.name)
                 guild_name = self.sanitise(ch.guild.name)
-                content = content.replace(channel, f"__**{guild_name}/{channel_name}**__")
+                content = content.replace(
+                    channel, f"__**{guild_name}/{channel_name}**__"
+                )
             except Exception as e:
                 await self.event.user(message, "Problem in channel retrieval:\n>>>{e}")
         # remove unavailable emojis
@@ -426,16 +438,16 @@ class Wormhole(wormcog.Wormcog):
         # apply prefixes
         content_ = content.split("\n")
         content = ""
-        p = self.__getPrefix(message)
+        p = self._get_prefix(message)
         code = False
         for i in range(len(content_)):
             if i == 1:
                 # use fill icon instead of guild one
-                p = self.__getPrefix(message, firstline=False)
+                p = self._get_prefix(message, first_line=False)
             line = content_[i]
             # add prefix if message starts with code block
             if i == 0 and line.startswith("```"):
-                content += self.__getPrefix(message) + "\n"
+                content += self._get_prefix(message) + "\n"
             if line.startswith("```"):
                 code = True
             if code:
@@ -447,17 +459,17 @@ class Wormhole(wormcog.Wormcog):
 
         return content.replace("@", "@_")
 
-    def __updateStats(self, message: discord.Message):
+    def _update_stats(self, message: discord.Message):
         """Increment wormhole's statistics"""
-        current = repo_w.getAttribute(message.channel.id, "messages")
+        current = repo_w.get_attribute(message.channel.id, "messages")
         repo_w.set(message.channel.id, "messages", current + 1)
-        beam_name = repo_w.getAttribute(message.channel.id, "beam")
+        beam_name = repo_w.get_attribute(message.channel.id, "beam")
         if beam_name in self.transferred:
             self.transferred[beam_name] += 1
         else:
             self.transferred[beam_name] = 1
 
-    def __getInfo(self, beam_name: str, title: bool = False) -> str:
+    def _get_info(self, beam_name: str, title: bool = False) -> str:
         """Get beam statistics.
 
         If title is True, the message has beam information.
@@ -474,7 +486,7 @@ class Wormhole(wormcog.Wormcog):
             "Currently opened wormholes:",
         ]
 
-        wormholes = repo_w.listObjects(beam_name)
+        wormholes = repo_w.list_objects(beam_name)
         wormholes.sort(key=lambda x: x.messages, reverse=True)
 
         # loop over wormholes in current beam

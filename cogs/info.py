@@ -17,7 +17,7 @@ class Info(wormcog.Wormcog):
         if ctx.invoked_subcommand is not None:
             return
 
-        embed = self.getEmbed(
+        embed = self.get_embed(
             ctx=ctx, title="Get information", description="Get to know your guilds better."
         )
         # fmt: off

@@ -32,7 +32,7 @@ per-file-ignores =
 	core/output.py:T001
 count = True
 max-complexity = 16
-max-line-length = 110
+max-line-length = 100
 max-doc-length = 100
 format=%(code)s %(path)s (%(row)d:%(col)d): %(text)s
 statistics = True

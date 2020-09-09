@@ -49,10 +49,16 @@ Required permissions:
 - Create `config.json` file with `config.default.json` as a reference
 - Run the bot with `python3 init.py`
 
+## Development
+
+Issues and PRs are welcome -- maybe let me know before you start working on something.
+
+All pull requests should be targeted to the `devel` branch.
+
 ## Contributors
 
-- [CrafterSvK](https://github.com/CrafterSvK): parallel message sending (v0.2)
-- [jirkavrba](https://github.com/jirkavrba): character `&` is not escaped
+- [CrafterSvK](https://github.com/CrafterSvK): parallel message sending, variable name unification (v0.2)
+- [jirkavrba](https://github.com/jirkavrba): character `&` is not escaped (pre-v0.1)
 
 ## License
-Released under the GNU GPL v3
+Released under the GNU GPL v3.

@@ -15,7 +15,7 @@ class Event:
         self.user_template = "{user} in {location}: {message}"
         self.sudo_template = "**SUDO** {user} in {location}: {message}"
 
-    def getChannel(self):
+    def get_channel(self):
         if self.channel is None:
             self.channel = self.bot.get_channel(config["log channel"])
         return self.channel
@@ -23,7 +23,7 @@ class Event:
     async def user(self, ctx: Union[commands.Context, discord.Message], message: str):
         """Unprivileged events"""
         # fmt: off
-        await self.getChannel().send(self.user_template.format(
+        await self.get_channel().send(self.user_template.format(
             user=str(ctx.author),
             location=f"{ctx.channel.mention} ({ctx.guild.name})"
             if hasattr(ctx.channel, "mention")
@@ -35,7 +35,7 @@ class Event:
     async def sudo(self, ctx: Union[commands.Context, discord.Message], message: str):
         """Privileged events"""
         # fmt: off
-        await self.getChannel().send(self.sudo_template.format(
+        await self.get_channel().send(self.sudo_template.format(
             user=str(ctx.author),
             location=f"{ctx.channel.mention} ({ctx.guild.name})"
             if hasattr(ctx.channel, "mention")

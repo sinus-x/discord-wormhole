@@ -48,7 +48,7 @@ class Wormcog(commands.Cog):
         else:
             self.wormholes[beam] = []
 
-        wormholes = repo_w.listObjects(beam)
+        wormholes = repo_w.list_objects(beam)
         for wormhole in wormholes:
             self.wormholes[beam].append(self.bot.get_channel(wormhole.discord_id))
 
@@ -58,7 +58,9 @@ class Wormcog(commands.Cog):
         if key == "admin":
             return 10
 
-    async def smartSend(self, ctx, *, content: str = None, embed: discord.Embed = None):
+    async def smart_send(
+        self, ctx, *, content: str = None, embed: discord.Embed = None
+    ):
         if content is None and embed is None:
             return
 
@@ -68,9 +70,15 @@ class Wormcog(commands.Cog):
             await ctx.send(content=content, embed=embed)
 
     async def send(
-        self, *, message: discord.Message, text: str, files: list = None,
+        self,
+        *,
+        message: discord.Message,
+        text: str,
+        files: list = None,
     ):
         """Distribute the message"""
+        deleted_original = False
+
         # get variables
         messages = [message]
         db_w = repo_w.get(message.channel.id)
@@ -81,15 +89,18 @@ class Wormcog(commands.Cog):
             return
         if db_w.active == 0 or db_w.readonly == 1:
             return
-        if repo_u.getAttribute(message.author.id, "readonly") == 1:
+        if repo_u.get_attribute(message.author.id, "readonly") == 1:
             return
 
         # remove the original, if possible
-        manage_messages_perm = message.guild.me.permissions_in(message.channel).manage_messages
+        manage_messages_perm = message.guild.me.permissions_in(
+            message.channel
+        ).manage_messages
         if manage_messages_perm and db_b.replace == 1 and not files:
             try:
                 messages[0] = message.author
                 await self.delete(message)
+                deleted_original = True
             except discord.Forbidden:
                 pass
 
@@ -108,11 +119,22 @@ class Wormcog(commands.Cog):
         for wormhole in wormholes:
             task = asyncio.ensure_future(
                 self.replicate(
-                    wormhole, message, messages, users, text, files, db_b, manage_messages_perm
+                    wormhole,
+                    message,
+                    messages,
+                    users,
+                    text,
+                    files,
+                    db_b,
+                    manage_messages_perm,
                 )
             )
             tasks.append(task)
         await asyncio.gather(*tasks, return_exceptions=True)
+
+        # add checkmark to original, if it hasn't been deleted
+        if not deleted_original:
+            await message.add_reaction("✅")
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:
@@ -121,10 +143,18 @@ class Wormcog(commands.Cog):
             self.sent.remove(messages)
 
     async def replicate(
-        self, wormhole, message, messages, users, text, files, db_b, manage_messages_perm
+        self,
+        wormhole,
+        message,
+        messages,
+        users,
+        text,
+        files,
+        db_b,
+        manage_messages_perm,
     ):
         # skip not active wormholes
-        if repo_w.getAttribute(wormhole.id, "active") == 0:
+        if repo_w.get_attribute(wormhole.id, "active") == 0:
             return
 
         # skip source if message has attachments
@@ -162,8 +192,15 @@ class Wormcog(commands.Cog):
             )
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
-        tags = [repo_u.getByNickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
-        users = [user for user in tags if user is not None and beam_name in user.home_ids.keys()]
+        tags = [
+            repo_u.get_by_nickname(tag)
+            for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)
+        ]
+        users = [
+            user
+            for user in tags
+            if user is not None and beam_name in user.home_ids.keys()
+        ]
         return users
 
     def _process_tags(
@@ -179,11 +216,11 @@ class Wormcog(commands.Cog):
     async def announce(self, *, beam: str, message: str):
         """Send information to all channels"""
         if len(message) <= 256:
-            embed = self.getEmbed(title=message)
+            embed = self.get_embed(title=message)
         else:
-            embed = self.getEmbed(description=message)
+            embed = self.get_embed(description=message)
 
-        for db_w in repo_w.listObjects(beam=beam):
+        for db_w in repo_w.list_objects(beam=beam):
             await self.bot.get_channel(db_w.discord_id).send(embed=embed)
 
     async def feedback(self, ctx, *, private: bool = True, message: str):
@@ -201,7 +238,7 @@ class Wormcog(commands.Cog):
         """Return cleaned-up string ready for output"""
         return discord.utils.escape_markdown(string).replace("@", "")[:limit]
 
-    def getEmbed(
+    def get_embed(
         self,
         *,
         ctx: commands.Context = None,
@@ -241,7 +278,10 @@ class Wormcog(commands.Cog):
 
         # create embed
         embed = discord.Embed(
-            title=title, description=description, url=url, color=discord.Color.light_grey()
+            title=title,
+            description=description,
+            url=url,
+            color=discord.Color.light_grey(),
         )
 
         # add footer timestamp
