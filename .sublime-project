@@ -6,7 +6,7 @@
 		"default_line_ending": "unix",
 
 		"sublack.black_on_save": true,
-		"sublack.black_line_length": 110,
+		"sublack.black_line_length": 100,
 		"sublack.black_log": "error"
 	}
 }

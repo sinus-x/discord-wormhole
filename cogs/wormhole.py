@@ -108,7 +108,10 @@ class Wormhole(wormcog.Wormcog):
         for message in forwarded[1:]:
             await message.edit(
                 content=self._process_tags(
-                    beam_name=beam_name, wormhole_id=after.channel.id, users=users, text=content
+                    beam_name=beam_name,
+                    wormhole_id=after.channel.id,
+                    users=users,
+                    text=content,
                 )
             )
         await after.add_reaction("✅")
@@ -186,7 +189,10 @@ class Wormhole(wormcog.Wormcog):
             or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
                 await self.delete(ctx.message)
                 for m in msgs:
-                    await self.delete(m)
+                    try:
+                        await self.delete(m)
+                    except discord.NotFound:
+                        pass
                 break
             # fmt: on
 
@@ -394,7 +400,9 @@ class Wormhole(wormcog.Wormcog):
             content = content.replace(u, user)
         for r in roles:
             try:
-                role = message.guild.get_role(int(r.replace("<@&", "").replace(">", ""))).name
+                role = message.guild.get_role(
+                    int(r.replace("<@&", "").replace(">", ""))
+                ).name
             except Exception as e:
                 role = "unknown-role"
                 await self.event.user(message, "Problem in role retrieval:\n>>>{e}")
@@ -402,10 +410,14 @@ class Wormhole(wormcog.Wormcog):
         # convert channel tags to universal names
         for channel in channels:
             try:
-                ch = self.bot.get_channel(int(channel.replace("<#", "").replace(">", "")))
+                ch = self.bot.get_channel(
+                    int(channel.replace("<#", "").replace(">", ""))
+                )
                 channel_name = self.sanitise(ch.name)
                 guild_name = self.sanitise(ch.guild.name)
-                content = content.replace(channel, f"__**{guild_name}/{channel_name}**__")
+                content = content.replace(
+                    channel, f"__**{guild_name}/{channel_name}**__"
+                )
             except Exception as e:
                 await self.event.user(message, "Problem in channel retrieval:\n>>>{e}")
         # remove unavailable emojis
