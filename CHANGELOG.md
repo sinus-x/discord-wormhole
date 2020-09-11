@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+- `announce` command
+
 ## [0.2.0]
 
 - Force registration in Wormhole
