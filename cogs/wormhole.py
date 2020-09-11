@@ -50,7 +50,7 @@ class Wormhole(wormcog.Wormcog):
 
         # do not act if message is bot command
         if message.content.startswith(config["prefix"]):
-            return await self.delete(message)
+            return
 
         # get wormhole channel objects
         if db_b.name not in self.wormholes or len(self.wormholes[db_b.name]) == 0:
