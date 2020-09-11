@@ -394,7 +394,7 @@ class Wormhole(wormcog.Wormcog):
                     user = "((" + nickname + "))"
                 else:
                     user = str(self.bot.get_user(user_id))
-            except Exception as e:
+            except Exception as e:  # noqa: F841
                 user = "unknown-user"
                 await self.event.user(message, "Problem in user retrieval:\n>>>{e}")
             content = content.replace(u, user)
@@ -403,7 +403,7 @@ class Wormhole(wormcog.Wormcog):
                 role = message.guild.get_role(
                     int(r.replace("<@&", "").replace(">", ""))
                 ).name
-            except Exception as e:
+            except Exception as e:  # noqa: F841
                 role = "unknown-role"
                 await self.event.user(message, "Problem in role retrieval:\n>>>{e}")
             content = content.replace(r, role)
@@ -418,7 +418,7 @@ class Wormhole(wormcog.Wormcog):
                 content = content.replace(
                     channel, f"__**{guild_name}/{channel_name}**__"
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: F841
                 await self.event.user(message, "Problem in channel retrieval:\n>>>{e}")
         # remove unavailable emojis
         for emoji in emojis:
