@@ -49,7 +49,6 @@ class Errors(wormcog.Wormcog):
                 + ctx.message.content
             )
             await ctx.author.send(message[:2000])
-            await self.delete(ctx.message)
             return
 
         # user interaction
