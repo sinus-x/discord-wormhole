@@ -4,6 +4,10 @@
 
 The **Admin cog** allows the bot administrator to manage beams, wormholes and users.
 
+### announce [message]
+
+Send manual announcement to all wormholes in the beam.
+
 ## Beam
 
 There can be multiple independent shared chats. These chats, called beams, may have multiple wormholes connected to them. Wormhole can only be connected to one beam.

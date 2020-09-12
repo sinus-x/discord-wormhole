@@ -42,17 +42,24 @@ class Errors(wormcog.Wormcog):
         # get original exception
         error = getattr(error, "original", error)
 
-        # ignore some errors
+        # handle messages with prefix
         if isinstance(error, commands.CommandNotFound):
+            message = (
+                "Your message was not recognised as a command.\n>>> "
+                + ctx.message.content
+            )
+            await ctx.author.send(message[:2000])
+            await self.delete(ctx.message)
             return
 
         # user interaction
-        # fmt: off
         elif isinstance(error, commands.NotOwner):
             return await self.send(ctx, error, "You are not an owner")
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            return await self.send(ctx, error, f"Missing required argument: **{error.param.name}**")
+            return await self.send(
+                ctx, error, f"Missing required argument: **{error.param.name}**"
+            )
 
         elif isinstance(error, commands.BadArgument):
             return await self.send(ctx, error, "Bad argument")
@@ -61,13 +68,17 @@ class Errors(wormcog.Wormcog):
             return await self.send(ctx, error, "Bad argument quotes")
 
         elif isinstance(error, commands.BotMissingPermissions):
-            return await self.send(ctx, error, "Wormhole does not have permission to do this")
+            return await self.send(
+                ctx, error, "Wormhole does not have permission to do this"
+            )
 
         elif isinstance(error, commands.CheckFailure):
             return await self.send(ctx, error, "You are not allowed to do this")
 
         elif isinstance(error, commands.CommandOnCooldown):
-            return await self.send(ctx, error, f"Cooldown ({seconds2str(error.retry_after)})")
+            return await self.send(
+                ctx, error, f"Cooldown ({seconds2str(error.retry_after)})"
+            )
 
         elif isinstance(error, commands.UserInputError):
             return await self.send(ctx, error, "Wrong input")
@@ -81,19 +92,22 @@ class Errors(wormcog.Wormcog):
             await self.send(ctx, error, "The cog failed")
         elif isinstance(error, commands.ExtensionNotFound):
             return await self.send(ctx, error, "No such cog")
-        # fmt: on
 
         # print the rest
         s = "Wormhole error: {prefix}{command} by {author} in {channel}".format(
             prefix=config["prefix"],
             command=ctx.command,
             author=str(ctx.author),
-            channel=ctx.channel.id if hasattr(ctx.channel, "id") else type(ctx.channel).__name__,
+            channel=ctx.channel.id
+            if hasattr(ctx.channel, "id")
+            else type(ctx.channel).__name__,
         )
         print(s, file=sys.stderr)
         if config["log level"] == "CRITICAL":
             return
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+        traceback.print_exception(
+            type(error), error, error.__traceback__, file=sys.stderr
+        )
         await self.send(ctx, error, str(error))
 
     async def send(self, ctx: commands.Context, error, text: str):

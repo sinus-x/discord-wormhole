@@ -9,7 +9,7 @@
 	"bot key": null,
 
 	"__comment": "Bot prefix",
-	"prefix": "~",
+	"prefix": "+",
 
 	"__comment": "Empty emote to print on multiline comments instead of guild logo",
 	"logo fill": null,
