@@ -36,7 +36,7 @@ If the user is registered, they can be tagged with `((nickname))`. Otherwise the
 
 **register**
 
-That's it. If the user sent the message to a wormhole, that wormhole will become their home. If the user used DMs, home is not set.
+Add user acount, set home to current wormhole.
 
 **set home**
 
@@ -52,6 +52,6 @@ Display your information.
 
 **whois [name]**
 
-Display information about some user. If the user is found, it will show their home wormhole and optional attributes like mod or readonly status.
+Display information about registered user -- home wormhole and optional attributes like mod or readonly status.
 
 [<< back to home](index.md)
