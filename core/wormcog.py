@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import git
 import json
 import re
 from typing import List
@@ -18,9 +17,7 @@ config = json.load(open("config.json"))
 
 
 async def presence(bot: commands.Bot):
-    git_repo = git.Repo(search_parent_directories=True)
-    git_hash = git_repo.head.object.hexsha[:7]
-    s = f"{config['prefix']}help | " + git_hash
+    s = f"{config['prefix']}help"
     await bot.change_presence(activity=discord.Game(s))
 
 

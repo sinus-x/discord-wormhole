@@ -278,7 +278,7 @@ class Wormhole(wormcog.Wormcog):
         pars = []
         # fmt: off
         pars.append("active" if db_b.active else "inactive")
-        pars.append(f"replacing (timeout **{db_b.timeout} s**)" if db_b.replace else "not replacing")
+        pars.append(f"replace (timeout **{db_b.timeout} s**)" if db_b.replace else "not replacing")
         pars.append(f"anonymity level **{db_b.anonymity}**")
         # fmt: on
         msg += ", ".join(pars)

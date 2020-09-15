@@ -21,12 +21,12 @@ started = False
 @bot.event
 async def on_ready():
     global started
-    if started:
-        return
+    if not started:
+        m = "INFO: Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        started = True
+    else:
+        m = "Reconnected: " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
-    started = True
-
-    m = "INFO: Ready at " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
     print(m)
 
     ch = bot.get_channel(config["log channel"])
