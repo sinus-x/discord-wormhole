@@ -459,7 +459,7 @@ class Wormhole(wormcog.Wormcog):
             if line.endswith("```") and code:
                 code = False
 
-        return content.replace("@", "@_")
+        return content.replace("@", "@\u200b")
 
     def _update_stats(self, message: discord.Message):
         """Increment wormhole's statistics"""
