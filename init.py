@@ -1,3 +1,4 @@
+import git
 import json
 import traceback
 from datetime import datetime
@@ -9,6 +10,7 @@ from core import wormcog, output, checks
 config = json.load(open("config.json"))
 bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
 event = output.Event(bot)
+git_repo = git.Repo(search_parent_directories=True)
 
 ##
 ## EVENTS
@@ -26,6 +28,10 @@ async def on_ready():
         started = True
     else:
         m = "Reconnected: " + datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+
+    git_hash = git_repo.head.object.hexsha[:7]
+    git_branch = git_repo.active_branch.name
+    m += f" ({git_hash} on branch {git_branch})"
 
     print(m)
 
