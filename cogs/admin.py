@@ -419,7 +419,7 @@ class Admin(wormcog.Wormcog):
         return self.bot.get_user(member_id)
 
     def _w2str_out(self, channel: discord.TextChannel) -> str:
-        return f"**{channel.mention}** in **{channel.guild.name}**"
+        return f"**#{channel.name}** in **{channel.guild.name}**"
 
     def _w2str_log(self, channel: discord.TextChannel) -> str:
         return f"{channel.guild.name}/{channel.name} (ID {channel.id})"

@@ -35,8 +35,10 @@ class Wormhole(wormcog.Wormcog):
 
         # get wormhole
         db_w = repo_w.get(message.channel.id)
+
         if db_w is None:
             return
+
         # get additional information
         db_b = repo_b.get(db_w.beam)
 
@@ -50,7 +52,7 @@ class Wormhole(wormcog.Wormcog):
 
         # do not act if message is bot command
         if message.content.startswith(config["prefix"]):
-            return
+            return await self.delete(message)
 
         # get wormhole channel objects
         if db_b.name not in self.wormholes or len(self.wormholes[db_b.name]) == 0:
@@ -276,7 +278,7 @@ class Wormhole(wormcog.Wormcog):
         pars = []
         # fmt: off
         pars.append("active" if db_b.active else "inactive")
-        pars.append(f"replacing (timeout **{db_b.timeout} s**)" if db_b.replace else "not replacing")
+        pars.append(f"replace (timeout **{db_b.timeout} s**)" if db_b.replace else "not replacing")
         pars.append(f"anonymity level **{db_b.anonymity}**")
         # fmt: on
         msg += ", ".join(pars)
@@ -457,7 +459,7 @@ class Wormhole(wormcog.Wormcog):
             if line.endswith("```") and code:
                 code = False
 
-        return content.replace("@", "@_")
+        return content.replace("@", "@\u200b")
 
     def _update_stats(self, message: discord.Message):
         """Increment wormhole's statistics"""
