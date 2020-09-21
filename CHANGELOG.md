@@ -2,7 +2,13 @@
 
 ## [unreleased]
 
+## [0.2.1]
+
 - `announce` command
+- Default prefix set to `+`
+- Make `@` escaping transparent
+- Fix wormhole to string function
+- Remove hash from presence
 
 ## [0.2.0]
 
@@ -30,7 +36,8 @@
 - Warnings on failed send/edit
 
 <!-- Versions -->
-[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.0...devel
+[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.1...devel
+[0.2.1]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/sinus-x/discord-wormhole/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/sinus-x/discord-wormhole/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/sinus-x/discord-wormhole/releases/tag/v0.1.0
