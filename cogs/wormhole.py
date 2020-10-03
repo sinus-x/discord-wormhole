@@ -99,9 +99,12 @@ class Wormhole(wormcog.Wormcog):
                 forwarded = m
                 break
         if not forwarded:
-            await after.add_reaction("❎")
-            await asyncio.sleep(1)
-            await after.remove_reaction("❎", self.bot.user)
+            try:
+                await after.add_reaction("❎")
+                await asyncio.sleep(1)
+                await after.remove_reaction("❎", self.bot.user)
+            except discord.Forbidden:
+                await after.channel.sent("_Edit not successful_ ❎", delete_after=1)
             return
 
         content = await self._process(after)
@@ -116,9 +119,12 @@ class Wormhole(wormcog.Wormcog):
                     text=content,
                 )
             )
-        await after.add_reaction("✅")
-        await asyncio.sleep(1)
-        await after.remove_reaction("✅", self.bot.user)
+        try:
+            await after.add_reaction("✅")
+            await asyncio.sleep(1)
+            await after.remove_reaction("✅", self.bot.user)
+        except discord.Forbidden:
+            await after.channel.sent("_Edit successful_ ✅", delete_after=1)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
