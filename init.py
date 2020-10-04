@@ -3,14 +3,29 @@ import json
 import traceback
 from datetime import datetime
 
+import discord
 from discord.ext import commands
 
 from core import wormcog, output, checks
 
 config = json.load(open("config.json"))
-bot = commands.Bot(command_prefix=config["prefix"], help_command=None)
-event = output.Event(bot)
 git_repo = git.Repo(search_parent_directories=True)
+
+intents = discord.Intents.none()
+intents.guilds = True  # Needed for on_guild_join() and Info cog commands
+intents.members = True
+# FIXME Do we need member cache? We only use it for whois and tag translation
+intents.emojis = True  # Needed to translate unavailable emojis
+intents.messages = True  # Core functionality
+
+bot = commands.Bot(
+    command_prefix=config["prefix"],
+    help_command=None,
+    allowed_mentions=discord.AllowedMentions(roles=False, everyone=False, users=True),
+    intents=intents,
+)
+
+event = output.Event(bot)
 
 ##
 ## EVENTS
