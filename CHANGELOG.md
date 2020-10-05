@@ -1,6 +1,10 @@
 # CHANGELOG
 
+Small fixes are not listed. See diffs for each version to see details.
+
 ## [unreleased]
+
+## [0.2.2]
 
 - Bump discord.py to 1.5.0, use Intents
 
