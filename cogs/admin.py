@@ -49,7 +49,7 @@ class Admin(wormcog.Wormcog):
             "open <name>",
             "close <name>",
             "edit <name> active [0, 1]",
-            "edit <name> admin_id <member ID>",
+            "edit <name> admin_id <member>",
             "edit <name> anonymity [none, guild, full]",
             "edit <name> replace [0, 1]",
             "edit <name> timeout <int>",
@@ -145,7 +145,7 @@ class Admin(wormcog.Wormcog):
             "add <beam> [<channel ID>, None]",
             "remove [<channel ID>, None]",
             "edit <channel ID> beam <beam>",
-            "edit <channel ID> admin_id <member ID>",
+            "edit <channel ID> admin_id <member>",
             "edit <channel ID> active [0, 1]",
             "edit <channel ID> logo <string>",
             "edit <channel ID> readonly [0, 1]",
@@ -266,13 +266,13 @@ class Admin(wormcog.Wormcog):
 
         description = config["prefix"] + "user…"
         values = [
-            "add <member ID> <nickname>",
-            "remove <member ID>",
-            "edit <member ID> home_id:<beam> <channel ID>",
-            "edit <member ID> mod [0, 1]",
-            "edit <member ID> nickname <string>",
-            "edit <member ID> readonly [0, 1]",
-            "edit <member ID> restricted [0, 1]",
+            "add <member> <nickname>",
+            "remove <member>",
+            "edit <member> home_id:<beam> <channel ID>",
+            "edit <member> mod [0, 1]",
+            "edit <member> nickname <string>",
+            "edit <member> readonly [0, 1]",
+            "edit <member> restricted [0, 1]",
             "list [<beam>, <channel ID>, <user attribute>]",
         ]
 
@@ -286,34 +286,34 @@ class Admin(wormcog.Wormcog):
         await ctx.send(embed=embed)
 
     @user.command(name="add")
-    async def user_add(self, ctx, member_id: int, nickname: str):
+    async def user_add(self, ctx, member: discord.Member, nickname: str):
         """Add user"""
-        repo_u.add(discord_id=member_id, nickname=nickname)
-        self.event.sudo(ctx, f"{str(repo_u.get(member_id))}.")
+        repo_u.add(discord_id=member.id, nickname=nickname)
+        self.event.sudo(ctx, f"{str(repo_u.get(member.id))}.")
 
     @user.command(name="remove", alises=["delete"])
-    async def user_remove(self, ctx, member_id: int):
+    async def user_remove(self, ctx, member: discord.Member):
         """Remove user"""
         if (
             ctx.author.id != config["admin id"]
-            and repo_u.get_attribute(member_id, "mod") == 1
+            and repo_u.get_attribute(member.id, "mod") == 1
         ):
             return await ctx.send("> You do not have permission to alter mod accounts")
-        if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
+        if ctx.author.id != config["admin id"] and member.id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
-        repo_u.delete(member_id)
-        await self.event.sudo(ctx, f"User **{member_id}** removed.")
+        repo_u.delete(member.id)
+        await self.event.sudo(ctx, f"User **{member.id}** removed.")
 
     @user.command(name="edit", aliases=["set"])
-    async def user_edit(self, ctx, member_id: int, key: str, value: str):
+    async def user_edit(self, ctx, member: discord.Member, key: str, value: str):
         """Edit user"""
         if (
             ctx.author.id != config["admin id"]
-            and repo_u.get_attribute(member_id, "mod") == 1
+            and repo_u.get_attribute(member.id, "mod") == 1
         ):
             return await ctx.send("> You do not have permission to alter mod accounts")
-        if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
+        if ctx.author.id != config["admin id"] and member.id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
 
         if key in ("mod", "readonly", "restricted"):
@@ -327,8 +327,8 @@ class Admin(wormcog.Wormcog):
             except ValueError:
                 raise errors.BadArgument("Value has to be integer.")
 
-        repo_u.set(discord_id=member_id, key=key, value=value)
-        await self.event.sudo(ctx, f"{member_id} updated: {key} = {value}.")
+        repo_u.set(discord_id=member.id, key=key, value=value)
+        await self.event.sudo(ctx, f"{member.id} updated: {key} = {value}.")
 
     @user.command(name="list")
     async def user_list(self, ctx, restraint: str = None):
