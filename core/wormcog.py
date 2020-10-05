@@ -131,7 +131,10 @@ class Wormcog(commands.Cog):
 
         # add checkmark to original, if it hasn't been deleted
         if not deleted_original:
-            await message.add_reaction("✅")
+            try:
+                await message.add_reaction("✅")
+            except:
+                await message.channel.send("Media file sent. To disable this message, give me `Add Reactions` permission.")
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:
