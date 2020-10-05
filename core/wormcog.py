@@ -131,7 +131,10 @@ class Wormcog(commands.Cog):
 
         # add checkmark to original, if it hasn't been deleted
         if not deleted_original:
-            await message.add_reaction("✅")
+            try:
+                await message.add_reaction("✅")
+            except discord.Forbidden:
+                await message.channel.send(f"_Successfully distributed_ ✅")
 
         # save message objects in case of editing/deletion
         if db_b.timeout > 0:

@@ -99,9 +99,12 @@ class Wormhole(wormcog.Wormcog):
                 forwarded = m
                 break
         if not forwarded:
-            await after.add_reaction("❎")
-            await asyncio.sleep(1)
-            await after.remove_reaction("❎", self.bot.user)
+            try:
+                await after.add_reaction("❎")
+                await asyncio.sleep(1)
+                await after.remove_reaction("❎", self.bot.user)
+            except discord.Forbidden:
+                await after.channel.sent("_Edit not successful_ ❎", delete_after=1)
             return
 
         content = await self._process(after)
@@ -116,9 +119,12 @@ class Wormhole(wormcog.Wormcog):
                     text=content,
                 )
             )
-        await after.add_reaction("✅")
-        await asyncio.sleep(1)
-        await after.remove_reaction("✅", self.bot.user)
+        try:
+            await after.add_reaction("✅")
+            await asyncio.sleep(1)
+            await after.remove_reaction("✅", self.bot.user)
+        except discord.Forbidden:
+            await after.channel.sent("_Edit successful_ ✅", delete_after=1)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
@@ -463,8 +469,16 @@ class Wormhole(wormcog.Wormcog):
 
     def _update_stats(self, message: discord.Message):
         """Increment wormhole's statistics"""
-        current = repo_w.get_attribute(message.channel.id, "messages")
-        repo_w.set(message.channel.id, "messages", current + 1)
+        # try to get author's home wormhole
+        beam_name = repo_w.get_attribute(message.channel.id, "beam")
+        channel_id = repo_u.get_attribute(message.author.id, f"home_id:{beam_name}")
+        if channel_id is None:
+            # user is not registered, use current wormhole
+            channel_id = message.channel.id
+
+        current = repo_w.get_attribute(channel_id, "messages")
+        repo_w.set(channel_id, "messages", current + 1)
+
         beam_name = repo_w.get_attribute(message.channel.id, "beam")
         if beam_name in self.transferred:
             self.transferred[beam_name] += 1
