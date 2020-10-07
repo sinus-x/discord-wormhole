@@ -33,6 +33,16 @@ class Admin(wormcog.Wormcog):
             beam=repo_w.get_attribute(ctx.channel.id, "beam"), message=message
         )
 
+    @commands.check(checks.is_mod)
+    @commands.command(name="block")
+    async def user_block(self, ctx, discord_id: int):
+        """Block user. If user not registered, it registers it first"""
+        if not repo_u.exists(discord_id=discord_id):
+            self.user_add(ctx, member_id=discord_id, nickname=str(discord_id))
+
+        repo_u.set(discord_id=discord_id, key='readonly', value=True)
+        await self.event.sudo(ctx, f"User **{discord_id}** blocked.")
+
     @commands.check(checks.is_admin)
     @commands.check(checks.not_in_wormhole)
     @commands.group(name="beam")
