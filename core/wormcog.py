@@ -55,6 +55,14 @@ class Wormcog(commands.Cog):
         if key == "admin":
             return 10
 
+    def get_free_nickname(self, nickname: str) -> str:
+        i = 0
+        orig_name = nickname
+        while repo_u.is_nickname_used(nickname):
+            nickname = f"{orig_name}{i}"
+            i += 1
+        return nickname
+
     async def smart_send(
         self, ctx, *, content: str = None, embed: discord.Embed = None
     ):
@@ -236,7 +244,7 @@ class Wormcog(commands.Cog):
 
     def sanitise(self, string: str, *, limit: int = 500) -> str:
         """Return cleaned-up string ready for output"""
-        return discord.utils.escape_markdown(string).replace("@", "")[:limit]
+        return discord.utils.escape_markdown(string).replace("@", "@\u200b")[:limit]
 
     def get_embed(
         self,

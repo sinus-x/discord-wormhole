@@ -24,14 +24,10 @@ class User(wormcog.Wormcog):
         if repo_u.exists(ctx.author.id):
             return await ctx.author.send("You are already registered.")
 
-        nickname = self.sanitise(ctx.author.name, limit=12).replace(")", "").replace("(", "")
-
-        # get first available nickname
-        i = 0
-        name_orig = nickname
-        while repo_u.is_nickname_used(nickname):
-            nickname = f"{name_orig}{i}"
-            i += 1
+        nickname = (
+            self.sanitise(ctx.author.name, limit=16).replace(")", "").replace("(", "")
+        )
+        nickname = self.get_free_nickname(nickname)
 
         # register
         repo_u.add(discord_id=ctx.author.id, nickname=nickname)
@@ -43,7 +39,7 @@ class User(wormcog.Wormcog):
         await ctx.author.send(
             f"You are now registered as `{nickname}`. "
             f"You can display your information with `{self.p}me`.\n"
-            f"To see information about another user, enter `{self.p}whois [nickname]`.\n\n"
+            f"To see information about another user, enter `{self.p}whois nickname`.\n\n"
             f"You can tag other registered users with `((nickname))`."
         )
 
@@ -87,14 +83,17 @@ class User(wormcog.Wormcog):
             return await ctx.author.send(f"Register with `{self.p}register`")
         if repo_u.get_attribute(ctx.author.id, "restricted") == 1:
             return await ctx.author.send("You are forbidden to alter your settings.")
-        if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
+        if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(
+            ctx.channel.id
+        ):
             return await ctx.author.send("Home has to be a wormhole")
 
         beam_name = repo_w.get(ctx.channel.id).beam
         repo_u.set(ctx.author.id, key=f"home_id:{beam_name}", value=ctx.channel.id)
         await ctx.author.send("Home set to " + ctx.channel.mention)
         await self.event.user(
-            ctx, f"Home in **{beam_name}** set to **{ctx.channel.id}** ({ctx.guild.name})."
+            ctx,
+            f"Home in **{beam_name}** set to **{ctx.channel.id}** ({ctx.guild.name}).",
         )
 
     @commands.cooldown(rate=2, per=14400, type=commands.BucketType.user)
@@ -167,7 +166,9 @@ class User(wormcog.Wormcog):
         if user is None:
             return await ctx.author.send("User not found.")
 
-        description = f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
+        description = (
+            f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
+        )
         if len(db_u.home_ids) == 0:
             description += "_, once they've set their home wormhole_"
         embed = self.get_embed(ctx=ctx, title=str(user), description=description)
@@ -180,13 +181,17 @@ class User(wormcog.Wormcog):
         if db_u.restricted:
             information.append("restricted")
         if len(information):
-            embed.add_field(name="Information", value=", ".join(information), inline=False)
+            embed.add_field(
+                name="Information", value=", ".join(information), inline=False
+            )
 
         if len(db_u.home_ids):
             value = []
             for beam, discord_id in db_u.home_ids.items():
                 channel = self.bot.get_channel(discord_id)
-                value.append("**{}**: {}, {}".format(beam, channel.name, channel.guild.name))
+                value.append(
+                    "**{}**: {}, {}".format(beam, channel.name, channel.guild.name)
+                )
             embed.add_field(name="Home wormhole", value="\n".join(value), inline=False)
 
         await ctx.author.send(embed=embed)
@@ -200,7 +205,9 @@ class User(wormcog.Wormcog):
 
         result = []
         template = "{logo} **{guild}**, {name}: {link}"
-        for wormhole in repo_w.list_objects(repo_w.get_attribute(ctx.channel.id, "beam")):
+        for wormhole in repo_w.list_objects(
+            repo_w.get_attribute(ctx.channel.id, "beam")
+        ):
             if wormhole.invite is None:
                 continue
             channel = self.bot.get_channel(wormhole.discord_id)

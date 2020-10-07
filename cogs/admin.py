@@ -35,13 +35,18 @@ class Admin(wormcog.Wormcog):
 
     @commands.check(checks.is_mod)
     @commands.command(name="block")
-    async def user_block(self, ctx, discord_id: int):
-        """Block user. If user not registered, it registers it first"""
-        if not repo_u.exists(discord_id=discord_id):
-            self.user_add(ctx, member_id=discord_id, nickname=str(discord_id))
+    async def block(self, ctx, member: discord.Member):
+        """Block discord user from sending messages"""
+        nickname = (
+            self.sanitise(member.name, limit=16).replace(")", "").replace("(", "")
+        )
+        nickname = self.get_free_nickname(nickname)
 
-        repo_u.set(discord_id=discord_id, key='readonly', value=True)
-        await self.event.sudo(ctx, f"User **{discord_id}** blocked.")
+        if not repo_u.exists(discord_id=member.id):
+            self.user_add(ctx, member_id=member.id, nickname=nickname)
+
+        repo_u.set(discord_id=member.id, key="readonly", value=1)
+        await self.event.sudo(ctx, f"User **{nickname}** blocked.")
 
     @commands.check(checks.is_admin)
     @commands.check(checks.not_in_wormhole)
