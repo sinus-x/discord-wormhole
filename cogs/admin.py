@@ -41,7 +41,7 @@ class Admin(wormcog.Wormcog):
             self.user_add(ctx, member_id=discord_id, nickname=str(discord_id))
 
         repo_u.set(discord_id=discord_id, key='readonly', value=True)
-        await self.event.sudo(ctx, f"User **{member_id}** blocked.")
+        await self.event.sudo(ctx, f"User **{discord_id}** blocked.")
 
     @commands.check(checks.is_admin)
     @commands.check(checks.not_in_wormhole)
