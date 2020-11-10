@@ -221,9 +221,9 @@ class Wormhole(wormcog.Wormcog):
             # fmt: off
             if isinstance(msgs[0], discord.Member)  and ctx.author.id == msgs[0].id \
             or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
-                await self.delete(ctx.message)
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
+                await self.delete(ctx.message)
                 content = await self._process(m)
 
                 beam_name = repo_w.get_attribute(m.channel.id, "beam")
@@ -239,15 +239,15 @@ class Wormhole(wormcog.Wormcog):
                             )
                         )
                     except Exception as e:
-                        self.event.user(
+                        await self.event.user(
                             ctx, (
                                 f"Could not edit message in {self.sanitise(message.guild.name)}"
                                 f"/{self.sanitise(message.channel.name)}:\n>>> {e}"
                             )
                         )
-                        await message.channel.send(
+                        await ctx.channel.send(
                             f"> **{self.sanitise(ctx.author.name)}**: " +
-                            f"Could not replicate in **{self.sanitise(message.guild.name)}**.",
+                            f"Could not replicate edit in **{self.sanitise(message.guild.name)}**.",
                             delete_after=0.5,
                         )
                 break
