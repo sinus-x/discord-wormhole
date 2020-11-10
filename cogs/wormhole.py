@@ -221,9 +221,9 @@ class Wormhole(wormcog.Wormcog):
             # fmt: off
             if isinstance(msgs[0], discord.Member)  and ctx.author.id == msgs[0].id \
             or isinstance(msgs[0], discord.Message) and ctx.author.id == msgs[0].author.id:
+                await self.delete(ctx.message)
                 m = ctx.message
                 m.content = m.content.split(" ", 1)[1]
-                await self.delete(ctx.message)
                 content = await self._process(m)
 
                 beam_name = repo_w.get_attribute(m.channel.id, "beam")
