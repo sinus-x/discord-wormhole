@@ -5,6 +5,7 @@ Small fixes are not listed. See diffs for each version to see details.
 ## [unreleased]
 
 - `block` command ([PR-67] by [AlejandroGomezFrieiro])
+- `spy messages` command
 
 ## [0.2.2]
 
