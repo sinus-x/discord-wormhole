@@ -120,7 +120,15 @@ class BeamRepository:
 
 class WormholeRepository:
     def __init__(self):
-        self.attributes = ("beam", "admin_id", "active", "logo", "readonly", "messages", "invite")
+        self.attributes = (
+            "beam",
+            "admin_id",
+            "active",
+            "logo",
+            "readonly",
+            "messages",
+            "invite",
+        )
 
     ##
     ## Interface
@@ -236,7 +244,14 @@ class WormholeRepository:
 
 class UserRepository:
     def __init__(self):
-        self.attributes = ("discord_id", "home_id", "mod", "nickname", "readonly", "restricted")
+        self.attributes = (
+            "discord_id",
+            "home_id",
+            "mod",
+            "nickname",
+            "readonly",
+            "restricted",
+        )
 
     ##
     ## Interface

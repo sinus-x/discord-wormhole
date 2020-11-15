@@ -24,9 +24,7 @@ class User(wormcog.Wormcog):
         if repo_u.exists(ctx.author.id):
             return await ctx.author.send("You are already registered.")
 
-        nickname = (
-            self.sanitise(ctx.author.name, limit=16).replace(")", "").replace("(", "")
-        )
+        nickname = self.sanitise(ctx.author.name, limit=16).replace(")", "").replace("(", "")
         nickname = self.get_free_nickname(nickname)
 
         # register
@@ -83,9 +81,7 @@ class User(wormcog.Wormcog):
             return await ctx.author.send(f"Register with `{self.p}register`")
         if repo_u.get_attribute(ctx.author.id, "restricted") == 1:
             return await ctx.author.send("You are forbidden to alter your settings.")
-        if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(
-            ctx.channel.id
-        ):
+        if not isinstance(ctx.channel, discord.TextChannel) or not repo_w.exists(ctx.channel.id):
             return await ctx.author.send("Home has to be a wormhole")
 
         beam_name = repo_w.get(ctx.channel.id).beam
@@ -166,9 +162,7 @@ class User(wormcog.Wormcog):
         if user is None:
             return await ctx.author.send("User not found.")
 
-        description = (
-            f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
-        )
+        description = f"{user.mention} (ID {user.id})\n_Taggable via_ `(({db_u.nickname}))`"
         if len(db_u.home_ids) == 0:
             description += "_, once they've set their home wormhole_"
         embed = self.get_embed(ctx=ctx, title=str(user), description=description)
@@ -181,17 +175,13 @@ class User(wormcog.Wormcog):
         if db_u.restricted:
             information.append("restricted")
         if len(information):
-            embed.add_field(
-                name="Information", value=", ".join(information), inline=False
-            )
+            embed.add_field(name="Information", value=", ".join(information), inline=False)
 
         if len(db_u.home_ids):
             value = []
             for beam, discord_id in db_u.home_ids.items():
                 channel = self.bot.get_channel(discord_id)
-                value.append(
-                    "**{}**: {}, {}".format(beam, channel.name, channel.guild.name)
-                )
+                value.append("**{}**: {}, {}".format(beam, channel.name, channel.guild.name))
             embed.add_field(name="Home wormhole", value="\n".join(value), inline=False)
 
         await ctx.author.send(embed=embed)
@@ -205,9 +195,7 @@ class User(wormcog.Wormcog):
 
         result = []
         template = "{logo} **{guild}**, {name}: {link}"
-        for wormhole in repo_w.list_objects(
-            repo_w.get_attribute(ctx.channel.id, "beam")
-        ):
+        for wormhole in repo_w.list_objects(repo_w.get_attribute(ctx.channel.id, "beam")):
             if wormhole.invite is None:
                 continue
             channel = self.bot.get_channel(wormhole.discord_id)

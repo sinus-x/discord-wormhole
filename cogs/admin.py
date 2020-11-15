@@ -29,17 +29,13 @@ class Admin(wormcog.Wormcog):
     @commands.command(name="announce")
     async def announce_(self, ctx, *, message):
         """Send announcement"""
-        await self.announce(
-            beam=repo_w.get_attribute(ctx.channel.id, "beam"), message=message
-        )
+        await self.announce(beam=repo_w.get_attribute(ctx.channel.id, "beam"), message=message)
 
     @commands.check(checks.is_mod)
     @commands.command(name="block")
     async def block(self, ctx, member: discord.Member):
         """Block discord user from sending messages"""
-        nickname = (
-            self.sanitise(member.name, limit=16).replace(")", "").replace("(", "")
-        )
+        nickname = self.sanitise(member.name, limit=16).replace(")", "").replace("(", "")
         nickname = self.get_free_nickname(nickname)
 
         if not repo_u.exists(discord_id=member.id):
@@ -90,9 +86,7 @@ class Admin(wormcog.Wormcog):
 
         repo_b.add(name=name, admin_id=ctx.author.id)
         await self.event.sudo(ctx, f"Beam **{name}** created.")
-        await self.feedback(
-            ctx, private=False, message=f"Beam **{name}** created and opened."
-        )
+        await self.feedback(ctx, private=False, message=f"Beam **{name}** created and opened.")
 
     @beam.command(name="open", aliases=["enable"])
     async def beam_open(self, ctx, name: str):
@@ -189,9 +183,7 @@ class Admin(wormcog.Wormcog):
             ctx,
             f"{self._w2str_log(channel)} added. {ctx.author.mention}, can you set the local admin?",
         )
-        await self.announce(
-            beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}."
-        )
+        await self.announce(beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}.")
 
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx, channel_id: int = None):
@@ -208,9 +200,7 @@ class Admin(wormcog.Wormcog):
         beam_name = repo_w.get_attribute(channel_id, "beam")
         repo_w.delete(discord_id=channel_id)
         await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
-        await self.announce(
-            beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}."
-        )
+        await self.announce(beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.")
         await channel.send(f"Wormhole closed: {self._w2str_out(channel)}.")
 
     @wormhole.command(name="edit", aliases=["set"])
@@ -309,10 +299,7 @@ class Admin(wormcog.Wormcog):
     @user.command(name="remove", alises=["delete"])
     async def user_remove(self, ctx, member_id: int):
         """Remove user"""
-        if (
-            ctx.author.id != config["admin id"]
-            and repo_u.get_attribute(member_id, "mod") == 1
-        ):
+        if ctx.author.id != config["admin id"] and repo_u.get_attribute(member_id, "mod") == 1:
             return await ctx.send("> You do not have permission to alter mod accounts")
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
@@ -323,10 +310,7 @@ class Admin(wormcog.Wormcog):
     @user.command(name="edit", aliases=["set"])
     async def user_edit(self, ctx, member_id: int, key: str, value: str):
         """Edit user"""
-        if (
-            ctx.author.id != config["admin id"]
-            and repo_u.get_attribute(member_id, "mod") == 1
-        ):
+        if ctx.author.id != config["admin id"] and repo_u.get_attribute(member_id, "mod") == 1:
             return await ctx.send("> You do not have permission to alter mod accounts")
         if ctx.author.id != config["admin id"] and member_id == config["admin id"]:
             return await ctx.send("> You do not have permission to alter admin account")
@@ -374,9 +358,7 @@ class Admin(wormcog.Wormcog):
             user = self.bot.get_user(db_user.discord_id)
             user_name = str(user) if hasattr(user, "name") else "---"
             result.append(
-                template.format(
-                    id=db_user.discord_id, name=user_name, nickname=db_user.nickname
-                )
+                template.format(id=db_user.discord_id, name=user_name, nickname=db_user.nickname)
             )
             for beam, discord_id in db_user.home_ids.items():
                 if restraint and restraint != beam and restraint != str(discord_id):
@@ -387,9 +369,7 @@ class Admin(wormcog.Wormcog):
                         beam=beam,
                         home=discord_id,
                         name=channel.name if hasattr(channel, "name") else "---",
-                        guild=channel.guild.name
-                        if hasattr(channel.guild, "name")
-                        else "---",
+                        guild=channel.guild.name if hasattr(channel.guild, "name") else "---",
                     )
                 )
             # attributes
@@ -420,9 +400,7 @@ class Admin(wormcog.Wormcog):
             output = "No users."
         await send_output(output)
 
-    def _get_channel(
-        self, *, ctx: commands.Context, channel_id: int = None
-    ) -> discord.TextChannel:
+    def _get_channel(self, *, ctx: commands.Context, channel_id: int = None) -> discord.TextChannel:
         if channel_id:
             return self.bot.get_channel(channel_id)
         if isinstance(ctx.channel, discord.TextChannel):
