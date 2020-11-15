@@ -44,6 +44,10 @@ class Errors(wormcog.Wormcog):
 
         # handle messages with prefix
         if isinstance(error, commands.CommandNotFound):
+            # Only send in DMs and Wormhole channels
+            if hasattr(ctx.channel, "id") and not repo_w.exists(ctx.channel.id):
+                return
+
             message = "Your message was not recognised as a command.\n>>> " + ctx.message.content
             await ctx.author.send(message[:2000])
 
