@@ -31,8 +31,9 @@ class Admin(wormcog.Wormcog):
         """Send announcement"""
         await self.announce(beam=repo_w.get_attribute(ctx.channel.id, "beam"), message=message)
 
+    @commands.check(checks.in_wormhole)
     @commands.check(checks.is_mod)
-    @commands.command(name="block")
+    @commands.command(name="block", aliases=["ban"])
     async def block(self, ctx, member: discord.Member):
         """Block discord user from sending messages"""
         nickname = self.sanitise(member.name, limit=16).replace(")", "").replace("(", "")
