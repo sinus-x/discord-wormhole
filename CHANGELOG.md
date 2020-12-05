@@ -4,6 +4,11 @@ Small fixes are not listed. See diffs for each version to see details.
 
 ## [unreleased]
 
+## [0.2.3]
+
+- `block` command ([PR-67] by [AlejandroGomezFrieiro])
+- `spy messages` command
+
 ## [0.2.2]
 
 - Bump discord.py to 1.5.0, use Intents
@@ -42,7 +47,9 @@ Small fixes are not listed. See diffs for each version to see details.
 - Warnings on failed send/edit
 
 <!-- Versions -->
-[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.1...devel
+[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.3...devel
+[0.2.2]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/sinus-x/discord-wormhole/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/sinus-x/discord-wormhole/compare/v0.1.0...v0.1.1
@@ -50,4 +57,6 @@ Small fixes are not listed. See diffs for each version to see details.
 
 <!-- Descriptions -->
 [PR-48]: https://github.com/sinus-x/discord-wormhole/pull/48
+[PR-67]: https://github.com/sinus-x/discord-wormhole/pull/67
 [CrafterSvK]: https://github.com/CrafterSvK
+[AlejandroGomezFrieiro]: https://github.com/AlejandroGomezFrieiro

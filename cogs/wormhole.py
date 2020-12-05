@@ -239,15 +239,15 @@ class Wormhole(wormcog.Wormcog):
                             )
                         )
                     except Exception as e:
-                        self.event.user(
+                        await self.event.user(
                             ctx, (
                                 f"Could not edit message in {self.sanitise(message.guild.name)}"
                                 f"/{self.sanitise(message.channel.name)}:\n>>> {e}"
                             )
                         )
-                        await message.channel.send(
+                        await ctx.channel.send(
                             f"> **{self.sanitise(ctx.author.name)}**: " +
-                            f"Could not replicate in **{self.sanitise(message.guild.name)}**.",
+                            f"Could not replicate edit in **{self.sanitise(message.guild.name)}**.",
                             delete_after=0.5,
                         )
                 break
@@ -408,9 +408,7 @@ class Wormhole(wormcog.Wormcog):
             content = content.replace(u, user)
         for r in roles:
             try:
-                role = message.guild.get_role(
-                    int(r.replace("<@&", "").replace(">", ""))
-                ).name
+                role = message.guild.get_role(int(r.replace("<@&", "").replace(">", ""))).name
             except Exception as e:  # noqa: F841
                 role = "unknown-role"
                 await self.event.user(message, "Problem in role retrieval:\n>>>{e}")
@@ -418,14 +416,10 @@ class Wormhole(wormcog.Wormcog):
         # convert channel tags to universal names
         for channel in channels:
             try:
-                ch = self.bot.get_channel(
-                    int(channel.replace("<#", "").replace(">", ""))
-                )
+                ch = self.bot.get_channel(int(channel.replace("<#", "").replace(">", "")))
                 channel_name = self.sanitise(ch.name)
                 guild_name = self.sanitise(ch.guild.name)
-                content = content.replace(
-                    channel, f"__**{guild_name}/{channel_name}**__"
-                )
+                content = content.replace(channel, f"__**{guild_name}/{channel_name}**__")
             except Exception as e:  # noqa: F841
                 await self.event.user(message, "Problem in channel retrieval:\n>>>{e}")
         # remove unavailable emojis

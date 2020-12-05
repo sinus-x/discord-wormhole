@@ -6,13 +6,19 @@ The **Admin cog** allows the bot administrator to manage beams, wormholes and us
 
 ### announce [message]
 
-Send manual announcement to all wormholes in the beam.
+Admin only. Send manual announcement to all wormholes in the beam.
+
+### block (member)
+
+Mod only. Block user from sending any messages to the given beam.
+
+**ban (member)** is an alias for this command.
 
 ## Beam
 
 There can be multiple independent shared chats. These chats, called beams, may have multiple wormholes connected to them. Wormhole can only be connected to one beam.
 
-Invoker has to be bot administrator in order to edit these settings.
+**Invoker has to be bot administrator** in order to edit these settings.
 
 ### Beam settings
 
@@ -54,7 +60,7 @@ List opened beams
 
 Each wormhole is a text channel in some guild, connected to specified beam.
 
-Invoker has to be bot administrator in order to edit these settings.
+**Invoker has to be bot administrator** in order to edit these settings.
 
 ### Wormhole settings
 
@@ -90,7 +96,7 @@ List beams and their wormholes.
 
 Users can register their accounts if they want to be able to be tagged or to have their home wormhole linked to them.
 
-Invoker has to be mod or bot administrator in order to edit these settings.
+**Invoker has to be mod or bot administrator** in order to edit these settings.
 
 ### User settings
 

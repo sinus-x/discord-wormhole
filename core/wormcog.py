@@ -55,9 +55,15 @@ class Wormcog(commands.Cog):
         if key == "admin":
             return 10
 
-    async def smart_send(
-        self, ctx, *, content: str = None, embed: discord.Embed = None
-    ):
+    def get_free_nickname(self, nickname: str) -> str:
+        i = 0
+        orig_name = nickname
+        while repo_u.is_nickname_used(nickname):
+            nickname = f"{orig_name}{i}"
+            i += 1
+        return nickname
+
+    async def smart_send(self, ctx, *, content: str = None, embed: discord.Embed = None):
         if content is None and embed is None:
             return
 
@@ -90,9 +96,7 @@ class Wormcog(commands.Cog):
             return
 
         # remove the original, if possible
-        manage_messages_perm = message.guild.me.permissions_in(
-            message.channel
-        ).manage_messages
+        manage_messages_perm = message.guild.me.permissions_in(message.channel).manage_messages
         if manage_messages_perm and db_b.replace == 1 and not files:
             try:
                 messages[0] = message.author
@@ -192,15 +196,8 @@ class Wormcog(commands.Cog):
             )
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
-        tags = [
-            repo_u.get_by_nickname(tag)
-            for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)
-        ]
-        users = [
-            user
-            for user in tags
-            if user is not None and beam_name in user.home_ids.keys()
-        ]
+        tags = [repo_u.get_by_nickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
+        users = [user for user in tags if user is not None and beam_name in user.home_ids.keys()]
         return users
 
     def _process_tags(
@@ -236,7 +233,7 @@ class Wormcog(commands.Cog):
 
     def sanitise(self, string: str, *, limit: int = 500) -> str:
         """Return cleaned-up string ready for output"""
-        return discord.utils.escape_markdown(string).replace("@", "")[:limit]
+        return discord.utils.escape_markdown(string).replace("@", "@\u200b")[:limit]
 
     def get_embed(
         self,

@@ -1,3 +1,7 @@
+import json
+import tempfile
+
+import discord
 from discord.ext import commands
 
 from core import wormcog
@@ -18,7 +22,9 @@ class Info(wormcog.Wormcog):
             return
 
         embed = self.get_embed(
-            ctx=ctx, title="Get information", description="Get to know your guilds better."
+            ctx=ctx,
+            title="Get information",
+            description="Get to know your guilds better.",
         )
         # fmt: off
         embed.add_field(
@@ -179,6 +185,43 @@ class Info(wormcog.Wormcog):
         await self.spy_channels(ctx, guild_id)
         await self.spy_roles(ctx, guild_id)
         await self.spy_emotes(ctx, guild_id)
+
+    @spy.command(name="messages")
+    async def spy_messages(self, ctx, channel_id: int, count: int = 100):
+        """Download messages from given channel. May fail if permissions are missing."""
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            return await ctx.send("Channel not found.")
+
+        messages = []
+        try:
+            async for message in channel.history(limit=count, oldest_first=False):
+                message_dict = {
+                    "id": message.id,
+                    "author": message.author.id,
+                    "content": message.content,
+                }
+                if len(message.attachments):
+                    attmnts = []
+                    for attachment in message.attachments:
+                        try:
+                            attmnts.append(attachment.url)
+                        except:
+                            pass
+                    if len(attmnts):
+                        message_dict["attachments"] = attmnts
+
+                messages.append(message_dict)
+        except Exception as e:
+            return await ctx.send(str(e))
+
+        # Convert to json
+        with tempfile.TemporaryFile() as fp:
+            fp.write(bytes(json.dumps(messages), "utf-8"))
+            fp.seek(0)
+            await ctx.send(file=discord.File(fp=fp, filename="dump.json"))
+
+        return
 
 
 def setup(bot):
