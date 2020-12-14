@@ -228,6 +228,8 @@ class Wormhole(wormcog.Wormcog):
 
                 beam_name = repo_w.get_attribute(m.channel.id, "beam")
                 users = self._get_users_from_tags(beam_name=beam_name, text=content)
+                # FIXME This is causing a cascade of "Not found" messages for every wormhole.
+                # It should be rewritten so it is
                 for message in msgs[1:]:
                     try:
                         await message.edit(
@@ -509,6 +511,8 @@ class Wormhole(wormcog.Wormcog):
                 line.append(wormhole.logo)
             # guild, channel, counter
             channel = self.bot.get_channel(wormhole.discord_id)
+            if channel is None:
+                continue
             line.append(
                 f"**{self.sanitise(channel.guild.name)}** ({self.sanitise(channel.name)}): "
                 f"**{wormhole.messages}** messages"

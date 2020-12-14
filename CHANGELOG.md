@@ -48,7 +48,7 @@ Small fixes are not listed. See diffs for each version to see details.
 
 <!-- Versions -->
 [unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.3...devel
-[0.2.2]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.2...v0.2.3
+[0.2.3]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/sinus-x/discord-wormhole/compare/v0.1.1...v0.2.0

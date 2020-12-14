@@ -199,6 +199,8 @@ class User(wormcog.Wormcog):
             if wormhole.invite is None:
                 continue
             channel = self.bot.get_channel(wormhole.discord_id)
+            if channel is None:
+                continue
             result.append(
                 template.format(
                     logo=wormhole.logo if len(wormhole.logo) else "",
