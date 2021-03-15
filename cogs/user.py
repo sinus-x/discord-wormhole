@@ -24,7 +24,7 @@ class User(wormcog.Wormcog):
         if repo_u.exists(ctx.author.id):
             return await ctx.author.send("You are already registered.")
 
-        nickname = self.sanitise(ctx.author.name, limit=16).replace(")", "").replace("(", "")
+        nickname = self.sanitise(ctx.author.name, limit=32).replace(")", "").replace("(", "")
         nickname = self.get_free_nickname(nickname)
 
         # register
@@ -136,11 +136,12 @@ class User(wormcog.Wormcog):
     async def whois(self, ctx, *, member: str):
         """Get information about member"""
         await self.delete(ctx.message)
-        await self.event.user(ctx, f"Whois lookup for **{member}**.")
 
         u = repo_u.get_by_nickname(member)
-        if u:
+        if u is not None:
+            await self.event.user(ctx, f"Whois lookup for **{member}**.")
             return await self.display_user_info(ctx, u)
+        await self.event.user(ctx, f"Invalid whois lookup for **{member}**.")
         await ctx.author.send("User not found")
 
     async def display_user_info(self, ctx, db_u: objects.User):

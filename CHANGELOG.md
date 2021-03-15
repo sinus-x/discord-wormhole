@@ -4,6 +4,10 @@ Small fixes are not listed. See diffs for each version to see details.
 
 ## [unreleased]
 
+- Unite nickname limits to 32 characters
+- Distinguish successfull and invalid whois lookups in the log
+- Do not use mentions in logs (they don't work if you aren't on the server)
+
 ## [0.2.3]
 
 - `block` command ([PR-67] by [AlejandroGomezFrieiro])

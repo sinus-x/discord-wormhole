@@ -25,8 +25,8 @@ class Event:
         # fmt: off
         await self.get_channel().send(self.user_template.format(
             user=str(ctx.author),
-            location=f"{ctx.channel.mention} ({ctx.guild.name})"
-            if hasattr(ctx.channel, "mention")
+            location=f"{ctx.channel.name} ({ctx.guild.name})"
+            if hasattr(ctx.channel, "name")
             else type(ctx.channel).__name__,
             message=message.replace("@", "@\u200b"),
         ))
@@ -37,8 +37,8 @@ class Event:
         # fmt: off
         await self.get_channel().send(self.sudo_template.format(
             user=str(ctx.author),
-            location=f"{ctx.channel.mention} ({ctx.guild.name})"
-            if hasattr(ctx.channel, "mention")
+            location=f"{ctx.channel.name} ({ctx.guild.name})"
+            if hasattr(ctx.channel, "name")
             else type(ctx.channel).__name__,
             message=message,
         ))
