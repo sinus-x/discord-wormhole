@@ -4,9 +4,12 @@ Small fixes are not listed. See diffs for each version to see details.
 
 ## [unreleased]
 
+## [0.2.4]
+
 - Unite nickname limits to 32 characters
 - Distinguish successfull and invalid whois lookups in the log
 - Do not use mentions in logs (they don't work if you aren't on the server)
+- This may be the last release
 
 ## [0.2.3]
 
@@ -51,7 +54,8 @@ Small fixes are not listed. See diffs for each version to see details.
 - Warnings on failed send/edit
 
 <!-- Versions -->
-[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.3...devel
+[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.4...devel
+[0.2.4]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.0...v0.2.1

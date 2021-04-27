@@ -4,3 +4,5 @@ __pycache__
 config.json
 # database
 *.db
+# development
+.venv
