@@ -106,7 +106,10 @@ class Wormcog(commands.Cog):
                 pass
 
         # limit message length
-        text = text[:1024]
+        text = text[:1900]
+        # this is a safe space before the usernames are expanded and it should be enough.
+        # if someone intentionally sends a message that will be expanded over 2k characters,
+        # it will be rejected by the API
 
         # update wormhole list
         if db_b.name not in self.wormholes.keys():

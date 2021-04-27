@@ -1,6 +1,8 @@
 # Wormhole
 A Discord bot able to connect multiple guilds with one shared chat.
 
+*Update 2021-04-27: I don't have time for the development anymore. The bot still works, but no new features are being added.*
+
 <p align="center">
   <!-- Discord -->
   <a href="https://discord.com/invite/9N3cP2E">
@@ -12,7 +14,7 @@ A Discord bot able to connect multiple guilds with one shared chat.
   </a>
   <!-- Mantained? -->
   <a href="https://github.com/sinus-x/discord-wormhole/graphs/commit-activity">
-    <img src="https://img.shields.io/badge/mantained-yes-success?style=flat-square" alt="Mantained" />
+    <img src="https://img.shields.io/badge/mantained-bugfix-critical?style=flat-square" alt="Mantained" />
   </a>
   <!-- License -->
   <a href="https://github.com/sinus-x/discord-wormhole/blob/master/LICENSE">

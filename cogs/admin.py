@@ -186,6 +186,7 @@ class Admin(wormcog.Wormcog):
         )
         await self.announce(beam=beam, message=f"Wormhole opened: {self._w2str_out(channel)}.")
 
+    # TODO Rewrite
     @wormhole.command(name="remove", aliases=["delete"])
     async def wormhole_remove(self, ctx, channel_id: int = None):
         """Remove wormhole from database"""
@@ -194,15 +195,26 @@ class Admin(wormcog.Wormcog):
                 channel_id = ctx.channel.id
             else:
                 raise errors.BadArgument("Missing channel ID")
-        channel = self._get_channel(ctx=ctx, channel_id=channel_id)
-        if channel is None:
-            raise errors.BadArgument("No such channel")
 
-        beam_name = repo_w.get_attribute(channel_id, "beam")
-        repo_w.delete(discord_id=channel_id)
-        await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
-        await self.announce(beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}.")
-        await channel.send(f"Wormhole closed: {self._w2str_out(channel)}.")
+        channel = self._get_channel(ctx=ctx, channel_id=channel_id)
+        if channel is not None:
+            beam_name = repo_w.get_attribute(channel_id, "beam")
+            repo_w.delete(discord_id=channel_id)
+            await self.event.sudo(ctx, f"{self._w2str_log(channel)} removed.")
+            await self.announce(
+                beam=beam_name, message=f"Wormhole closed: {self._w2str_out(channel)}."
+            )
+            await channel.send(f"Wormhole closed: {self._w2str_out(channel)}.")
+            return
+
+        # channel is not available
+        wormhole = repo_w.get(channel_id)
+        if wormhole is not None:
+            await self.event.sudo(ctx, f"Wormhole {channel_id} removed.")
+            repo_w.delete(discord_id=channel_id)
+            return
+
+        await ctx.send("Not found.")
 
     @wormhole.command(name="edit", aliases=["set"])
     async def wormhole_edit(self, ctx, channel_id: int, key: str, value: str):
@@ -233,6 +245,7 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx):
         """List all wormholes"""
+        # TODO Use name & ID instead of mentions
         embed = self.get_embed(ctx=ctx, title="Wormholes")
         template = "**{mention}** ({guild}): active {active}, readonly {readonly}"
 

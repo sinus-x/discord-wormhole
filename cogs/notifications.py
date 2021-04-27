@@ -51,6 +51,15 @@ class Notifications(wormcog.Wormcog):
         await log_channel.send(embed=embed)
         # fmt: on
 
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        embed = self.get_embed(
+            title="Guild removed: " + guild.name,
+            description=f"ID {guild.id}\nCreated: {guild.created_at}",
+        )
+        log_channel = self.bot.get_channel(config.get("log channel"))
+        await log_channel.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Notifications(bot))
