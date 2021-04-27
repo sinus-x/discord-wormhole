@@ -245,6 +245,7 @@ class Admin(wormcog.Wormcog):
     @wormhole.command(name="list")
     async def wormhole_list(self, ctx):
         """List all wormholes"""
+        # TODO Use name & ID instead of mentions
         embed = self.get_embed(ctx=ctx, title="Wormholes")
         template = "**{mention}** ({guild}): active {active}, readonly {readonly}"
 

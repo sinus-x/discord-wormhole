@@ -24,7 +24,12 @@ class User(wormcog.Wormcog):
         if repo_u.exists(ctx.author.id):
             return await ctx.author.send("You are already registered.")
 
-        nickname = self.sanitise(ctx.author.name, limit=32).replace(")", "").replace("(", "")
+        nickname = (
+            self.sanitise(ctx.author.name, limit=32)
+            .replace(")", "")
+            .replace("(", "")
+            .replace("_", "")
+        )
         nickname = self.get_free_nickname(nickname)
 
         # register
