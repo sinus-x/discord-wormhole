@@ -4,6 +4,11 @@ Small fixes are not listed. See diffs for each version to see details.
 
 ## [unreleased]
 
+## [0.2.5]
+
+- Bump discord.py version to 1.7.2
+- Fix issues with embed URLs throwing errors because of bad type
+
 ## [0.2.4]
 
 - Unite nickname limits to 32 characters
