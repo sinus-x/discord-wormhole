@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import json
 import re
-from typing import List
+from typing import List, Union
 
 import discord
 from discord.ext import commands
@@ -246,7 +246,7 @@ class Wormcog(commands.Cog):
         author: discord.User = None,
         title: str = None,
         description: str = None,
-        url: str = None,
+        url: Union[str, discord.embeds._EmptyEmbed] = discord.Embed.Empty,
     ) -> discord.Embed:
         """Create embed"""
         # author

@@ -6,3 +6,4 @@ config.json
 *.db
 # development
 .venv
+.sublime-project

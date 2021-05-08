@@ -4,6 +4,11 @@ Small fixes are not listed. See diffs for each version to see details.
 
 ## [unreleased]
 
+## [0.2.5]
+
+- Bump discord.py version to 1.7.2
+- Fix issues with embed URLs throwing errors because of bad type
+
 ## [0.2.4]
 
 - Unite nickname limits to 32 characters
@@ -54,7 +59,8 @@ Small fixes are not listed. See diffs for each version to see details.
 - Warnings on failed send/edit
 
 <!-- Versions -->
-[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.4...devel
+[unreleased]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.5...devel
+[0.2.5]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/sinus-x/discord-wormhole/compare/v0.2.1...v0.2.2
