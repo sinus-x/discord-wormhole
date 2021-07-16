@@ -180,23 +180,8 @@ class Wormcog(commands.Cog):
                 )
             )
             messages.append(m)
-        except discord.Forbidden:
-            await self.event.user(
-                message,
-                (
-                    f"Forbidden to send message to {self.sanitise(message.guild.name)}"
-                    f"/{self.sanitise(message.channel.name)}."
-                ),
-            )
-        except Exception as e:
-            await self.event.user(
-                message,
-                (
-                    f"Could not send message to {self.sanitise(message.guild.name)}"
-                    f"/{self.sanitise(message.channel.name)}:\n"
-                    f">>>{type(e).__name__}\n{str(e)}"
-                ),
-            )
+        except Exception:
+            pass
 
     def _get_users_from_tags(self, beam_name: str, text: str) -> List[objects.User]:
         tags = [repo_u.get_by_nickname(tag) for tag in re.findall(r"\(\(([^\(\)]*)\)\)", text)]
